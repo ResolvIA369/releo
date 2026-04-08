@@ -1,0 +1,23 @@
+@import '../shared/styles/design-tokens.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Dark Theme Overrides ────────────────────────────────────────── */
+[data-theme="dark"] {
+  --bg-primary: #1a1a2e;
+  --bg-secondary: #16213e;
+  --bg-card: #1f2937;
+  --text-primary: #e2e8f0;
+  --text-muted: #a0aec0;
+  --text-placeholder: #718096;
+  --border-light: #2d3748;
+
+  /* Override design-tokens CSS variables (RGB format for Tailwind) */
+  --color-background: 26 26 46;
+  --color-surface: 22 33 62;
+  --color-border: 45 55 72;
+  --color-text: 226 232 240;
+  --color-text-muted: 160 174 192;
+}

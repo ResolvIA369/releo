@@ -1,0 +1,146 @@
+export interface GameAudioRules {
+  speakWordOnAppear: boolean;
+  speakTargetWord: boolean;
+  speakOnCorrect: boolean;
+  speakOnIncorrect: boolean;
+  speakRulesAtStart: boolean;
+  speakEncouragement: boolean;
+  hasCountdown: boolean;
+  countdownSeconds: number;
+  hasMicrophone: boolean;
+}
+
+export const GAME_AUDIO_RULES: Record<string, GameAudioRules> = {
+  doman_session: {
+    speakWordOnAppear: true,
+    speakTargetWord: false,
+    speakOnCorrect: true,
+    speakOnIncorrect: false,
+    speakRulesAtStart: false,
+    speakEncouragement: true,
+    hasCountdown: true,
+    countdownSeconds: 2,
+    hasMicrophone: true,
+  },
+  "word-image-match": {
+    speakWordOnAppear: false,
+    speakTargetWord: false,
+    speakOnCorrect: true,
+    speakOnIncorrect: false,
+    speakRulesAtStart: true,
+    speakEncouragement: true,
+    hasCountdown: true,
+    countdownSeconds: 3,
+    hasMicrophone: false,
+  },
+  "memory-cards": {
+    speakWordOnAppear: false,
+    speakTargetWord: false,
+    speakOnCorrect: true,
+    speakOnIncorrect: false,
+    speakRulesAtStart: true,
+    speakEncouragement: true,
+    hasCountdown: true,
+    countdownSeconds: 45,
+    hasMicrophone: false,
+  },
+  "word-train": {
+    speakWordOnAppear: false,
+    speakTargetWord: true,
+    speakOnCorrect: true,
+    speakOnIncorrect: true,
+    speakRulesAtStart: true,
+    speakEncouragement: true,
+    hasCountdown: false,
+    countdownSeconds: 0,
+    hasMicrophone: false,
+  },
+  "phrase-builder": {
+    speakWordOnAppear: false,
+    speakTargetWord: false,
+    speakOnCorrect: true,
+    speakOnIncorrect: false,
+    speakRulesAtStart: true,
+    speakEncouragement: true,
+    hasCountdown: true,
+    countdownSeconds: 15,
+    hasMicrophone: false,
+  },
+  "word-rain": {
+    speakWordOnAppear: false,
+    speakTargetWord: true,
+    speakOnCorrect: true,
+    speakOnIncorrect: false,
+    speakRulesAtStart: true,
+    speakEncouragement: true,
+    hasCountdown: false,
+    countdownSeconds: 0,
+    hasMicrophone: false,
+  },
+  "story-reader": {
+    speakWordOnAppear: true,
+    speakTargetWord: false,
+    speakOnCorrect: true,
+    speakOnIncorrect: false,
+    speakRulesAtStart: true,
+    speakEncouragement: true,
+    hasCountdown: false,
+    countdownSeconds: 0,
+    hasMicrophone: false,
+  },
+  "category-sort": {
+    speakWordOnAppear: true,
+    speakTargetWord: false,
+    speakOnCorrect: true,
+    speakOnIncorrect: false,
+    speakRulesAtStart: true,
+    speakEncouragement: true,
+    hasCountdown: true,
+    countdownSeconds: 5,
+    hasMicrophone: false,
+  },
+  "word-fishing": {
+    speakWordOnAppear: false,
+    speakTargetWord: true,
+    speakOnCorrect: true,
+    speakOnIncorrect: false,
+    speakRulesAtStart: true,
+    speakEncouragement: true,
+    hasCountdown: true,
+    countdownSeconds: 5,
+    hasMicrophone: false,
+  },
+  "daily-bits": {
+    speakWordOnAppear: true,
+    speakTargetWord: false,
+    speakOnCorrect: false,
+    speakOnIncorrect: false,
+    speakRulesAtStart: false,
+    speakEncouragement: false,
+    hasCountdown: false,
+    countdownSeconds: 0,
+    hasMicrophone: false,
+  },
+  "word-flash": {
+    speakWordOnAppear: true,
+    speakTargetWord: false,
+    speakOnCorrect: true,
+    speakOnIncorrect: false,
+    speakRulesAtStart: false,
+    speakEncouragement: true,
+    hasCountdown: true,
+    countdownSeconds: 2,
+    hasMicrophone: true,
+  },
+};
+
+export const GAME_RULES_TEXT: Record<string, string> = {
+  "word-image-match": "¡Vamos a jugar, {name}! Mira la palabra y toca la imagen correcta. ¡Tú puedes!",
+  "memory-cards": "¡{name}, vamos a encontrar las parejas! Voltea las tarjetas y busca las iguales. ¡Tienes 45 segundos!",
+  "word-train": "¡Mira el tren, {name}! Escucha la palabra y toca el vagón correcto antes de que caiga.",
+  "phrase-builder": "¡Vamos a armar oraciones, {name}! Toca las palabras en el orden correcto.",
+  "word-rain": "¡{name}, están cayendo palabras! Escucha cuál necesitas y tócala antes de que caiga.",
+  "story-reader": "¡Vamos a leer un cuento, {name}! Toca cada palabra para leerla.",
+  "category-sort": "¡{name}, pon cada palabra en su categoría correcta!",
+  "word-fishing": "¡Vamos a pescar palabras, {name}! Escucha cuál necesitas y pesca el pez correcto.",
+};
