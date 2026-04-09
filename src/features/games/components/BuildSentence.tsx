@@ -213,10 +213,10 @@ export const BuildSentence: React.FC<GameProps> = ({ words, phase = 1, onComplet
 
   if (gamePhase === "intro") {
     return (
-      <GameShell title="Construye la Frase" icon="🧩" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})}>
+      <GameShell title="Construye la Frase" icon="🧱" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})}>
         <GameIntro
           gameName="Construye la Frase"
-          gameIcon="🧩"
+          gameIcon="🧱"
           rulesText="¡Ordena las palabras para formar la oración!"
           color={GAME_COLOR}
           onReady={() => setGamePhase("playing")}
@@ -227,7 +227,7 @@ export const BuildSentence: React.FC<GameProps> = ({ words, phase = 1, onComplet
 
   if (gamePhase === "finished" || finished) {
     return (
-      <GameShell title="Construye la Frase" icon="🧩" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})}>
+      <GameShell title="Construye la Frase" icon="🧱" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})}>
         <GameCompleteScreen
           title="Construye la Frase"
           correct={state.correctAttempts}
@@ -241,7 +241,7 @@ export const BuildSentence: React.FC<GameProps> = ({ words, phase = 1, onComplet
   }
 
   return (
-    <GameShell title="Construye la Frase" icon="🧩" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})}>
+    <GameShell title="Construye la Frase" icon="🧱" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})}>
       <div style={{ display: "flex", gap: spacing.md, paddingTop: spacing.md, maxWidth: 620, margin: "0 auto" }}>
         <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: spacing.lg }}>
         {/* Header: round */}

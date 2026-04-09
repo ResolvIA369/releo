@@ -37,7 +37,7 @@ export const GAME_REGISTRY: GameMeta[] = [
     id: "phrase-builder",
     name: "Construye la Frase",
     description: "Arrastra palabras para formar frases",
-    icon: "🧩",
+    icon: "🧱",
     minPhase: 2,
     color: "#d69e2e",
   },
