@@ -7,6 +7,7 @@ import type { DomanWord } from "@/shared/types/doman";
 import { useGameState } from "../hooks/useGameState";
 import { sofiaReads, sofiaCelebrates } from "@/shared/services/sofiaVoice";
 import { GameShell } from "./GameShell";
+import { useRewards } from "@/shared/components/RewardsLayer";
 import { GameIntro } from "./GameIntro";
 import { GameCompleteScreen } from "@/shared/components/GameCompleteScreen";
 import { TimeBar } from "@/shared/components/TimeBar";
@@ -76,6 +77,7 @@ type Phase = "intro" | "playing" | "finished";
 
 export const BuildSentence: React.FC<GameProps> = ({ words, phase = 1, onComplete, onBack }) => {
   const { state, recordAttempt, finish, reset } = useGameState("phrase-builder", { phase });
+  const { rewardCorrect } = useRewards();
 
   const [gamePhase, setGamePhase] = useState<Phase>("intro");
   const [roundIdx, setRoundIdx] = useState(0);
@@ -162,6 +164,7 @@ export const BuildSentence: React.FC<GameProps> = ({ words, phase = 1, onComplet
           setShowCelebration(true);
           setFeedbackType("correct");
           setIsAdvancing(true);
+          rewardCorrect();
 
           (async () => {
             await sofiaCelebrates(`¡Muy bien!`);

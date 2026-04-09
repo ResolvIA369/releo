@@ -1,12 +1,13 @@
 "use client";
 
-import React from "react";
-import { motion } from "framer-motion";
+import React, { useEffect, useRef, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { AnimatedButton } from "./AnimatedButton";
-import { VictoryBurst } from "./VictoryBurst";
 import { CelebrationGif } from "./CelebrationGif";
 import { colors, spacing, fonts, fontSizes } from "@/shared/styles/design-tokens";
 import { fadeInUp, starPop } from "@/shared/styles/animations";
+import { useRewards } from "./RewardsLayer";
+import { useAppStore } from "@/shared/store/useAppStore";
 
 interface GameCompleteScreenProps {
   title: string;
@@ -25,20 +26,72 @@ function getStars(correct: number, total: number): number {
 
 const MESSAGES = ["¡Sigue practicando!", "¡Buen trabajo!", "¡Muy bien!", "¡Perfecto!"];
 
+interface ChestCoin {
+  id: number;
+  startX: number;
+  delay: number;
+}
+
 export const GameCompleteScreen: React.FC<GameCompleteScreenProps> = ({
   title, correct, total, color = colors.brand.primary, onReplay, onBack,
 }) => {
   const stars = getStars(correct, total);
   const message = MESSAGES[stars];
+  const { bigBurst } = useRewards();
+  const addCoins = useAppStore((s) => s.addCoins);
+  const [chestOpen, setChestOpen] = useState(false);
+  const [coins, setCoins] = useState<ChestCoin[]>([]);
+  const [storedCount, setStoredCount] = useState(0);
+  const firedRef = useRef(false);
+
+  // Coins to drop = 1 per correct + 5 bonus
+  const totalCoins = correct + 5;
+
+  useEffect(() => {
+    if (firedRef.current) return;
+    firedRef.current = true;
+
+    // 1. Big celebration burst
+    setTimeout(() => bigBurst(), 200);
+
+    // 2. Open chest after the stars animate in
+    setTimeout(() => setChestOpen(true), 1400);
+
+    // 3. Drop coins one by one into chest
+    const initialDelay = 1700;
+    const newCoins: ChestCoin[] = [];
+    for (let i = 0; i < totalCoins; i++) {
+      newCoins.push({
+        id: i,
+        startX: (Math.random() - 0.5) * 200,
+        delay: initialDelay + i * 110,
+      });
+    }
+    setCoins(newCoins);
+
+    // 4. Increment displayed count as each coin lands
+    newCoins.forEach((c, i) => {
+      setTimeout(() => {
+        setStoredCount(i + 1);
+      }, c.delay + 700);
+    });
+
+    // 5. Persist coins to store after all have landed
+    const persistDelay = initialDelay + totalCoins * 110 + 800;
+    setTimeout(() => {
+      addCoins(totalCoins);
+      // Close chest after coins are stored
+      setTimeout(() => setChestOpen(false), 600);
+    }, persistDelay);
+  }, [bigBurst, totalCoins, addCoins]);
 
   return (
     <motion.div variants={fadeInUp} initial="initial" animate="animate"
-      style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: spacing.md, position: "relative" }}
+      style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: spacing.md, position: "relative", paddingBottom: 180 }}
     >
       {/* Celebration GIF */}
       <div style={{ position: "relative" }}>
-        <VictoryBurst active count={12} x={100} y={100} />
-        <CelebrationGif size={200} />
+        <CelebrationGif size={180} />
       </div>
 
       {/* Stars */}
@@ -59,7 +112,93 @@ export const GameCompleteScreen: React.FC<GameCompleteScreenProps> = ({
         style={{ fontSize: fontSizes.lg, color: colors.text.muted, margin: 0, fontFamily: fonts.body }}
       >{correct} de {total} correctas</motion.p>
 
-      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.2 }}
+      {/* Chest with falling coins */}
+      <div style={{ position: "relative", width: 200, height: 140, marginTop: spacing.md }}>
+        {/* Falling coins */}
+        <AnimatePresence>
+          {coins.map((c) => (
+            <motion.div
+              key={c.id}
+              initial={{
+                top: -260,
+                left: `calc(50% + ${c.startX}px - 22px)`,
+                opacity: 0,
+                rotate: 0,
+                scale: 0.8,
+              }}
+              animate={{
+                top: chestOpen ? [-260, 60] : -260,
+                opacity: [0, 1, 1, 0],
+                rotate: [0, 360, 720],
+                scale: [0.8, 1.1, 0.7],
+              }}
+              transition={{
+                delay: c.delay / 1000,
+                duration: 0.85,
+                ease: "easeIn",
+                times: [0, 0.6, 0.85, 1],
+              }}
+              style={{
+                position: "absolute",
+                width: 44,
+                height: 44,
+                fontSize: 36,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                filter: "drop-shadow(0 4px 8px rgba(218, 165, 32, 0.5))",
+                pointerEvents: "none",
+                zIndex: 5,
+              }}
+            >
+              🪙
+            </motion.div>
+          ))}
+        </AnimatePresence>
+
+        {/* Chest */}
+        <motion.div
+          animate={chestOpen ? { y: [0, -4, 0] } : { scale: [1, 1.05, 1] }}
+          transition={{
+            duration: chestOpen ? 0.4 : 0.6,
+            repeat: chestOpen && coins.length > storedCount ? Infinity : 0,
+          }}
+          style={{
+            position: "absolute",
+            bottom: 0, left: 0, right: 0,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 4,
+          }}
+        >
+          <span style={{ fontSize: 96, lineHeight: 1, filter: "drop-shadow(0 6px 12px rgba(0,0,0,0.25))" }}>
+            {chestOpen ? "🗃️" : "🧰"}
+          </span>
+          <motion.div
+            key={storedCount}
+            initial={{ scale: 0.6, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 4,
+              padding: "4px 12px",
+              borderRadius: 9999,
+              backgroundColor: "#FFF8E1",
+              border: "2px solid #FFD54F",
+              fontSize: fontSizes.lg,
+              fontWeight: "bold",
+              fontFamily: fonts.display,
+              color: "#B7791F",
+            }}
+          >
+            🪙 +{storedCount}
+          </motion.div>
+        </motion.div>
+      </div>
+
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 2.5 }}
         style={{ display: "flex", gap: spacing.md, marginTop: spacing.sm }}
       >
         <AnimatedButton color={color} onClick={onReplay}>Jugar de nuevo</AnimatedButton>

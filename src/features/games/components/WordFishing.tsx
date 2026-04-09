@@ -6,6 +6,7 @@ import type { GameProps } from "../types";
 import type { DomanWord } from "@/shared/types/doman";
 import { useGameState } from "../hooks/useGameState";
 import { GameShell, usePause, useLeoContext } from "./GameShell";
+import { useRewards } from "@/shared/components/RewardsLayer";
 import { GameIntro } from "./GameIntro";
 import { GameCompleteScreen } from "@/shared/components/GameCompleteScreen";
 import { FeedbackFlash } from "@/shared/components/FeedbackFlash";
@@ -34,6 +35,7 @@ export const WordFishing: React.FC<GameProps> = ({ words, phase = 1, onComplete,
   const { state, recordAttempt, finish, reset } = useGameState("word-fishing", { phase });
   const { paused } = usePause();
   const leo = useLeoContext();
+  const { rewardCorrect } = useRewards();
 
   const [gamePhase, setGamePhase] = useState<Phase>("intro");
   const [roundIdx, setRoundIdx] = useState(0);
@@ -131,8 +133,11 @@ export const WordFishing: React.FC<GameProps> = ({ words, phase = 1, onComplete,
         setConfetti(true);
         setFeedbackType("correct");
         const rect = (e.target as HTMLElement).getBoundingClientRect();
-        setBurstPos({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+        setBurstPos({ x: cx, y: cy });
         leo.celebrate();
+        rewardCorrect(cx, cy);
 
         await sofiaPlayAudio("celebra-05", `¡${fish.word.text}!`, "excited");
         await new Promise((r) => setTimeout(r, 800));

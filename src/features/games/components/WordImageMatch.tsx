@@ -6,6 +6,7 @@ import type { GameProps } from "../types";
 import type { DomanWord } from "@/shared/types/doman";
 import { useGameState } from "../hooks/useGameState";
 import { GameShell, usePause } from "./GameShell";
+import { useRewards } from "@/shared/components/RewardsLayer";
 import { GameIntro } from "./GameIntro";
 import { FeedbackFlash } from "@/shared/components/FeedbackFlash";
 import { VictoryBurst } from "@/shared/components/VictoryBurst";
@@ -34,6 +35,7 @@ type Phase = "intro" | "playing" | "feedback" | "finished";
 
 export const WordImageMatch: React.FC<GameProps> = ({ words, phase = 1, onComplete, onBack }) => {
   const { state, recordAttempt, finish, reset } = useGameState("word-image-match", { phase });
+  const { rewardCorrect } = useRewards();
   const { paused } = usePause();
 
   const [gamePhase, setGamePhase] = useState<Phase>("intro");
@@ -93,7 +95,10 @@ export const WordImageMatch: React.FC<GameProps> = ({ words, phase = 1, onComple
 
       if (correct) {
         const rect = (e.target as HTMLElement).getBoundingClientRect();
-        setBurstPos({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+        setBurstPos({ x: cx, y: cy });
+        rewardCorrect(cx, cy);
         // Only say the word AFTER correct answer
         await sofiaCelebrates(`¡${currentWord.text}!`);
         await new Promise((r) => setTimeout(r, 400));

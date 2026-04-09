@@ -6,6 +6,7 @@ import type { GameProps } from "../types";
 import type { DomanWord } from "@/shared/types/doman";
 import { useGameState } from "../hooks/useGameState";
 import { GameShell, usePause } from "./GameShell";
+import { useRewards } from "@/shared/components/RewardsLayer";
 import { GameIntro } from "./GameIntro";
 import { FeedbackFlash } from "@/shared/components/FeedbackFlash";
 import { VictoryBurst } from "@/shared/components/VictoryBurst";
@@ -43,6 +44,7 @@ type Phase = "intro" | "announcing" | "dropping" | "feedback" | "finished";
 export const WordRain: React.FC<GameProps> = ({ words, phase = 1, onComplete, onBack }) => {
   const { state, recordAttempt, finish, reset } = useGameState("word-rain", { phase });
   const { paused } = usePause();
+  const { rewardCorrect } = useRewards();
 
   const [gamePhase, setGamePhase] = useState<Phase>("intro");
   const [roundIdx, setRoundIdx] = useState(0);
@@ -113,7 +115,10 @@ export const WordRain: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
 
       if (correct) {
         const rect = (e.target as HTMLElement).getBoundingClientRect();
-        setBurstPos({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+        setBurstPos({ x: cx, y: cy });
+        rewardCorrect(cx, cy);
         await sofiaCelebrates(`¡${targetWord.text}!`);
       } else {
         await sofiaEncourages(`¡Esa no! Busca "${targetWord.text}"`);

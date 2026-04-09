@@ -6,6 +6,7 @@ import type { GameProps } from "../types";
 import type { DomanWord } from "@/shared/types/doman";
 import { useGameState } from "../hooks/useGameState";
 import { GameShell, usePause } from "./GameShell";
+import { useRewards } from "@/shared/components/RewardsLayer";
 import { GameIntro } from "./GameIntro";
 import { GameCompleteScreen } from "@/shared/components/GameCompleteScreen";
 import { FeedbackFlash } from "@/shared/components/FeedbackFlash";
@@ -34,6 +35,7 @@ const WORDS_BY_PHASE = [PHASE1_WORDS, PHASE2_WORDS, PHASE3_WORDS, PHASE4_WORDS, 
 
 export const CategoryGame: React.FC<GameProps> = ({ words, phase = 1, onComplete, onBack }) => {
   const { state, recordAttempt, finish, reset } = useGameState("category-sort", { phase });
+  const { rewardCorrect } = useRewards();
   const { paused } = usePause();
 
   const [gamePhase, setGamePhase] = useState<Phase>("intro");
@@ -89,7 +91,10 @@ export const CategoryGame: React.FC<GameProps> = ({ words, phase = 1, onComplete
 
       if (correct) {
         const rect = (e.target as HTMLElement).getBoundingClientRect();
-        setBurstPos({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+        setBurstPos({ x: cx, y: cy });
+        rewardCorrect(cx, cy);
         setScore((s) => ({ ...s, [category]: (s[category] ?? 0) + 1 }));
         setFeedbackType("correct");
         await sofiaPlayAudio("celebra-01", `¡${currentWord.text}!`, "excited");

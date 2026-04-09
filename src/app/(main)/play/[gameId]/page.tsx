@@ -46,7 +46,6 @@ function GamePageInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const completeSession = useAppStore((s) => s.completeSession);
-  const addCoins = useAppStore((s) => s.addCoins);
 
   const gameId = params.gameId as GameId;
   const meta = GAME_REGISTRY.find((g) => g.id === gameId);
@@ -125,11 +124,8 @@ function GamePageInner() {
     if (sessionId > 0) {
       await completeSession(sessionId);
     }
-    // Award coins: 1 per correct answer + 5 for completing the game
-    const correctCount = result?.correctAttempts ?? 0;
-    const coinsEarned = correctCount + 5;
-    addCoins(coinsEarned);
-
+    // Coins are now awarded by GameCompleteScreen as part of the
+    // chest animation (1 per correct + 5 bonus).
     setPostGame(result ?? {
       gameId, score: 0, totalAttempts: 0, correctAttempts: 0,
       startedAt: Date.now(), wordsCompleted: [],

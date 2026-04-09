@@ -6,6 +6,7 @@ import type { GameProps } from "../types";
 import type { DomanWord } from "@/shared/types/doman";
 import { useGameState } from "../hooks/useGameState";
 import { GameShell, usePause } from "./GameShell";
+import { useRewards } from "@/shared/components/RewardsLayer";
 import { GameIntro } from "./GameIntro";
 import { GameCompleteScreen } from "@/shared/components/GameCompleteScreen";
 import { FeedbackFlash } from "@/shared/components/FeedbackFlash";
@@ -40,6 +41,7 @@ type Phase = "intro" | "announcing" | "popping" | "feedback" | "finished";
 
 export const BitsReading: React.FC<GameProps> = ({ words, phase = 1, onComplete, onBack }) => {
   const { state, recordAttempt, finish, reset } = useGameState("daily-bits", { phase });
+  const { rewardCorrect } = useRewards();
   const { paused } = usePause();
 
   const [gamePhase, setGamePhase] = useState<Phase>("intro");
@@ -108,7 +110,7 @@ export const BitsReading: React.FC<GameProps> = ({ words, phase = 1, onComplete,
     setGamePhase("finished"); finish().then(() => onComplete?.(state));
   }, [finished, gamePhase]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handlePop = useCallback(async (bubble: Bubble) => {
+  const handlePop = useCallback(async (bubble: Bubble, e?: React.MouseEvent) => {
     if (gamePhase !== "popping" || feedbackType) return;
     const correct = bubble.word.id === target?.id;
     recordAttempt(correct, correct ? bubble.word.id : undefined);
@@ -116,6 +118,12 @@ export const BitsReading: React.FC<GameProps> = ({ words, phase = 1, onComplete,
     if (correct) {
       setPoppedId(bubble.word.id);
       setFeedbackType("correct");
+      if (e) {
+        const rect = (e.target as HTMLElement).getBoundingClientRect();
+        rewardCorrect(rect.left + rect.width / 2, rect.top + rect.height / 2);
+      } else {
+        rewardCorrect();
+      }
       await sofiaPlayAudio("celebra-03", `¡${bubble.word.text}!`, "excited");
       await new Promise((r) => setTimeout(r, 500));
       setFeedbackType(null);
@@ -126,7 +134,7 @@ export const BitsReading: React.FC<GameProps> = ({ words, phase = 1, onComplete,
       await new Promise((r) => setTimeout(r, 300));
       setFeedbackType(null); setGamePhase("popping");
     }
-  }, [gamePhase, feedbackType, target, recordAttempt, roundIdx, setupRound]);
+  }, [gamePhase, feedbackType, target, recordAttempt, roundIdx, setupRound, rewardCorrect]);
 
   const handleReplay = useCallback(() => { reset(); setRoundIdx(0); setGamePhase("intro"); }, [reset]);
 
@@ -189,7 +197,7 @@ export const BitsReading: React.FC<GameProps> = ({ words, phase = 1, onComplete,
                 <motion.button key={bubble.word.id}
                   initial={{ scale: 0 }} animate={{ scale: 1 }}
                   whileHover={{ scale: 1.12 }} whileTap={{ scale: 0.85 }}
-                  onClick={() => handlePop(bubble)}
+                  onClick={(e) => handlePop(bubble, e)}
                   disabled={!!feedbackType || gamePhase !== "popping"}
                   style={{
                     position: "absolute", left: `${bubble.x}%`, top: `${bubble.y}%`,

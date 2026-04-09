@@ -6,6 +6,7 @@ import type { GameProps, GameSessionState } from "../types";
 import type { DomanWord } from "@/shared/types/doman";
 import { useGameState } from "../hooks/useGameState";
 import { GameShell, usePause } from "./GameShell";
+import { useRewards } from "@/shared/components/RewardsLayer";
 import { FeedbackFlash } from "@/shared/components/FeedbackFlash";
 import { VictoryBurst } from "@/shared/components/VictoryBurst";
 import { GameCompleteScreen } from "@/shared/components/GameCompleteScreen";
@@ -35,6 +36,7 @@ function TrainGame({ words, phase = 1, difficulty, onComplete, onBack }: GamePro
   const trainSpeed = difficulty === 1 ? 10 : difficulty === 2 ? 8 : 6;
 
   const { state, recordAttempt, finish, reset } = useGameState("word-train", { phase });
+  const { rewardCorrect } = useRewards();
   const { paused } = usePause();
 
   const [gamePhase, setGamePhase] = useState<Phase>("announcing");
@@ -183,7 +185,10 @@ function TrainGame({ words, phase = 1, difficulty, onComplete, onBack }: GamePro
 
       if (correct) {
         const rect = (e.target as HTMLElement).getBoundingClientRect();
-        setBurstPos({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+        setBurstPos({ x: cx, y: cy });
+        rewardCorrect(cx, cy);
         setFeedbackType("correct");
         await sofiaCelebrates(`¡${word.text}!`);
       } else {

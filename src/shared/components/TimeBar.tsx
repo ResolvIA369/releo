@@ -56,40 +56,76 @@ export function TimeBar({
   const isUrgent = pct < 30;
   const barColor = isUrgent ? colors.error : pct < 60 ? colors.warning : color;
 
+  // Leo rides the top of the bar — anchored to where the colored
+  // fill ends. He bobs slightly when urgent (panicked).
+  const leoBottom = `calc(${pct}% - 22px)`;
+
   return (
     <div style={{
-      width: 14,
+      width: 24,
       height: "100%",
       minHeight: 200,
-      backgroundColor: `${color}15`,
       borderRadius: radii.pill,
-      overflow: "hidden",
       display: "flex",
       flexDirection: "column",
       justifyContent: "flex-end",
       position: "relative",
     }}>
-      <motion.div
-        animate={{ height: `${pct}%` }}
-        transition={{ duration: 0.15, ease: "linear" }}
-        style={{
-          width: "100%",
-          backgroundColor: barColor,
-          borderRadius: radii.pill,
-          transition: "background-color 0.3s",
-        }}
-      />
-      {isUrgent && (
+      {/* Track */}
+      <div style={{
+        position: "absolute",
+        left: 5, right: 5,
+        top: 0, bottom: 0,
+        backgroundColor: `${color}15`,
+        borderRadius: radii.pill,
+        overflow: "hidden",
+      }}>
         <motion.div
-          animate={{ opacity: [1, 0.3, 1] }}
-          transition={{ repeat: Infinity, duration: 0.5 }}
+          animate={{ height: `${pct}%` }}
+          transition={{ duration: 0.15, ease: "linear" }}
           style={{
-            position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
+            position: "absolute",
+            bottom: 0, left: 0, right: 0,
+            backgroundColor: barColor,
             borderRadius: radii.pill,
-            border: `2px solid ${colors.error}`,
+            transition: "background-color 0.3s",
           }}
         />
-      )}
+        {isUrgent && (
+          <motion.div
+            animate={{ opacity: [1, 0.3, 1] }}
+            transition={{ repeat: Infinity, duration: 0.5 }}
+            style={{
+              position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
+              borderRadius: radii.pill,
+              border: `2px solid ${colors.error}`,
+            }}
+          />
+        )}
+      </div>
+
+      {/* Leo riding the bar */}
+      <motion.img
+        src="/images/Leo/motivando.png"
+        alt="Leo"
+        animate={isUrgent ? { rotate: [-8, 8, -8], y: [0, -3, 0] } : { y: [0, -2, 0] }}
+        transition={isUrgent
+          ? { repeat: Infinity, duration: 0.4 }
+          : { repeat: Infinity, duration: 1.6 }}
+        style={{
+          position: "absolute",
+          left: "50%",
+          bottom: leoBottom,
+          width: 44,
+          height: 44,
+          marginLeft: -22,
+          objectFit: "contain",
+          filter: "drop-shadow(0 4px 8px rgba(0,0,0,0.2))",
+          pointerEvents: "none",
+          zIndex: 2,
+          transition: "bottom 0.15s linear",
+        }}
+      />
     </div>
   );
 }
