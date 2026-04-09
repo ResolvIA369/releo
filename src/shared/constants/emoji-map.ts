@@ -54,7 +54,9 @@ export const EMOJI_MAP: Record<string, string> = {
 
   // ─── Phase 4: Frases Completas ───────────────────────────────────
   // Artículos y Conectores
-  el: "👉", la: "👉", los: "👥", las: "👥", un: "☝️",
+  // el/la/los/las → personas (masc/fem, sing/plur)
+  // un/una/unos/unas → objetos contables (1 vs 2)
+  el: "👨", la: "👩", los: "👬", las: "👭", un: "☝️",
   una: "☝️", unos: "✌️", unas: "✌️", y: "🔗", con: "🤝",
   // Preposiciones
   en: "📍", de: "↩️", por: "➡️", para: "🎯", sobre: "⬆️",
