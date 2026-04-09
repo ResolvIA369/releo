@@ -4,6 +4,7 @@ import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { wordFlash } from "@/shared/styles/animations";
 import { colors, fonts, fontSizes } from "@/shared/styles/design-tokens";
+import { fitWordFontSize } from "@/shared/utils/fitText";
 
 interface DomanWordDisplayProps {
   word: string;
@@ -20,15 +21,17 @@ export const DomanWordDisplay: React.FC<DomanWordDisplayProps> = ({
   word, fontColor = "red", size = "lg", showEmoji, emoji, wordKey,
 }) => {
   const textColor = fontColor === "red" ? colors.doman.wordRed : colors.doman.wordBlack;
+  const baseSize = SIZE_MAP[size];
+  const finalSize = fitWordFontSize(word, baseSize);
 
   return (
     <AnimatePresence mode="wait">
       <motion.div
         key={wordKey ?? word}
         variants={wordFlash} initial="initial" animate="animate" exit="exit"
-        style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}
+        style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, padding: "0 24px", maxWidth: "100%", overflow: "hidden" }}
       >
-        <span style={{ fontSize: SIZE_MAP[size], fontWeight: "bold", color: textColor, fontFamily: fonts.display, textAlign: "center", lineHeight: 1.1 }}>
+        <span style={{ fontSize: finalSize, fontWeight: "bold", color: textColor, fontFamily: fonts.display, textAlign: "center", lineHeight: 1.1, whiteSpace: "nowrap", maxWidth: "100%" }}>
           {word}
         </span>
         {showEmoji && emoji && (

@@ -15,6 +15,7 @@ import { FlipCard } from "@/shared/components/FlipCard";
 import { QuickCelebration } from "@/shared/components/QuickCelebration";
 import { AudioWaves, ProgressLine } from "@/shared/components/doman-visuals";
 import { colors, spacing, fonts, fontSizes, radii, shadows } from "@/shared/styles/design-tokens";
+import { fitWordFontSize } from "@/shared/utils/fitText";
 import { AnimatedButton } from "@/shared/components/AnimatedButton";
 import { useAppStore } from "@/shared/store/useAppStore";
 import { SofiaAvatar } from "@/shared/components/SofiaAvatar";
@@ -171,7 +172,7 @@ export function WordFlash({ words, phase, onComplete, onBack }: GameProps) {
   const currentStep = ph.startsWith("pres") ? pass : ph.startsWith("repeat") ? 3 + pass : ph === "story" ? 7 : 0;
   const progress = currentStep / totalSteps;
 
-  const fontSize = phase === 1 ? 96 : phase === 2 ? 80 : phase === 3 ? 64 : 48;
+  const baseFontSize = phase === 1 ? 96 : phase === 2 ? 80 : phase === 3 ? 64 : 48;
   const fontColor = sessionWords[wordIdx]?.fontColor === "red" ? "#e53e3e" : "#2d3748";
   const currentWord = sessionWords[wordIdx];
 
@@ -631,8 +632,8 @@ export function WordFlash({ words, phase, onComplete, onBack }: GameProps) {
                 </div>
               }
               back={
-                <div style={{ width: "100%", height: "100%", borderRadius: 20, backgroundColor: "#fff", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: shadows.lg, position: "relative" }}>
-                  <span style={{ fontSize, fontWeight: "bold", color: fontColor, fontFamily: "Arial Rounded MT Bold, Arial, sans-serif", textAlign: "center" }}>
+                <div style={{ width: "100%", height: "100%", borderRadius: 20, backgroundColor: "#fff", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: shadows.lg, position: "relative", padding: "16px 24px", overflow: "hidden" }}>
+                  <span style={{ fontSize: fitWordFontSize(cardWord, baseFontSize), fontWeight: "bold", color: fontColor, fontFamily: "Arial Rounded MT Bold, Arial, sans-serif", textAlign: "center", lineHeight: 1.1, wordBreak: "keep-all", whiteSpace: "nowrap", maxWidth: "100%" }}>
                     {cardWord}
                   </span>
                   <QuickCelebration active={showCelebration} />
@@ -749,9 +750,9 @@ export function WordFlash({ words, phase, onComplete, onBack }: GameProps) {
       {ph === "farewell" && displayWord && (
         <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <motion.div key={displayWord} initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}
-            style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
+            style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, padding: "0 24px", maxWidth: "100%" }}>
             <span style={{ fontSize: 64 }}>{EMOJI_MAP[displayWord] ?? ""}</span>
-            <span style={{ fontSize: 72, fontWeight: "bold", fontFamily: "Arial Rounded MT Bold, Arial, sans-serif", color: "#2d3748" }}>
+            <span style={{ fontSize: fitWordFontSize(displayWord, 72), fontWeight: "bold", fontFamily: "Arial Rounded MT Bold, Arial, sans-serif", color: "#2d3748", whiteSpace: "nowrap", maxWidth: "100%" }}>
               {displayWord}
             </span>
           </motion.div>

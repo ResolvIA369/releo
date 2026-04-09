@@ -12,6 +12,7 @@ import { VictoryBurst } from "@/shared/components/VictoryBurst";
 import { GameCompleteScreen } from "@/shared/components/GameCompleteScreen";
 import { TimeBar } from "@/shared/components/TimeBar";
 import { colors, spacing, radii, shadows, fontSizes, fonts } from "@/shared/styles/design-tokens";
+import { fitWordFontSize } from "@/shared/utils/fitText";
 import { tapBounce, staggerContainer, staggerItem } from "@/shared/styles/animations";
 import { EMOJI_MAP } from "@/shared/constants/emoji-map";
 import { sofiaCelebrates, sofiaEncourages } from "@/shared/services/sofiaVoice";
@@ -169,7 +170,7 @@ export const WordImageMatch: React.FC<GameProps> = ({ words, phase = 1, onComple
               borderRadius: radii.xl,
             }}
           >
-            <span style={{ fontSize: fontSizes["3xl"], fontWeight: "bold", fontFamily: fonts.display, color: GAME_COLOR }}>
+            <span style={{ fontSize: fitWordFontSize(currentWord.text, fontSizes["3xl"]), fontWeight: "bold", fontFamily: fonts.display, color: GAME_COLOR, whiteSpace: "nowrap" }}>
               {currentWord.text}
             </span>
           </motion.div>
