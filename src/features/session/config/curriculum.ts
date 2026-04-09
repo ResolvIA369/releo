@@ -144,152 +144,152 @@ const CONTEXT_SENTENCES: Record<number, string> = {
 
 const STORIES: Record<number, { story5: string; previousStory?: string }> = {
   1: {
-    story5: "Hoy Mamá y Papá preparan una torta deliciosa. El Bebé juega con sus juguetes en el suelo, mientras la Abuela y el Abuelo nos cuentan historias muy divertidas. ¡Qué feliz es la familia!",
+    story5: "Hoy mamá y papá preparan una torta deliciosa. El bebé juega con sus juguetes en el suelo, mientras la abuela y el abuelo nos cuentan historias muy divertidas. ¡Qué feliz es la familia!",
   },
   2: {
-    story5: "Mi Hermano y mi Hermana juegan en el parque con mi Primo. De repente, llegan mi Tío y mi Tía con globos de colores. ¡Qué divertido es jugar todos juntos en familia!",
-    previousStory: "Hoy Mamá y Papá preparan una torta deliciosa. El Bebé juega con sus juguetes en el suelo, mientras la Abuela y el Abuelo nos cuentan historias divertidas.",
+    story5: "Mi hermano y mi hermana juegan en el parque con mi primo. De repente, llegan mi tío y mi tía con globos de colores. ¡Qué divertido es jugar todos juntos en familia!",
+    previousStory: "Hoy mamá y papá preparan una torta deliciosa. El bebé juega con sus juguetes en el suelo, mientras la abuela y el abuelo nos cuentan historias divertidas.",
   },
   3: {
-    story5: "En el jardín hay una flor de color Rojo y un cielo muy Azul. El pasto es Verde y el sol Amarillo brilla sobre una nube de color Blanco. ¡Qué lindo es ver colores!",
-    previousStory: "Mi Hermano y mi Hermana juegan en el parque con mi Primo. De repente, llegan mi Tío y mi Tía con globos de colores. ¡Qué divertido es jugar todos juntos!",
+    story5: "En el jardín hay una flor de color rojo y un cielo muy azul. El pasto es verde y el sol amarillo brilla sobre una nube de color blanco. ¡Qué lindo es ver colores!",
+    previousStory: "Mi hermano y mi hermana juegan en el parque con mi primo. De repente, llegan mi tío y mi tía con globos de colores. ¡Qué divertido es jugar todos juntos!",
   },
   4: {
-    story5: "En el campo, un Perro corre tras un Gato. El Caballo salta la cerca mientras la Vaca come pasto y un Pájaro canta desde lo alto de un árbol. ¡Qué lindos son los animales!",
-    previousStory: "En el jardín hay una flor de color Rojo y un cielo muy Azul. El pasto es Verde y el sol Amarillo brilla sobre una nube de color Blanco.",
+    story5: "En el campo, un perro corre tras un gato. El caballo salta la cerca mientras la vaca come pasto y un pájaro canta desde lo alto de un árbol. ¡Qué lindos son los animales!",
+    previousStory: "En el jardín hay una flor de color rojo y un cielo muy azul. El pasto es verde y el sol amarillo brilla sobre una nube de color blanco.",
   },
   5: {
-    story5: "En la cocina hay una Manzana roja y una Banana dulce. Preparamos un jugo de Uva y cortamos una Pera jugosa junto a una Naranja llena de sol. ¡Qué rico es comer frutas!",
-    previousStory: "En el campo, un Perro corre tras un Gato. El Caballo salta la cerca mientras la Vaca come pasto y un Pájaro canta desde lo alto.",
+    story5: "En la cocina hay una manzana roja y una banana dulce. Preparamos un jugo de uva y cortamos una pera jugosa junto a una naranja llena de sol. ¡Qué rico es comer frutas!",
+    previousStory: "En el campo, un perro corre tras un gato. El caballo salta la cerca mientras la vaca come pasto y un pájaro canta desde lo alto.",
   },
   6: {
-    story5: "La casa tiene una Ventana grande por donde entra el sol. En la Cocina mamá prepara comida rica. El Baño tiene un espejo divertido. El Piso es perfecto para jugar y el Techo nos protege de la lluvia. ¡Qué linda es la casa!",
-    previousStory: "En la cocina hay una Manzana roja y una Banana dulce. Preparamos un jugo de Uva y cortamos una Pera jugosa junto a una Naranja llena de sol.",
+    story5: "La casa tiene una ventana grande por donde entra el sol. En la cocina mamá prepara comida rica. El baño tiene un espejo divertido. El piso es perfecto para jugar y el techo nos protege de la lluvia. ¡Qué linda es la casa!",
+    previousStory: "En la cocina hay una manzana roja y una banana dulce. Preparamos un jugo de uva y cortamos una pera jugosa junto a una naranja llena de sol.",
   },
   7: {
-    story5: "Con el Ojo se puede ver todo el mundo. Con la Nariz se huelen las flores del jardín. Con la Boca se pueden cantar canciones bonitas. Con la Mano se puede dibujar y con el Pie se puede correr muy rápido. ¡El cuerpo es increíble!",
-    previousStory: "La casa tiene una Ventana grande. En la Cocina mamá prepara comida. El Baño tiene un espejo. El Piso es para jugar y el Techo nos protege.",
+    story5: "Con el ojo se puede ver todo el mundo. Con la nariz se huelen las flores del jardín. Con la boca se pueden cantar canciones bonitas. Con la mano se puede dibujar y con el pie se puede correr muy rápido. ¡El cuerpo es increíble!",
+    previousStory: "La casa tiene una ventana grande. En la cocina mamá prepara comida. El baño tiene un espejo. El piso es para jugar y el techo nos protege.",
   },
   8: {
-    story5: "Con la Oreja se escucha la música y los cuentos de la abuela. El Pelo brilla como el sol cuando mamá lo peina. Con cada Dedo se puede contar hasta diez. Los Brazos son perfectos para abrazar y las Piernas para saltar muy alto. ¡Somos fuertes y especiales!",
-    previousStory: "Con el Ojo se puede ver. Con la Nariz se huelen flores. Con la Boca se canta. Con la Mano se dibuja y con el Pie se corre rápido.",
+    story5: "Con la oreja se escucha la música y los cuentos de la abuela. El pelo brilla como el sol cuando mamá lo peina. Con cada dedo se puede contar hasta diez. Los brazos son perfectos para abrazar y las piernas para saltar muy alto. ¡Somos fuertes y especiales!",
+    previousStory: "Con el ojo se puede ver. Con la nariz se huelen flores. Con la boca se canta. Con la mano se dibuja y con el pie se corre rápido.",
   },
   9: {
-    story5: "Hay mucha hambre. Mamá sirve un vaso de Agua fresca y un vaso de Leche tibia. En la mesa hay Pan calentito, Arroz con pollo y un Huevo revuelto. ¡Qué rica es la comida que prepara la familia!",
-    previousStory: "Con la Oreja se escucha música. El Pelo brilla. Con el Dedo se cuenta. Los Brazos abrazan y las Piernas saltan.",
+    story5: "Hay mucha hambre. Mamá sirve un vaso de agua fresca y un vaso de leche tibia. En la mesa hay pan calentito, arroz con pollo y un huevo revuelto. ¡Qué rica es la comida que prepara la familia!",
+    previousStory: "Con la oreja se escucha música. El pelo brilla. Con el dedo se cuenta. Los brazos abrazan y las piernas saltan.",
   },
   10: {
-    story5: "La Casa es el lugar más lindo del mundo. Hay una Mesa grande donde come toda la familia. Cada uno tiene su Silla favorita. La Cama es súper cómoda y antes de dormir mamá cierra la Puerta y da un beso de buenas noches. ¡Todos aman su casa!",
-    previousStory: "Hay hambre. Mamá sirve Agua y Leche. En la mesa hay Pan, Arroz y Huevo. ¡Qué rica comida!",
+    story5: "La casa es el lugar más lindo del mundo. Hay una mesa grande donde come toda la familia. Cada uno tiene su silla favorita. La cama es súper cómoda y antes de dormir mamá cierra la puerta y da un beso de buenas noches. ¡Todos aman su casa!",
+    previousStory: "Hay hambre. Mamá sirve agua y leche. En la mesa hay pan, arroz y huevo. ¡Qué rica comida!",
   },
 
   // ─── World 2 — Bahía de los Pares (Phase 2) ─────────────────────────
 
   11: {
-    story5: "En la caja de crayones hay uno Rojo como una manzana, uno Azul como el cielo, uno Verde como el pasto, uno Amarillo como el sol y uno Blanco como las nubes. ¡Con todos los colores se puede pintar el mundo entero!",
-    previousStory: "La Casa es el lugar más lindo. Hay una Mesa grande, una Silla, una Cama cómoda y una Puerta que mamá cierra antes de dormir.",
+    story5: "En la caja de crayones hay uno rojo como una manzana, uno azul como el cielo, uno verde como el pasto, uno amarillo como el sol y uno blanco como las nubes. ¡Con todos los colores se puede pintar el mundo entero!",
+    previousStory: "La casa es el lugar más lindo. Hay una mesa grande, una silla, una cama cómoda y una puerta que mamá cierra antes de dormir.",
   },
   12: {
-    story5: "La mariposa tiene alas de color Negro y Rosa. La flor es color Naranja como el atardecer. El caracol es Morado y camina sobre la tierra Café del jardín. ¡La naturaleza tiene colores hermosos!",
-    previousStory: "En la caja de crayones hay uno Rojo, uno Azul, uno Verde, uno Amarillo y uno Blanco. ¡Con todos se pinta el mundo!",
+    story5: "La mariposa tiene alas de color negro y rosa. La flor es color naranja como el atardecer. El caracol es morado y camina sobre la tierra café del jardín. ¡La naturaleza tiene colores hermosos!",
+    previousStory: "En la caja de crayones hay uno rojo, uno azul, uno verde, uno amarillo y uno blanco. ¡Con todos se pinta el mundo!",
   },
   13: {
-    story5: "En el zoológico hay un elefante muy Grande y un ratón muy Pequeño. La jirafa tiene un cuello Largo y el pingüino tiene patas Cortas. Hasta hay un Alto sombrero de copa en la tienda de regalos. ¡Qué divertido es comparar!",
-    previousStory: "La mariposa tiene alas Negro y Rosa. La flor es Naranja. El caracol es Morado y camina sobre tierra Café.",
+    story5: "En el zoológico hay un elefante muy grande y un ratón muy pequeño. La jirafa tiene un cuello largo y el pingüino tiene patas cortas. Hasta hay un alto sombrero de copa en la tienda de regalos. ¡Qué divertido es comparar!",
+    previousStory: "La mariposa tiene alas negro y rosa. La flor es naranja. El caracol es morado y camina sobre tierra café.",
   },
   14: {
-    story5: "El payaso es Bajo y usa zapatos muy grandes. El bailarín es Gordo y baila con mucha gracia. La gimnasta es Flaca y muy ágil. La pelota es Redonda y la caja es Cuadrada. ¡Cada forma es especial!",
-    previousStory: "En el zoológico hay un elefante Grande y un ratón Pequeño. La jirafa tiene cuello Largo y el pingüino patas Cortas.",
+    story5: "El payaso es bajo y usa zapatos muy grandes. El bailarín es gordo y baila con mucha gracia. La gimnasta es flaca y muy ágil. La pelota es redonda y la caja es cuadrada. ¡Cada forma es especial!",
+    previousStory: "En el zoológico hay un elefante grande y un ratón pequeño. La jirafa tiene cuello largo y el pingüino patas cortas.",
   },
   15: {
-    story5: "El gatito sube Arriba del árbol y luego baja Abajo con cuidado. Se mete Dentro de una caja y después sale Fuera a explorar. Siempre se queda Cerca de mamá gata. ¡Qué aventurero es el gatito!",
-    previousStory: "El payaso es Bajo y usa zapatos grandes. El bailarín es Gordo. La gimnasta es Flaca. La pelota es Redonda y la caja Cuadrada.",
+    story5: "El gatito sube arriba del árbol y luego baja abajo con cuidado. Se mete dentro de una caja y después sale fuera a explorar. Siempre se queda cerca de mamá gata. ¡Qué aventurero es el gatito!",
+    previousStory: "El payaso es bajo y usa zapatos grandes. El bailarín es gordo. La gimnasta es flaca. La pelota es redonda y la caja cuadrada.",
   },
   16: {
-    story5: "El conejo corre muy Rápido por el campo. La tortuga camina Lento pero nunca se detiene. La sopa está Caliente y el helado está Frío. A veces Cerca y a veces Lejos, pero siempre llegan a donde quieren. ¡Lo importante es seguir adelante!",
-    previousStory: "El gatito sube Arriba y baja Abajo. Se mete Dentro de una caja y sale Fuera. Siempre se queda Cerca de mamá gata.",
+    story5: "El conejo corre muy rápido por el campo. La tortuga camina lento pero nunca se detiene. La sopa está caliente y el helado está frío. A veces cerca y a veces lejos, pero siempre llegan a donde quieren. ¡Lo importante es seguir adelante!",
+    previousStory: "El gatito sube arriba y baja abajo. Se mete dentro de una caja y sale fuera. Siempre se queda cerca de mamá gata.",
   },
   17: {
-    story5: "Hoy el sol brilla y me siento muy Feliz. Ayer estuve un poco Triste porque perdí mi juguete. A veces me pongo Enojado, y otras veces Asustado cuando hay truenos. Pero ahora estoy Cansado de tanto jugar. ¡Mañana será otro gran día!",
-    previousStory: "El conejo corre Rápido. La tortuga camina Lento. La sopa está Caliente y el helado Frío.",
+    story5: "Hoy el sol brilla y me siento muy feliz. Ayer estuve un poco triste porque perdí mi juguete. A veces me pongo enojado, y otras veces asustado cuando hay truenos. Pero ahora estoy cansado de tanto jugar. ¡Mañana será otro gran día!",
+    previousStory: "El conejo corre rápido. La tortuga camina lento. La sopa está caliente y el helado frío.",
   },
   18: {
-    story5: "Mi amigo siempre está Contento y es muy Tranquilo. A veces nos quedamos Sorprendidos cuando vemos un arcoíris. Él es Valiente cuando hay que cruzar el puente alto y siempre es Amable con todos. ¡Tener un buen amigo es lo mejor!",
-    previousStory: "Hoy me siento Feliz. Ayer estuve Triste. A veces me pongo Enojado o Asustado. Ahora estoy Cansado de jugar.",
+    story5: "Mi amigo siempre está contento y es muy tranquilo. A veces nos quedamos sorprendidos cuando vemos un arcoíris. Él es valiente cuando hay que cruzar el puente alto y siempre es amable con todos. ¡Tener un buen amigo es lo mejor!",
+    previousStory: "Hoy me siento feliz. Ayer estuve triste. A veces me pongo enojado o asustado. Ahora estoy cansado de jugar.",
   },
   19: {
-    story5: "El Sol sale por la mañana y calienta todo. La Luna aparece de noche con su luz plateada. Una Estrella brilla en el cielo junto a una Nube blanca. Cuando la Lluvia cae, salen charcos para saltar. ¡El cielo siempre tiene algo lindo!",
-    previousStory: "Mi amigo está Contento y es Tranquilo. Nos quedamos Sorprendidos con el arcoíris. Él es Valiente y Amable.",
+    story5: "El sol sale por la mañana y calienta todo. La luna aparece de noche con su luz plateada. Una estrella brilla en el cielo junto a una nube blanca. Cuando la lluvia cae, salen charcos para saltar. ¡El cielo siempre tiene algo lindo!",
+    previousStory: "Mi amigo está contento y es tranquilo. Nos quedamos sorprendidos con el arcoíris. Él es valiente y amable.",
   },
   20: {
-    story5: "En el bosque hay un Árbol enorme con hojas verdes. A su lado crece una Flor de muchos colores. Un Río corre entre las piedras hasta llegar al Mar azul. A lo lejos se ve una Montaña con nieve en la punta. ¡La naturaleza es mágica!",
-    previousStory: "El Sol calienta. La Luna brilla de noche. Una Estrella y una Nube están en el cielo. La Lluvia hace charcos para saltar.",
+    story5: "En el bosque hay un árbol enorme con hojas verdes. A su lado crece una flor de muchos colores. Un río corre entre las piedras hasta llegar al mar azul. A lo lejos se ve una montaña con nieve en la punta. ¡La naturaleza es mágica!",
+    previousStory: "El sol calienta. La luna brilla de noche. Una estrella y una nube están en el cielo. La lluvia hace charcos para saltar.",
   },
 
   // ─── World 3 — Valle de las Frases (Phase 3) ────────────────────────
 
   21: {
-    story5: "El niño Come su desayuno con mucha alegría. Luego Bebe un vaso de jugo fresco. Después de almorzar, Duerme una siesta corta. Al despertar, Juega con sus amigos en el patio y Corre por todo el jardín. ¡Qué día tan divertido!",
-    previousStory: "En el bosque hay un Árbol enorme. Una Flor crece a su lado. Un Río corre hasta el Mar. A lo lejos una Montaña con nieve.",
+    story5: "El niño come su desayuno con mucha alegría. Luego bebe un vaso de jugo fresco. Después de almorzar, duerme una siesta corta. Al despertar, juega con sus amigos en el patio y corre por todo el jardín. ¡Qué día tan divertido!",
+    previousStory: "En el bosque hay un árbol enorme. Una flor crece a su lado. Un río corre hasta el mar. A lo lejos una montaña con nieve.",
   },
   22: {
-    story5: "La niña Salta la cuerda en el recreo. Luego Lee un cuento muy bonito. Después Escribe su nombre con letras grandes. Cuando termina, Canta su canción favorita y Baila con mucha gracia. ¡Le encanta la escuela!",
-    previousStory: "El niño Come, Bebe jugo, Duerme la siesta, Juega con amigos y Corre por el jardín.",
+    story5: "La niña salta la cuerda en el recreo. Luego lee un cuento muy bonito. Después escribe su nombre con letras grandes. Cuando termina, canta su canción favorita y baila con mucha gracia. ¡Le encanta la escuela!",
+    previousStory: "El niño come, bebe jugo, duerme la siesta, juega con amigos y corre por el jardín.",
   },
   23: {
-    story5: "La mamá Abre la puerta del armario. Luego Cierra la ventana porque hace frío. El gato Sube a la mesa de un salto. Papá Baja las escaleras con cuidado. La hermana Toca el piano con alegría. ¡Cada uno hace algo diferente!",
-    previousStory: "La niña Salta la cuerda. Lee un cuento. Escribe su nombre. Canta y Baila con gracia.",
+    story5: "La mamá abre la puerta del armario. Luego cierra la ventana porque hace frío. El gato sube a la mesa de un salto. Papá baja las escaleras con cuidado. La hermana toca el piano con alegría. ¡Cada uno hace algo diferente!",
+    previousStory: "La niña salta la cuerda. Lee un cuento. Escribe su nombre. Canta y baila con gracia.",
   },
   24: {
-    story5: "Mamá Lava los platos después de comer. Abuela Cocina una sopa deliciosa. Hermana Limpia su cuarto con mucho orden. El niño Pinta un cuadro con muchos colores y luego Dibuja a toda la familia. ¡Todos ayudan en casa!",
-    previousStory: "Mamá Abre la puerta. Cierra la ventana. El gato Sube a la mesa. Papá Baja las escaleras. Hermana Toca el piano.",
+    story5: "Mamá lava los platos después de comer. Abuela cocina una sopa deliciosa. Hermana limpia su cuarto con mucho orden. El niño pinta un cuadro con muchos colores y luego dibuja a toda la familia. ¡Todos ayudan en casa!",
+    previousStory: "Mamá abre la puerta. Cierra la ventana. El gato sube a la mesa. Papá baja las escaleras. Hermana toca el piano.",
   },
   25: {
-    story5: "La Camisa azul y el Pantalón gris están listos para la escuela. Los Zapatos brillan porque papá los limpió. La Gorra roja protege del sol. Hermana se pone su Falda verde favorita. ¡Todos se ven muy lindos!",
-    previousStory: "Mamá Lava los platos. Abuela Cocina sopa. Hermana Limpia su cuarto. El niño Pinta y Dibuja.",
+    story5: "La camisa azul y el pantalón gris están listos para la escuela. Los zapatos brillan porque papá los limpió. La gorra roja protege del sol. Hermana se pone su falda verde favorita. ¡Todos se ven muy lindos!",
+    previousStory: "Mamá lava los platos. Abuela cocina sopa. Hermana limpia su cuarto. El niño pinta y dibuja.",
   },
   26: {
-    story5: "El Calcetín tiene rayas de colores. El Vestido de mamá es muy elegante. La Chaqueta de papá es grande y calientita. La Bufanda de la abuela huele a flores. El Pijama del bebé tiene estrellas. ¡Cada prenda es especial!",
-    previousStory: "La Camisa azul y el Pantalón están listos. Los Zapatos brillan. La Gorra protege del sol. Hermana usa su Falda verde.",
+    story5: "El calcetín tiene rayas de colores. El vestido de mamá es muy elegante. La chaqueta de papá es grande y calientita. La bufanda de la abuela huele a flores. El pijama del bebé tiene estrellas. ¡Cada prenda es especial!",
+    previousStory: "La camisa azul y el pantalón están listos. Los zapatos brillan. La gorra protege del sol. Hermana usa su falda verde.",
   },
   27: {
-    story5: "En la mochila hay un Libro de cuentos y un Lápiz afilado. También hay Papel para dibujar, unas Tijeras con punta redonda y Pegamento para manualidades. ¡Todo listo para un día genial en la escuela!",
-    previousStory: "El Calcetín tiene rayas. El Vestido es elegante. La Chaqueta es grande. La Bufanda huele a flores. El Pijama tiene estrellas.",
+    story5: "En la mochila hay un libro de cuentos y un lápiz afilado. También hay papel para dibujar, unas tijeras con punta redonda y pegamento para manualidades. ¡Todo listo para un día genial en la escuela!",
+    previousStory: "El calcetín tiene rayas. El vestido es elegante. La chaqueta es grande. La bufanda huele a flores. El pijama tiene estrellas.",
   },
   28: {
-    story5: "La Mochila está llena de sorpresas. La Maestra saluda con una sonrisa grande. Mi mejor Amigo me espera en la entrada. En la Clase aprendemos cosas nuevas cada día. Y en el Recreo jugamos todos juntos. ¡La escuela es genial!",
-    previousStory: "En la mochila hay un Libro, un Lápiz, Papel, Tijeras y Pegamento. ¡Todo listo para la escuela!",
+    story5: "La mochila está llena de sorpresas. La maestra saluda con una sonrisa grande. Mi mejor amigo me espera en la entrada. En la clase aprendemos cosas nuevas cada día. Y en el recreo jugamos todos juntos. ¡La escuela es genial!",
+    previousStory: "En la mochila hay un libro, un lápiz, papel, tijeras y pegamento. ¡Todo listo para la escuela!",
   },
   29: {
-    story5: "El domingo vamos al Parque a jugar. Después pasamos por la Tienda a comprar helado. Cerca está la Escuela donde estudia mi hermano. Al lado hay un Hospital donde trabaja mi tía. Y la Iglesia donde se casan los novios. ¡El barrio tiene de todo!",
-    previousStory: "La Mochila está llena. La Maestra saluda. Mi Amigo me espera. En la Clase aprendemos. En el Recreo jugamos.",
+    story5: "El domingo vamos al parque a jugar. Después pasamos por la tienda a comprar helado. Cerca está la escuela donde estudia mi hermano. Al lado hay un hospital donde trabaja mi tía. Y la iglesia donde se casan los novios. ¡El barrio tiene de todo!",
+    previousStory: "La mochila está llena. La maestra saluda. Mi amigo me espera. En la clase aprendemos. En el recreo jugamos.",
   },
   30: {
-    story5: "En vacaciones vamos a la Playa a nadar y hacer castillos. El Campo tiene vacas y caballos. La Ciudad tiene edificios altos. En la Calle hay carros y bicicletas. Y en el Jardín de la abuela hay flores de todos los colores. ¡Cada lugar es una aventura!",
-    previousStory: "Vamos al Parque. Pasamos por la Tienda. Cerca está la Escuela, el Hospital y la Iglesia.",
+    story5: "En vacaciones vamos a la playa a nadar y hacer castillos. El campo tiene vacas y caballos. La ciudad tiene edificios altos. En la calle hay carros y bicicletas. Y en el jardín de la abuela hay flores de todos los colores. ¡Cada lugar es una aventura!",
+    previousStory: "Vamos al parque. Pasamos por la tienda. Cerca está la escuela, el hospital y la iglesia.",
   },
 
   // ─── World 4 — Montaña de la Lectura (Phase 4) ──────────────────────
 
   31: {
-    story5: "El perro corre por el parque. La gata duerme en la silla. Los pájaros cantan en el árbol. Las flores son de muchos colores. Un niño juega feliz. ¡El, La, Los, Las y Un hacen que todo suene bonito!",
-    previousStory: "Vamos a la Playa. El Campo tiene vacas. La Ciudad tiene edificios. En la Calle hay carros. En el Jardín hay flores.",
+    story5: "El perro corre por el parque. La gata duerme en la silla. Los pájaros cantan en el árbol. Las flores son de muchos colores. Un niño juega feliz. ¡el, la, los, las y un hacen que todo suene bonito!",
+    previousStory: "Vamos a la playa. El campo tiene vacas. La ciudad tiene edificios. En la calle hay carros. En el jardín hay flores.",
   },
   32: {
-    story5: "Una estrella brilla en el cielo. Unos gatitos juegan juntos. Unas mariposas vuelan alto. El sol Y la luna se turnan para brillar. Mamá prepara la cena Con mucho amor. ¡Las palabras conectan ideas!",
+    story5: "Una estrella brilla en el cielo. Unos gatitos juegan juntos. Unas mariposas vuelan alto. El sol y la luna se turnan para brillar. Mamá prepara la cena con mucho amor. ¡Las palabras conectan ideas!",
     previousStory: "El perro corre. La gata duerme. Los pájaros cantan. Las flores son lindas. Un niño juega feliz.",
   },
   33: {
-    story5: "El gato duerme En la cama. El regalo es De mamá. Caminamos Por el parque. Las flores son Para la abuela. Jugamos Con los amigos. ¡Las preposiciones nos dicen dónde y cómo!",
-    previousStory: "Una estrella brilla. Unos gatitos juegan. Unas mariposas vuelan. El sol Y la luna brillan. Mamá cocina Con amor.",
+    story5: "El gato duerme en la cama. El regalo es de mamá. Caminamos por el parque. Las flores son para la abuela. Jugamos con los amigos. ¡Las preposiciones nos dicen dónde y cómo!",
+    previousStory: "Una estrella brilla. Unos gatitos juegan. Unas mariposas vuelan. El sol y la luna brillan. Mamá cocina con amor.",
   },
   34: {
-    story5: "Sin zapatos corremos por el pasto. Entre los árboles jugamos a las escondidas. El gato está Sobre la mesa mirando todo. El perro está bajo la silla descansando. Caminamos Hacia el parque todos juntos. ¡Cada palabra nos guía!",
-    previousStory: "El gato duerme En la cama. El regalo es De mamá. Caminamos Por el parque. Las flores son Para abuela. Jugamos Con amigos.",
+    story5: "Sin zapatos corremos por el pasto. Entre los árboles jugamos a las escondidas. El gato está sobre la mesa mirando todo. El perro está bajo la silla descansando. Caminamos hacia el parque todos juntos. ¡Cada palabra nos guía!",
+    previousStory: "El gato duerme en la cama. El regalo es de mamá. Caminamos por el parque. Las flores son para abuela. Jugamos con amigos.",
   },
   35: {
     story5: "Yo tengo un perro que se llama Luna. Tú tienes un gato muy juguetón. Él dibuja muy bonito en la escuela. Ella canta canciones con su mamá. Nosotros jugamos juntos en el recreo. ¡Todos somos amigos!",
-    previousStory: "Sin zapatos corremos. Entre árboles jugamos. El gato Sobre la mesa. El perro bajo la silla. Caminamos Hacia el parque.",
+    previousStory: "Sin zapatos corremos. Entre árboles jugamos. El gato sobre la mesa. El perro bajo la silla. Caminamos hacia el parque.",
   },
   36: {
     story5: "Mi mochila es azul con estrellas. Tu casa tiene un jardín muy lindo. Su perro es grande y muy cariñoso. Este libro tiene muchos dibujos. Ese árbol es el más alto del parque. ¡Cada cosa tiene su dueño!",
@@ -300,35 +300,35 @@ const STORIES: Record<number, { story5: string; previousStory?: string }> = {
     previousStory: "Mi mochila es azul. Tu casa tiene jardín. Su perro es grande. Este libro tiene dibujos. Ese árbol es alto.",
   },
   38: {
-    story5: "Siempre le doy un abrazo a mamá antes de dormir. Nunca olvido decir gracias cuando me ayudan. Pronto llegará el día de mi cumpleaños. Antes de ir a la escuela desayuno bien. Llego Tarde a veces pero siempre con una sonrisa. ¡El tiempo pasa volando!",
+    story5: "Siempre le doy un abrazo a mamá antes de dormir. Nunca olvido decir gracias cuando me ayudan. Pronto llegará el día de mi cumpleaños. Antes de ir a la escuela desayuno bien. Llego tarde a veces pero siempre con una sonrisa. ¡El tiempo pasa volando!",
     previousStory: "Hoy es bonito. Mañana vamos al parque. Ayer llovió. Ahora jugamos. Después comemos helado.",
   },
   39: {
-    story5: "Tengo Un dedo pulgar que saluda. Mis Dos ojos ven el mundo entero. Con Tres saltos llego a la puerta. Cuatro gatitos duermen en la cesta. Y con Cinco dedos puedo contar una mano. ¡Los números están en todas partes!",
-    previousStory: "Siempre abrazo a mamá. Nunca olvido dar gracias. Pronto es mi cumpleaños. Antes desayuno. A veces llego Tarde.",
+    story5: "Tengo un dedo pulgar que saluda. Mis dos ojos ven el mundo entero. Con tres saltos llego a la puerta. cuatro gatitos duermen en la cesta. Y con cinco dedos puedo contar una mano. ¡Los números están en todas partes!",
+    previousStory: "Siempre abrazo a mamá. Nunca olvido dar gracias. Pronto es mi cumpleaños. Antes desayuno. A veces llego tarde.",
   },
   40: {
-    story5: "Seis pájaros cantan en la ventana. Siete estrellas brillan de noche. Ocho crayones pintan un arcoíris. Nueve hormiguitas marchan en fila. Y Diez globos vuelan por el cielo. ¡Ya sé contar hasta diez!",
-    previousStory: "Tengo Un dedo. Mis Dos ojos ven. Con Tres saltos llego. Cuatro gatitos duermen. Cinco dedos en la mano.",
+    story5: "seis pájaros cantan en la ventana. siete estrellas brillan de noche. ocho crayones pintan un arcoíris. nueve hormiguitas marchan en fila. Y diez globos vuelan por el cielo. ¡Ya sé contar hasta diez!",
+    previousStory: "Tengo un dedo. Mis dos ojos ven. Con tres saltos llego. cuatro gatitos duermen. cinco dedos en la mano.",
   },
 
   // ─── World 5 — El Libro Mágico (Phase 5) ───────────────────────────
 
   41: {
-    story5: "El niño Quiere aprender a leer y sabe que Puede lograrlo. Él Sabe que es inteligente porque Tiene muchos libros en su cuarto. Todos los días Hace algo nuevo y divertido. ¡Aprender es su superpoder!",
-    previousStory: "Seis pájaros cantan. Siete estrellas brillan. Ocho crayones pintan. Nueve hormiguitas marchan. Diez globos vuelan.",
+    story5: "El niño quiere aprender a leer y sabe que puede lograrlo. Él sabe que es inteligente porque tiene muchos libros en su cuarto. Todos los días hace algo nuevo y divertido. ¡Aprender es su superpoder!",
+    previousStory: "seis pájaros cantan. siete estrellas brillan. ocho crayones pintan. nueve hormiguitas marchan. diez globos vuelan.",
   },
   42: {
-    story5: "Sofía Dice que hoy será un gran día. Ella Viene a la escuela con una sonrisa enorme. Cuando Sale al recreo juega con todos. Después Llega a casa y abraza a mamá. Siempre Busca nuevas aventuras. ¡Sofía es muy especial!",
-    previousStory: "El niño Quiere aprender. Puede lograrlo. Sabe que es inteligente. Tiene libros. Hace cosas nuevas.",
+    story5: "Sofía dice que hoy será un gran día. Ella viene a la escuela con una sonrisa enorme. Cuando sale al recreo juega con todos. Después llega a casa y abraza a mamá. Siempre busca nuevas aventuras. ¡Sofía es muy especial!",
+    previousStory: "El niño quiere aprender. puede lograrlo. sabe que es inteligente. tiene libros. hace cosas nuevas.",
   },
   43: {
-    story5: "El perro es Muy juguetón y corre Más rápido que el gato. El gato come Menos que el perro pero se porta Bien todo el día. Nunca se porta Mal porque es un gatito bueno. ¡Los dos son los mejores amigos!",
-    previousStory: "Sofía Dice que será un gran día. Viene a la escuela. Sale al recreo. Llega a casa. Busca aventuras.",
+    story5: "El perro es muy juguetón y corre más rápido que el gato. El gato come menos que el perro pero se porta bien todo el día. Nunca se porta mal porque es un gatito bueno. ¡Los dos son los mejores amigos!",
+    previousStory: "Sofía dice que será un gran día. viene a la escuela. sale al recreo. llega a casa. busca aventuras.",
   },
   44: {
-    story5: "Aquí en mi casa estoy seguro. Allí en el parque juego con mis amigos. También me gusta ir a la escuela porque nunca estoy Solo. Siempre estamos Junto a las personas que nos quieren. ¡La vida es una aventura hermosa!",
-    previousStory: "El perro es Muy juguetón. Corre Más rápido. El gato come Menos. Se porta Bien. Nunca se porta Mal.",
+    story5: "Aquí en mi casa estoy seguro. Allí en el parque juego con mis amigos. También me gusta ir a la escuela porque nunca estoy solo. Siempre estamos junto a las personas que nos quieren. ¡La vida es una aventura hermosa!",
+    previousStory: "El perro es muy juguetón. Corre más rápido. El gato come menos. Se porta bien. Nunca se porta mal.",
   },
 };
 

@@ -480,7 +480,7 @@ export const STORY_EXAMPLES: DomanStory[] = [
       { text: "Ella me lee un cuento antes de dormir.", audioUrl: "", imageUrl: "", highlightWords: ["lee", "cuento", "dormir"] },
       { text: "Mi cuento favorito es el de la estrella.", audioUrl: "", imageUrl: "", highlightWords: ["cuento", "estrella"] },
       { text: "La estrella brilla en la noche.", audioUrl: "", imageUrl: "", highlightWords: ["estrella", "brilla"] },
-      { text: "Mamá dice que yo soy su estrella.", audioUrl: "", imageUrl: "", highlightWords: ["Mamá", "dice", "estrella"] },
+      { text: "Mamá dice que yo soy su estrella.", audioUrl: "", imageUrl: "", highlightWords: ["mamá", "dice", "estrella"] },
       { text: "Yo también la quiero mucho.", audioUrl: "", imageUrl: "", highlightWords: ["también", "quiero"] },
     ],
   },
