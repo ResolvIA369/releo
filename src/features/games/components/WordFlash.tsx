@@ -228,6 +228,29 @@ export function WordFlash({ words, phase, onComplete, onBack }: GameProps) {
     }
   }, [ph, isFlipped, currentWord, wordIdx, sessionWords.length, session, delay]);
 
+  // ─── Keyboard support (desktop) ────────────────────────────────
+  // Space / Enter: tap card during repeat phase
+  // Escape: pause
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.repeat) return;
+      if (e.key === " " || e.key === "Enter") {
+        if (ph === "repeat" && isFlipped) {
+          e.preventDefault();
+          handleCardTap();
+        }
+      } else if (e.key === "Escape") {
+        if (ph !== "ready" && ph !== "paused" && ph !== "complete") {
+          e.preventDefault();
+          handlePause();
+        }
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [ph, isFlipped, handleCardTap]); // eslint-disable-line
+
   // ─── Main state machine ────────────────────────────────────────
 
   useEffect(() => {
@@ -618,7 +641,7 @@ export function WordFlash({ words, phase, onComplete, onBack }: GameProps) {
           style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}
           onClick={ph === "repeat" ? handleCardTap : undefined}
         >
-          <div style={{ width: "85%", maxWidth: 420, aspectRatio: "4/3", position: "relative", cursor: ph === "repeat" ? "pointer" : "default" }}>
+          <div style={{ width: "min(85vw, 70vh, 720px)", maxWidth: 720, aspectRatio: "4/3", position: "relative", cursor: ph === "repeat" ? "pointer" : "default" }}>
             <FlipCard
               isFlipped={isFlipped}
               front={

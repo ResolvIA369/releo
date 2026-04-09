@@ -97,7 +97,7 @@ export default function DashboardPage() {
       <DailyProgress />
 
       <motion.div variants={staggerContainer} initial="initial" animate="animate"
-        style={{ display: "flex", flexDirection: "column", gap: spacing.lg, maxWidth: 400, margin: "0 auto" }}>
+        style={{ display: "flex", flexDirection: "column", gap: spacing.lg, maxWidth: 600, margin: "0 auto", width: "100%" }}>
 
         {/* 1. Flash de Palabras (arriba) */}
         <motion.button variants={staggerItem}

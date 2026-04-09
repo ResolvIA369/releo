@@ -88,7 +88,7 @@ export const GameShell: React.FC<GameShellProps> = ({ title, icon, color, sessio
             justifyContent: "center",
             boxSizing: "border-box",
           }}>
-            <div style={{ width: "100%", maxWidth: 700 }}>
+            <div style={{ width: "100%", maxWidth: 1000 }}>
               {children}
             </div>
           </div>

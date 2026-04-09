@@ -62,7 +62,7 @@ export default function PlayPage() {
 
       <motion.div
         variants={staggerContainer} initial="initial" animate="animate"
-        style={{ display: "flex", flexDirection: "column", gap: spacing.lg, maxWidth: 480, margin: "0 auto" }}>
+        style={{ display: "flex", flexDirection: "column", gap: spacing.lg, maxWidth: 720, margin: "0 auto", width: "100%" }}>
 
         {WORLDS.map((world, worldIdx) => {
           const counts = getWorldSessionCount(world.id);
