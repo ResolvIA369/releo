@@ -102,7 +102,7 @@ const CONTEXT_SENTENCES: Record<number, string> = {
   10: "En mi casa hay una mesa, una silla, una cama y una puerta.",
   // World 2 — Bahía de los Pares (Phase 2, black)
   11: "El rojo, azul, verde, amarillo y blanco son colores bonitos.",
-  12: "El negro, rosa, naranja, morado y café también son lindos.",
+  12: "El negro, rosa, naranja, violeta y marrón también son lindos.",
   13: "Algo grande y algo pequeño. Algo largo, algo corto y algo redondo.",
   14: "El cuadrado y el triángulo son delgados. El grueso y el mediano también.",
   15: "Arriba y abajo. Dentro y fuera. Todo es un opuesto.",
@@ -114,8 +114,8 @@ const CONTEXT_SENTENCES: Record<number, string> = {
   // World 3 — Valle de las Frases (Phase 3, black)
   21: "El niño come y bebe. Luego duerme, juega y camina.",
   22: "Ella corre, salta y baila. Después canta y dibuja.",
-  23: "La camisa y el pantalón. El zapato, el vestido y la falda.",
-  24: "El sombrero y la chaqueta combinan con el calcetín, el cinturón y el pijama.",
+  23: "La camisa y el pantalón. El zapato, el vestido y la pollera.",
+  24: "El sombrero y el abrigo combinan con la media, el cinturón y el piyama.",
   25: "Tomo el libro y el lápiz. El papel, la mochila y la maestra esperan.",
   26: "Mi amigo va a la escuela. El parque, la tienda y la playa están cerca.",
   27: "Voy al jardín del campo. La ciudad, el hospital y la iglesia quedan lejos.",
@@ -190,12 +190,12 @@ const STORIES: Record<number, { story5: string; previousStory?: string }> = {
     previousStory: "La casa es el lugar más lindo. Hay una mesa grande, una silla, una cama cómoda y una puerta que mamá cierra antes de dormir.",
   },
   12: {
-    story5: "La mariposa tiene alas de color negro y rosa. La flor es color naranja como el atardecer. El caracol es morado y camina sobre la tierra café del jardín. ¡La naturaleza tiene colores hermosos!",
+    story5: "La mariposa tiene alas de color negro y rosa. La flor es color naranja como el atardecer. El caracol es violeta y camina sobre la tierra marrón del jardín. ¡La naturaleza tiene colores hermosos!",
     previousStory: "En la caja de crayones hay uno rojo, uno azul, uno verde, uno amarillo y uno blanco. ¡Con todos se pinta el mundo!",
   },
   13: {
     story5: "En el zoológico hay un elefante muy grande y un ratón muy pequeño. La jirafa tiene un cuello largo y el pingüino tiene patas cortas. Hasta hay un alto sombrero de copa en la tienda de regalos. ¡Qué divertido es comparar!",
-    previousStory: "La mariposa tiene alas negro y rosa. La flor es naranja. El caracol es morado y camina sobre tierra café.",
+    previousStory: "La mariposa tiene alas negro y rosa. La flor es naranja. El caracol es violeta y camina sobre tierra marrón.",
   },
   14: {
     story5: "El payaso es bajo y usa zapatos muy grandes. El bailarín es gordo y baila con mucha gracia. La gimnasta es flaca y muy ágil. La pelota es redonda y la caja es cuadrada. ¡Cada forma es especial!",
@@ -245,27 +245,27 @@ const STORIES: Record<number, { story5: string; previousStory?: string }> = {
     previousStory: "Mamá abre la puerta. Cierra la ventana. El gato sube a la mesa. Papá baja las escaleras. Hermana toca el piano.",
   },
   25: {
-    story5: "La camisa azul y el pantalón gris están listos para la escuela. Los zapatos brillan porque papá los limpió. La gorra roja protege del sol. Hermana se pone su falda verde favorita. ¡Todos se ven muy lindos!",
+    story5: "La camisa azul y el pantalón gris están listos para la escuela. Los zapatos brillan porque papá los limpió. La gorra roja protege del sol. Hermana se pone su pollera verde favorita. ¡Todos se ven muy lindos!",
     previousStory: "Mamá lava los platos. Abuela cocina sopa. Hermana limpia su cuarto. El niño pinta y dibuja.",
   },
   26: {
-    story5: "El calcetín tiene rayas de colores. El vestido de mamá es muy elegante. La chaqueta de papá es grande y calientita. La bufanda de la abuela huele a flores. El pijama del bebé tiene estrellas. ¡Cada prenda es especial!",
-    previousStory: "La camisa azul y el pantalón están listos. Los zapatos brillan. La gorra protege del sol. Hermana usa su falda verde.",
+    story5: "La media tiene rayas de colores. El vestido de mamá es muy elegante. El abrigo de papá es grande y calientito. La bufanda de la abuela huele a flores. El piyama del bebé tiene estrellas. ¡Cada prenda es especial!",
+    previousStory: "La camisa azul y el pantalón están listos. Los zapatos brillan. La gorra protege del sol. Hermana usa su pollera verde.",
   },
   27: {
     story5: "En la mochila hay un libro de cuentos y un lápiz afilado. También hay papel para dibujar, unas tijeras con punta redonda y pegamento para manualidades. ¡Todo listo para un día genial en la escuela!",
-    previousStory: "El calcetín tiene rayas. El vestido es elegante. La chaqueta es grande. La bufanda huele a flores. El pijama tiene estrellas.",
+    previousStory: "La media tiene rayas. El vestido es elegante. El abrigo es grande. La bufanda huele a flores. El piyama tiene estrellas.",
   },
   28: {
     story5: "La mochila está llena de sorpresas. La maestra saluda con una sonrisa grande. Mi mejor amigo me espera en la entrada. En la clase aprendemos cosas nuevas cada día. Y en el recreo jugamos todos juntos. ¡La escuela es genial!",
     previousStory: "En la mochila hay un libro, un lápiz, papel, tijeras y pegamento. ¡Todo listo para la escuela!",
   },
   29: {
-    story5: "El domingo vamos al parque a jugar. Después pasamos por la tienda a comprar helado. Cerca está la escuela donde estudia mi hermano. Al lado hay un hospital donde trabaja mi tía. Y la iglesia donde se casan los novios. ¡El barrio tiene de todo!",
+    story5: "El domingo vamos al parque a jugar. Después pasamos por la tienda a comprar ropa. Cerca está la escuela donde estudia mi hermano. Al lado hay un hospital donde trabaja mi tía. Y la iglesia donde se casan los novios. ¡El barrio tiene de todo!",
     previousStory: "La mochila está llena. La maestra saluda. Mi amigo me espera. En la clase aprendemos. En el recreo jugamos.",
   },
   30: {
-    story5: "En vacaciones vamos a la playa a nadar y hacer castillos. El campo tiene vacas y caballos. La ciudad tiene edificios altos. En la calle hay carros y bicicletas. Y en el jardín de la abuela hay flores de todos los colores. ¡Cada lugar es una aventura!",
+    story5: "En vacaciones vamos a la playa a nadar y hacer castillos. El campo tiene vacas y caballos. La ciudad tiene edificios altos. En la calle hay autos y bicicletas. Y en el jardín de la abuela hay flores de todos los colores. ¡Cada lugar es una aventura!",
     previousStory: "Vamos al parque. Pasamos por la tienda. Cerca está la escuela, el hospital y la iglesia.",
   },
 
@@ -273,7 +273,7 @@ const STORIES: Record<number, { story5: string; previousStory?: string }> = {
 
   31: {
     story5: "El perro corre por el parque. La gata duerme en la silla. Los pájaros cantan en el árbol. Las flores son de muchos colores. Un niño juega feliz. ¡el, la, los, las y un hacen que todo suene bonito!",
-    previousStory: "Vamos a la playa. El campo tiene vacas. La ciudad tiene edificios. En la calle hay carros. En el jardín hay flores.",
+    previousStory: "Vamos a la playa. El campo tiene vacas. La ciudad tiene edificios. En la calle hay autos. En el jardín hay flores.",
   },
   32: {
     story5: "Una estrella brilla en el cielo. Unos gatitos juegan juntos. Unas mariposas vuelan alto. El sol y la luna se turnan para brillar. Mamá prepara la cena con mucho amor. ¡Las palabras conectan ideas!",

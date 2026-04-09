@@ -75,7 +75,7 @@ const WORLD_2_STORIES: MiniStory[] = [
   {
     title: "La naturaleza",
     emoji: "🌳",
-    words: ["el", "árbol", "alto", "y", "verde", "la", "flor", "rosa", "y", "morado", "el", "río", "largo", "llega", "al", "mar", "azul", "y", "grande", "la", "montaña", "lejos"],
+    words: ["el", "árbol", "alto", "y", "verde", "la", "flor", "rosa", "y", "violeta", "el", "río", "largo", "llega", "al", "mar", "azul", "y", "grande", "la", "montaña", "lejos"],
   },
   {
     title: "Caliente y frío",
@@ -95,7 +95,7 @@ const WORLD_3_STORIES: MiniStory[] = [
   {
     title: "Hora de vestirse",
     emoji: "👔",
-    words: ["mamá", "lava", "la", "camisa", "azul", "y", "el", "pantalón", "negro", "yo", "limpia", "el", "zapato", "hermana", "pinta", "su", "falda", "rosa", "papá", "tiene", "su", "chaqueta", "y", "gorra"],
+    words: ["mamá", "lava", "la", "camisa", "azul", "y", "el", "pantalón", "negro", "yo", "limpia", "el", "zapato", "hermana", "pinta", "su", "pollera", "rosa", "papá", "tiene", "su", "abrigo", "y", "gorra"],
   },
   {
     title: "En el recreo",
@@ -110,7 +110,7 @@ const WORLD_3_STORIES: MiniStory[] = [
   {
     title: "Mamá cocina",
     emoji: "🍳",
-    words: ["mamá", "abre", "la", "puerta", "de", "la", "cocina", "ella", "lava", "y", "limpia", "después", "cocina", "arroz", "caliente", "con", "huevo", "papá", "bebe", "café", "yo", "come", "feliz"],
+    words: ["mamá", "abre", "la", "puerta", "de", "la", "cocina", "ella", "lava", "y", "limpia", "después", "cocina", "arroz", "caliente", "con", "huevo", "papá", "bebe", "leche", "yo", "come", "feliz"],
   },
 ];
 

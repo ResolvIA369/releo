@@ -20,7 +20,7 @@ export const EMOJI_MAP: Record<string, string> = {
   // ─── Phase 2: Parejas de Palabras ────────────────────────────────
   // Colores
   rojo: "🔴", azul: "🔵", verde: "🟢", amarillo: "🟡", blanco: "⚪",
-  negro: "⚫", rosa: "🩷", morado: "🟣", café: "🟤",
+  negro: "⚫", rosa: "🩷", violeta: "🟣", marrón: "🟤",
   // Tamaños y Formas
   grande: "🐘", pequeño: "🐜", largo: "📏", corto: "✂️", alto: "🦒",
   bajo: "🐢", gordo: "🎈", flaco: "🪡", redondo: "⚽", cuadrado: "🟧",
@@ -43,8 +43,8 @@ export const EMOJI_MAP: Record<string, string> = {
   abre: "🚪", cierra: "🔒", sube: "⬆️", baja: "⬇️", toca: "👆",
   lava: "🧼", limpia: "🧹", pinta: "🎨", dibuja: "✏️",
   // Ropa
-  camisa: "👔", pantalón: "👖", zapato: "👟", gorra: "🧢", falda: "👗",
-  calcetín: "🧦", vestido: "👗", chaqueta: "🧥", bufanda: "🧣", pijama: "🛌",
+  camisa: "👔", pantalón: "👖", zapato: "👟", gorra: "🧢", pollera: "👗",
+  media: "🧦", vestido: "👗", abrigo: "🧥", bufanda: "🧣", piyama: "🛌",
   // Escuela
   libro: "📖", lápiz: "✏️", papel: "📄", tijeras: "✂️", pegamento: "🧴",
   mochila: "🎒", maestra: "👩‍🏫", amigo: "🤝", clase: "🏫", recreo: "⚽",
