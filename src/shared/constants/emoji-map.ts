@@ -59,8 +59,11 @@ export const EMOJI_MAP: Record<string, string> = {
   el: "👨", la: "👩", los: "👬", las: "👭", un: "☝️",
   una: "☝️", unos: "✌️", unas: "✌️", y: "🔗", con: "🤝",
   // Preposiciones
-  en: "📍", de: "↩️", por: "➡️", para: "🎯", sobre: "⬆️",
-  entre: "↔️", hasta: "🏁", desde: "🏁", sin: "🚫", hacia: "➡️",
+  // en: dentro de, de: posesión, por: a través de, para: dar a alguien,
+  // sobre: encima de, entre: en medio, hasta: meta, desde: punto de origen,
+  // sin: ausencia/negación, hacia: dirección
+  en: "📦", de: "🤲", por: "🛤️", para: "🎁", sobre: "🔝",
+  entre: "🫂", hasta: "🏁", desde: "🚦", sin: "🚫", hacia: "➡️",
   // Pronombres
   yo: "🙋", tú: "🫵", él: "👦", ella: "👧", nosotros: "👨‍👩‍👧‍👦",
   mi: "💝", tu: "💝", su: "💝", este: "👈", ese: "👉",
