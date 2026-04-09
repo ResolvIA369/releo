@@ -71,13 +71,26 @@ export const GameShell: React.FC<GameShellProps> = ({ title, icon, color, sessio
           </div>
         </motion.div>
 
-        {/* Content — fills remaining space */}
+        {/* Content — fills remaining space, scrollable when content overflows */}
         <motion.div variants={fadeInUp} initial="initial" animate="animate" style={{
-          flex: 1, padding: spacing.lg, overflow: "auto",
-          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+          flex: 1,
+          overflowY: "auto",
+          WebkitOverflowScrolling: "touch",
         }}>
-          <div style={{ width: "100%", maxWidth: 700 }}>
-            {children}
+          <div style={{
+            minHeight: "100%",
+            padding: spacing.lg,
+            paddingTop: spacing.xl,
+            paddingBottom: spacing.xl,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            boxSizing: "border-box",
+          }}>
+            <div style={{ width: "100%", maxWidth: 700 }}>
+              {children}
+            </div>
           </div>
         </motion.div>
 

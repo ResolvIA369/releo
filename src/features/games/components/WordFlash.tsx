@@ -666,30 +666,58 @@ export function WordFlash({ words, phase, onComplete, onBack }: GameProps) {
 
       {/* Story text with word highlights */}
       {isStory && currentSentence && (
-        <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", padding: "60px 32px 40px" }}>
-          <p style={{ fontSize: 28, fontFamily: fonts.display, lineHeight: 1.8, textAlign: "center", margin: 0, maxWidth: 560 }}>
-            {currentSentence.split(/\s+/).map((token, i) => {
-              const clean = token.replace(/[.,!?;:¡¿]/g, "").toLowerCase();
-              const isLearned = sessionWords.some((w) => w.text.toLowerCase() === clean);
-              const isHighlighted = highlightedWord === clean;
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            overflowY: "auto",
+            WebkitOverflowScrolling: "touch",
+          }}
+        >
+          <div
+            style={{
+              minHeight: "100%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "70px 24px 48px",
+              boxSizing: "border-box",
+            }}
+          >
+            <p
+              style={{
+                fontSize: 26,
+                fontFamily: fonts.display,
+                lineHeight: 1.7,
+                textAlign: "center",
+                margin: 0,
+                maxWidth: 560,
+                width: "100%",
+              }}
+            >
+              {currentSentence.split(/\s+/).map((token, i) => {
+                const clean = token.replace(/[.,!?;:¡¿]/g, "").toLowerCase();
+                const isLearned = sessionWords.some((w) => w.text.toLowerCase() === clean);
+                const isHighlighted = highlightedWord === clean;
 
-              return (
-                <motion.span
-                  key={i}
-                  animate={isHighlighted ? { scale: 1.4 } : { scale: 1 }}
-                  transition={{ duration: 0.3 }}
-                  style={{
-                    color: isLearned ? worldColor : "#888",
-                    fontWeight: isLearned ? 700 : 400,
-                    display: "inline-block",
-                    marginRight: 8,
-                  }}
-                >
-                  {token}
-                </motion.span>
-              );
-            })}
-          </p>
+                return (
+                  <motion.span
+                    key={i}
+                    animate={isHighlighted ? { scale: 1.4 } : { scale: 1 }}
+                    transition={{ duration: 0.3 }}
+                    style={{
+                      color: isLearned ? worldColor : "#888",
+                      fontWeight: isLearned ? 700 : 400,
+                      display: "inline-block",
+                      marginRight: 8,
+                    }}
+                  >
+                    {token}
+                  </motion.span>
+                );
+              })}
+            </p>
+          </div>
         </div>
       )}
 
