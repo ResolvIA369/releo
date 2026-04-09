@@ -46,6 +46,122 @@ function playMP3(filename: string): Promise<boolean> {
   });
 }
 
+// ─── Phrase → MP3 mapping ────────────────────────────────────────
+
+const PHRASE_TO_MP3: Record<string, string> = {
+  // Short reactions
+  "¡Muy bien!": "reaccion-muy-bien",
+  "¡Intenta otra vez!": "reaccion-intenta-otra-vez",
+  "¡Se acabó el tiempo!": "reaccion-se-acabo-tiempo",
+  "¡Se escapó!": "reaccion-se-escapo",
+  "¡Se escapo!": "reaccion-se-escapo",
+  "¡Ese no! Fíjate bien": "reaccion-ese-no",
+  "¡Busca bien!": "reaccion-busca-bien",
+  "¡Qué linda historia!": "reaccion-que-linda-historia",
+  "¡Esa no!": "reaccion-esa-no",
+  "¡Sí!": "reaccion-si",
+  "¡Eso!": "reaccion-eso",
+  "¡Bravo!": "reaccion-bravo",
+  "¡Genial!": "reaccion-genial",
+  "¡Perfecto!": "reaccion-perfecto",
+  "¡Excelente!": "reaccion-excelente",
+  "¡Así es!": "reaccion-asi-es",
+  "¡Correcto!": "reaccion-correcto",
+  "¡Esa es!": "reaccion-esa-es",
+  "¡Lo sabías!": "reaccion-lo-sabias",
+  "¡Increíble!": "reaccion-increible",
+  "¡Wow!": "reaccion-wow",
+
+  // Session flow
+  "Te voy a mostrar las palabras. Mira bien y escucha cómo se dicen.": "sesion-presentacion",
+  "Ahora te voy a contar una historia con las palabras que aprendiste. ¡Escucha bien!": "sesion-historia-intro",
+  "Ahora escucha otra historia que tiene TODAS las palabras que sabes.": "sesion-historia-review",
+  "¿Te acuerdas de esta?": "sesion-review-acuerdas",
+  "¡Mira esta!": "sesion-review-mira",
+  "¡Y esta!": "sesion-review-y-esta",
+  "¡La última!": "sesion-review-ultima",
+
+  // Between presentations
+  "Esas son nuestras 5 palabras de hoy. ¡Vamos a verlas otra vez!": "sesion-entre-01",
+  "¡Genial! Ahora las veremos de nuevo. ¡Presta atención!": "sesion-entre-02",
+  "¡Ya casi las sabes! Una última vez.": "sesion-entre-03",
+  "¡Las conoces! Una vez más para que las recuerdes siempre.": "sesion-entre-04",
+  "Ahora es tu turno. Cuando veas la palabra, dila en voz alta. ¡Tú puedes!": "sesion-entre-06",
+
+  // Between repeats
+  "¡Así se hace! Tu voz suena hermosa. ¡Sigamos!": "sesion-repeat-02",
+  "¡Increíble! Ya casi terminamos. ¡Una más!": "sesion-repeat-04",
+
+  // Farewell
+  "Repite conmigo:": "sesion-repite-conmigo",
+
+  // Reviews
+  "¡Las recuerdas todas! ¡Qué memoria tan buena tienes!": "sesion-review-complete-01",
+  "¡Increíble! ¡Las recordaste todas!": "sesion-review-complete-02",
+
+  // Affirmations (session)
+  "Yo soy inteligente y puedo aprender cualquier cosa": "afirmacion-sesion-01",
+  "Cada día soy más fuerte y más capaz": "afirmacion-sesion-02",
+  "Leer me abre puertas a mundos increíbles": "afirmacion-sesion-03",
+  "Yo creo en mí y en lo que puedo hacer": "afirmacion-sesion-04",
+  "Soy valiente porque aprendo cosas nuevas": "afirmacion-sesion-05",
+  "Mi familia está orgullosa de mí": "afirmacion-sesion-06",
+
+  // Affirmations (general)
+  "Yo soy importante": "afirmacion-auto-01",
+  "Yo amo quien soy": "afirmacion-auto-02",
+  "Soy valioso": "afirmacion-auto-03",
+  "Me quiero tal y como soy": "afirmacion-auto-04",
+  "Yo soy único y especial": "afirmacion-auto-05",
+  "No hay nadie como yo en el mundo": "afirmacion-auto-06",
+  "Estoy orgulloso de ser yo": "afirmacion-auto-07",
+  "Merezco amor y respeto": "afirmacion-auto-08",
+  "Soy suficiente tal como soy": "afirmacion-auto-09",
+  "Yo creo en mí": "afirmacion-conf-01",
+  "Yo soy inteligente": "afirmacion-conf-02",
+  "Soy capaz de aprender cosas nuevas": "afirmacion-conf-03",
+  "Puedo hacerlo si lo intento": "afirmacion-conf-04",
+  "Cada día aprendo algo nuevo": "afirmacion-conf-05",
+  "Soy valiente": "afirmacion-conf-06",
+  "Confío en mis habilidades": "afirmacion-conf-07",
+  "Lo intento y lo logro": "afirmacion-conf-08",
+  "Soy bueno resolviendo problemas": "afirmacion-conf-09",
+  "Hay muchas personas que se preocupan por mí": "afirmacion-rel-01",
+  "Soy querido por mi familia": "afirmacion-rel-02",
+  "Mis amigos me aprecian": "afirmacion-rel-03",
+  "Siempre puedo pedir ayuda": "afirmacion-rel-04",
+  "Soy un buen amigo": "afirmacion-rel-05",
+  "Trato a los demás con respeto": "afirmacion-rel-06",
+  "Comparto con alegría": "afirmacion-rel-07",
+  "Me encanta aprender a leer": "afirmacion-lect-01",
+  "Cada palabra que leo me hace más fuerte": "afirmacion-lect-02",
+  "Leer me abre puertas a nuevos mundos": "afirmacion-lect-03",
+  "Disfruto practicar todos los días": "afirmacion-lect-04",
+  "Cada intento me acerca más a mi meta": "afirmacion-lect-05",
+  "Me siento orgulloso de mi progreso": "afirmacion-lect-06",
+  "Aprender es divertido": "afirmacion-lect-07",
+  "Soy un gran lector": "afirmacion-lect-08",
+  "Los errores me ayudan a mejorar": "afirmacion-lect-09",
+
+  // Multiplayer rules
+  "Sofia dice una palabra y muestra 4 emojis. El jugador que toque el emoji correcto gana un punto.": "reglas-multijugador",
+};
+
+/** Find a matching MP3 for a text. Strips {name} placeholders before matching. */
+function findMP3ForText(text: string): string | null {
+  // Direct match
+  const direct = PHRASE_TO_MP3[text];
+  if (direct) return direct;
+
+  // Strip name placeholders and try again
+  const cleaned = text
+    .replace(/,?\s*\{name\}/g, "")
+    .replace(/\{name\},?\s*/g, "")
+    .replace(/,?\s*[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+(?=[\s!.,?]|$)/g, "") // strip proper names at end
+    .trim();
+  return PHRASE_TO_MP3[cleaned] ?? null;
+}
+
 // ─── Web Speech API (fallback) ────────────────────────────────────
 
 const FEMALE_VOICE_PRIORITY = [
@@ -152,10 +268,18 @@ async function speakWithTTS(text: string, emotion: SpeechEmotion = "normal"): Pr
 // ─── Unified speak: MP3 first, TTS fallback ──────────────────────
 
 async function speak(mp3Name: string | null, text: string, emotion: SpeechEmotion): Promise<void> {
+  // Try explicit MP3 name first
   if (mp3Name && mp3Name.length > 0) {
     const played = await playMP3(mp3Name);
     if (played) return;
   }
+  // Try auto-matching text to MP3
+  const autoMp3 = findMP3ForText(text);
+  if (autoMp3) {
+    const played = await playMP3(autoMp3);
+    if (played) return;
+  }
+  // Fallback to TTS
   await speakWithTTS(text, emotion);
 }
 

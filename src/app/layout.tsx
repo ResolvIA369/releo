@@ -3,6 +3,7 @@ import { ErrorBoundary } from '@/shared/components/ErrorBoundary'
 import { BrowserCheck } from '@/shared/components/BrowserCheck'
 import { AppProvider } from '@/shared/components/AppProvider'
 import { PWARegister } from '@/shared/components/PWARegister'
+import { WakeLock } from '@/shared/components/WakeLock'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -52,6 +53,7 @@ export default function RootLayout({
             <AppProvider>
               {children}
               <PWARegister />
+              <WakeLock />
             </AppProvider>
           </BrowserCheck>
         </ErrorBoundary>
