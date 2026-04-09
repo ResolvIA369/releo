@@ -7,8 +7,8 @@ export const EMOJI_MAP: Record<string, string> = {
   mano: "🙋", pie: "🦶", ojo: "👁️", nariz: "👃", boca: "👄",
   oreja: "👂", pelo: "💇", dedo: "☝️", brazo: "💪", pierna: "🦵",
   // Casa
-  casa: "🏠", mesa: "🪑", silla: "🪑", cama: "🛏️", puerta: "🚪",
-  ventana: "🪟", cocina: "🍳", baño: "🚿", piso: "🏫", techo: "🏠",
+  casa: "🏠", mesa: "🍽️", silla: "🪑", cama: "🛏️", puerta: "🚪",
+  ventana: "🪟", cocina: "🧑‍🍳", baño: "🚿", piso: "🟫", techo: "🛖",
   // Animales
   perro: "🐶", gato: "🐱", caballo: "🐴", vaca: "🐮", pájaro: "🐦",
   pez: "🐟", pato: "🦆", conejo: "🐰", ratón: "🐭", oso: "🐻", pollo: "🐔",
@@ -33,7 +33,7 @@ export const EMOJI_MAP: Record<string, string> = {
   valiente: "🦸", amable: "🤗",
   // Naturaleza
   sol: "☀️", luna: "🌙", estrella: "⭐", nube: "☁️", lluvia: "🌧️",
-  árbol: "🌳", flor: "🌺", río: "🌊", mar: "🌊", montaña: "⛰️",
+  árbol: "🌳", flor: "🌺", río: "🏞️", mar: "🌊", montaña: "⛰️",
 
   // ─── Phase 3: Oraciones Sencillas ────────────────────────────────
   // Verbos Cotidianos
@@ -43,13 +43,13 @@ export const EMOJI_MAP: Record<string, string> = {
   abre: "🚪", cierra: "🔒", sube: "⬆️", baja: "⬇️", toca: "👆",
   lava: "🧼", limpia: "🧹", pinta: "🎨", dibuja: "✏️",
   // Ropa
-  camisa: "👔", pantalón: "👖", zapato: "👟", gorra: "🧢", pollera: "👗",
+  camisa: "👔", pantalón: "👖", zapato: "👟", gorra: "🧢", pollera: "🥻",
   media: "🧦", vestido: "👗", abrigo: "🧥", bufanda: "🧣", piyama: "🛌",
   // Escuela
   libro: "📖", lápiz: "✏️", papel: "📄", tijeras: "✂️", pegamento: "🧴",
-  mochila: "🎒", maestra: "👩‍🏫", amigo: "🤝", clase: "🏫", recreo: "⚽",
+  mochila: "🎒", maestra: "👩‍🏫", amigo: "🤝", clase: "📚", recreo: "🛝",
   // Lugares
-  parque: "🏞️", tienda: "🏪", escuela: "🏫", hospital: "🏥", iglesia: "⛪",
+  parque: "🎡", tienda: "🛍️", escuela: "🏫", hospital: "🏥", iglesia: "⛪",
   playa: "🏖️", campo: "🌾", ciudad: "🏙️", calle: "🛣️", jardín: "🌹",
 
   // ─── Phase 4: Frases Completas ───────────────────────────────────
