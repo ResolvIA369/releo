@@ -40,7 +40,7 @@ export const EMOJI_MAP: Record<string, string> = {
   come: "🍽️", bebe: "🥤", duerme: "😴", juega: "🎮", corre: "🏃",
   salta: "🤸", lee: "📖", escribe: "✍️", canta: "🎤", baila: "💃",
   // Verbos de Acción
-  abre: "🚪", cierra: "🔒", sube: "⬆️", baja: "⬇️", toca: "👆",
+  abre: "🔓", cierra: "🔒", sube: "🧗", baja: "🪂", toca: "👆",
   lava: "🧼", limpia: "🧹", pinta: "🎨", dibuja: "✏️",
   // Ropa
   camisa: "👔", pantalón: "👖", zapato: "👟", gorra: "🧢", pollera: "🥻",
