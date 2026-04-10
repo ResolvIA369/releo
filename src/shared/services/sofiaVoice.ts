@@ -42,7 +42,15 @@ function playMP3(filename: string): Promise<boolean> {
       resolve(false); // Fallback to TTS
     };
 
-    audio.play().catch(() => resolve(false));
+    try {
+      const playResult = audio.play();
+      // Some older browsers (and JSDOM) return undefined instead of a Promise.
+      if (playResult && typeof playResult.catch === "function") {
+        playResult.catch(() => resolve(false));
+      }
+    } catch {
+      resolve(false);
+    }
   });
 }
 
