@@ -14,6 +14,18 @@ function playMP3(filename: string): Promise<boolean> {
 
   return new Promise((resolve) => {
     const url = `/audio/sofia/${filename}.mp3`;
+    let settled = false;
+    const finish = (ok: boolean) => {
+      if (settled) return;
+      settled = true;
+      _currentAudio = null;
+      resolve(ok);
+    };
+
+    // Hard timeout — if nothing happens within 10s, give up so the
+    // calling code never hangs forever.
+    const timer = setTimeout(() => finish(false), 10000);
+    const wrap = (ok: boolean) => { clearTimeout(timer); finish(ok); };
 
     // Check cache
     let audio = _audioCache.get(filename);
@@ -33,23 +45,19 @@ function playMP3(filename: string): Promise<boolean> {
     _currentAudio = audio;
 
     audio.onended = () => {
-      _currentAudio = null;
       _audioCache.set(filename, audio!);
-      resolve(true);
+      wrap(true);
     };
-    audio.onerror = () => {
-      _currentAudio = null;
-      resolve(false); // Fallback to TTS
-    };
+    audio.onerror = () => wrap(false);
 
     try {
       const playResult = audio.play();
       // Some older browsers (and JSDOM) return undefined instead of a Promise.
       if (playResult && typeof playResult.catch === "function") {
-        playResult.catch(() => resolve(false));
+        playResult.catch(() => wrap(false));
       }
     } catch {
-      resolve(false);
+      wrap(false);
     }
   });
 }
@@ -220,18 +228,29 @@ function speakOneTTS(text: string, rate: number, pitch: number): Promise<void> {
   // Stop any MP3 playing
   if (_currentAudio) { _currentAudio.pause(); _currentAudio.currentTime = 0; _currentAudio = null; }
   return new Promise((resolve) => {
+    let settled = false;
+    const finish = () => { if (!settled) { settled = true; resolve(); } };
+    // 8-second hard timeout in case onend/onerror never fire (some
+    // browsers stall the speechSynthesis queue silently).
+    const timer = setTimeout(finish, 8000);
+    const done = () => { clearTimeout(timer); finish(); };
+
     speechSynthesis.cancel();
     setTimeout(() => {
-      const u = new SpeechSynthesisUtterance(text);
-      const voice = _selectedVoice ?? selectBestVoice();
-      if (voice) u.voice = voice;
-      u.lang = "es-MX";
-      u.rate = rate;
-      u.pitch = pitch;
-      u.volume = 1.0;
-      u.onend = () => resolve();
-      u.onerror = () => resolve();
-      speechSynthesis.speak(u);
+      try {
+        const u = new SpeechSynthesisUtterance(text);
+        const voice = _selectedVoice ?? selectBestVoice();
+        if (voice) u.voice = voice;
+        u.lang = "es-MX";
+        u.rate = rate;
+        u.pitch = pitch;
+        u.volume = 1.0;
+        u.onend = done;
+        u.onerror = done;
+        speechSynthesis.speak(u);
+      } catch {
+        done();
+      }
     }, 40);
   });
 }

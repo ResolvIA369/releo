@@ -16,6 +16,8 @@ import { QuickCelebration } from "@/shared/components/QuickCelebration";
 import { AudioWaves, ProgressLine } from "@/shared/components/doman-visuals";
 import { colors, spacing, fonts, fontSizes, radii, shadows } from "@/shared/styles/design-tokens";
 import { fitWordFontSize } from "@/shared/utils/fitText";
+import { useRewards } from "@/shared/components/RewardsLayer";
+import { TimeBar } from "@/shared/components/TimeBar";
 import { AnimatedButton } from "@/shared/components/AnimatedButton";
 import { useAppStore } from "@/shared/store/useAppStore";
 import { SofiaAvatar } from "@/shared/components/SofiaAvatar";
@@ -118,10 +120,12 @@ type Phase =
   | "ready" | "paused"
   | "greeting"
   | "presentation" | "pres_sofia"
-  | "repeat_intro" | "repeat" | "repeat_sofia" | "celebration"
+  | "repeat_intro" | "repeat" | "repeat_video" | "repeat_sofia" | "celebration"
   | "story_intro" | "story"
   | "review_intro" | "review"
   | "farewell" | "affirmation" | "complete";
+
+const REPEAT_TIMER_SECONDS = 5;
 
 export function WordFlash({ words, phase, onComplete, onBack }: GameProps) {
   const sessionWords = useMemo(() => words.slice(0, DEFAULT_SESSION_CONFIG.wordsPerSession), [words]);
@@ -129,6 +133,7 @@ export function WordFlash({ words, phase, onComplete, onBack }: GameProps) {
   const profile = useAppStore((s) => s.profile);
   const mic = useSpeechRecognition();
   const childName = profile?.childName ?? "amiguito";
+  const { rewardCorrect } = useRewards();
 
   // Try to get the full session data (for story + previousWords)
   const sessionData = useMemo(() => {
@@ -158,6 +163,12 @@ export function WordFlash({ words, phase, onComplete, onBack }: GameProps) {
   const [dotsCompleted, setDotsCompleted] = useState(0);
   const [score, setScore] = useState(0);
   const [totalAttempts, setTotalAttempts] = useState(0);
+  // Round 2 (repeat) per-pass tracking
+  const [correctInPass, setCorrectInPass] = useState(0);
+  const [repeatTimerKey, setRepeatTimerKey] = useState(0);
+  const [showRepeatTimer, setShowRepeatTimer] = useState(false);
+  const [videoMode, setVideoMode] = useState<"celebration" | "motivation">("motivation");
+  const repeatTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   // Story state
   const [currentSentence, setCurrentSentence] = useState("");
   const [highlightedWord, setHighlightedWord] = useState<string | null>(null);
@@ -199,34 +210,69 @@ export function WordFlash({ words, phase, onComplete, onBack }: GameProps) {
 
   // ─── Round 2: child taps card to confirm they read it ──────────
 
-  const handleCardTap = useCallback(async () => {
-    if (ph !== "repeat" || !isFlipped) return;
-
-    // Mark as recognized
-    setTotalAttempts((a) => a + 1);
-    setScore((s) => s + 1);
-    session.markRecognized(currentWord.id);
-    setShowCelebration(true);
-    setTimeout(() => setShowCelebration(false), 600);
-
-    // Sofia confirms the word
-    setIsSpeaking(true);
-    await sofiaNameWord(currentWord.text);
-    setIsSpeaking(false);
+  const advanceRepeatWord = useCallback(async () => {
     setDotsCompleted(wordIdx + 1);
     await delay(400);
 
     if (wordIdx < sessionWords.length - 1) {
+      setShowRepeatTimer(false);
       setIsFlipped(false);
       await delay(400);
       setWordIdx((i) => i + 1);
       setTick((t) => t + 1);
     } else {
+      setShowRepeatTimer(false);
       setIsFlipped(false);
       await delay(400);
-      setPh("repeat_sofia");
+      // End of pass — decide which video to show
+      setVideoMode((prev) => {
+        // We need to check correctInPass at this moment, but state is async.
+        // Use a ref-like trick: read from local closure via setState callback.
+        return prev;
+      });
+      setPh("repeat_video");
     }
-  }, [ph, isFlipped, currentWord, wordIdx, sessionWords.length, session, delay]);
+  }, [wordIdx, sessionWords.length, delay]);
+
+  const handleCardTap = useCallback(async () => {
+    if (ph !== "repeat" || !isFlipped) return;
+    // Stop the countdown
+    clearTimeout(repeatTimerRef.current);
+    setShowRepeatTimer(false);
+
+    // Mark as recognized
+    setTotalAttempts((a) => a + 1);
+    setScore((s) => s + 1);
+    setCorrectInPass((c) => c + 1);
+    session.markRecognized(currentWord.id);
+    setShowCelebration(true);
+    setTimeout(() => setShowCelebration(false), 600);
+
+    // Confetti + flying coin from screen center
+    if (typeof window !== "undefined") {
+      rewardCorrect(window.innerWidth / 2, window.innerHeight / 2);
+    }
+
+    // Sofia confirms the word
+    setIsSpeaking(true);
+    await sofiaNameWord(currentWord.text);
+    setIsSpeaking(false);
+
+    await advanceRepeatWord();
+  }, [ph, isFlipped, currentWord, session, rewardCorrect, advanceRepeatWord]);
+
+  const handleRepeatTimeout = useCallback(async () => {
+    if (ph !== "repeat" || !isFlipped) return;
+    setShowRepeatTimer(false);
+    setTotalAttempts((a) => a + 1);
+
+    // Sofia says the word so the child still hears it correctly
+    setIsSpeaking(true);
+    await sofiaNameWord(currentWord.text);
+    setIsSpeaking(false);
+
+    await advanceRepeatWord();
+  }, [ph, isFlipped, currentWord, advanceRepeatWord]);
 
   // ─── Keyboard support (desktop) ────────────────────────────────
   // Space / Enter: tap card during repeat phase
@@ -342,8 +388,26 @@ export function WordFlash({ words, phase, onComplete, onBack }: GameProps) {
           await delay(500);
           if (c()) return;
 
-          // Wait for child to tap (handled by tapToConfirm state)
-          // The tap handler sets the phase forward
+          // Start the 5-second countdown. If the child does not tap
+          // in time, advance to the next word automatically.
+          setRepeatTimerKey((k) => k + 1);
+          setShowRepeatTimer(true);
+          clearTimeout(repeatTimerRef.current);
+          repeatTimerRef.current = setTimeout(() => {
+            if (cancelledRef.current) return;
+            handleRepeatTimeout();
+          }, REPEAT_TIMER_SECONDS * 1000);
+          break;
+        }
+
+        case "repeat_video": {
+          // Decide which video to show based on this pass's score.
+          const mode = correctInPass > 2 ? "celebration" : "motivation";
+          setVideoMode(mode);
+          // Reset for next pass
+          setCorrectInPass(0);
+          // The video element renders inside the JSX and calls
+          // setPh("repeat_sofia") when it ends.
           break;
         }
 
@@ -638,9 +702,21 @@ export function WordFlash({ words, phase, onComplete, onBack }: GameProps) {
       {/* FlipCard for words */}
       {isCardVisible && (
         <div
-          style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}
+          style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 16 }}
           onClick={ph === "repeat" ? handleCardTap : undefined}
         >
+          {/* Repeat-phase countdown bar with Leo riding the top */}
+          {ph === "repeat" && showRepeatTimer && (
+            <div style={{ height: "min(70vh, 520px)", display: "flex", alignItems: "stretch" }}
+              onClick={(e) => e.stopPropagation()}>
+              <TimeBar
+                seconds={REPEAT_TIMER_SECONDS}
+                resetKey={repeatTimerKey}
+                onTimeUp={() => { /* handled imperatively via setTimeout */ }}
+                color={worldColor}
+              />
+            </div>
+          )}
           <div style={{ width: "min(85vw, 70vh, 720px)", maxWidth: 720, aspectRatio: "4/3", position: "relative", cursor: ph === "repeat" ? "pointer" : "default" }}>
             <FlipCard
               isFlipped={isFlipped}
@@ -752,6 +828,44 @@ export function WordFlash({ words, phase, onComplete, onBack }: GameProps) {
             <SofiaAvatar size={300} speaking={isSpeaking} />
             <AudioWaves active={isSpeaking} color={worldColor} />
           </motion.div>
+        </div>
+      )}
+
+      {/* End-of-pass video (Round 2): celebration if >2 correct, else motivation */}
+      {ph === "repeat_video" && (
+        <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: spacing.lg, gap: spacing.md }}>
+          <video
+            key={videoMode}
+            src={`/videos/leo-${videoMode}.mp4`}
+            autoPlay
+            playsInline
+            controls={false}
+            onEnded={() => setPh("repeat_sofia")}
+            onError={() => setPh("repeat_sofia")}
+            style={{
+              maxWidth: "min(85vw, 720px)",
+              maxHeight: "min(70vh, 540px)",
+              borderRadius: 24,
+              boxShadow: shadows.lg,
+              backgroundColor: "#000",
+            }}
+          />
+          <button
+            onClick={() => setPh("repeat_sofia")}
+            style={{
+              padding: `${spacing.sm}px ${spacing.lg}px`,
+              borderRadius: radii.pill,
+              backgroundColor: worldColor,
+              color: "#fff",
+              border: "none",
+              fontSize: fontSizes.md,
+              fontWeight: "bold",
+              fontFamily: fonts.display,
+              cursor: "pointer",
+            }}
+          >
+            Continuar →
+          </button>
         </div>
       )}
 
