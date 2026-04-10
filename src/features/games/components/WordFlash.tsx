@@ -772,6 +772,46 @@ export function WordFlash({ words, phase, onComplete, onBack }: GameProps) {
         </div>
       )}
 
+      {/* "¡Qué linda historia!" — Sofia + the 5 learned words after the story
+           text fades out but before the next phase. */}
+      {isStory && !currentSentence && (
+        <div style={{
+          position: "absolute", inset: 0,
+          display: "flex", flexDirection: "column",
+          alignItems: "center", justifyContent: "center",
+          gap: spacing.lg, padding: spacing.lg,
+        }}>
+          <SofiaAvatar size={220} speaking={isSpeaking} />
+          <AudioWaves active={isSpeaking} color={worldColor} />
+          <div style={{
+            display: "flex", flexWrap: "wrap", gap: spacing.sm,
+            justifyContent: "center", maxWidth: 620,
+          }}>
+            {sessionWords.map((w, i) => (
+              <motion.div
+                key={w.id}
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.15 + i * 0.12, type: "spring", damping: 12 }}
+                style={{
+                  padding: `${spacing.sm}px ${spacing.md}px`,
+                  backgroundColor: "#fff",
+                  border: `2px solid ${worldColor}`,
+                  borderRadius: radii.lg,
+                  fontSize: fontSizes.lg,
+                  fontFamily: fonts.display,
+                  fontWeight: "bold",
+                  color: "#2d3748",
+                  boxShadow: shadows.sm,
+                }}
+              >
+                {w.text} {EMOJI_MAP[w.text] ?? ""}
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Story text with word highlights */}
       {isStory && currentSentence && (
         <div

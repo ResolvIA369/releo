@@ -2,57 +2,67 @@
 //
 // Priority: pre-recorded MP3 audio → Web Speech API fallback
 // MP3 files live in /audio/sofia/
-// If MP3 not found or fails, falls back to browser TTS seamlessly
+//
+// Concurrency model — STRICTLY single-track:
+//   Only one playback session can be active at a time. Each call to
+//   speak() (or playMP3 / TTS) bumps a token; any in-flight callback
+//   for an older token is ignored. Starting a new session also fully
+//   stops the previous audio + cancels any TTS utterance.
+//
+// This is what eliminates the "two voices on top of each other" bug
+// where an MP3 (Elena) and a TTS fallback (system man voice) would
+// previously fire in parallel.
 
-// ─── Audio player (MP3) ───────────────────────────────────────────
-
-const _audioCache = new Map<string, HTMLAudioElement>();
+let _currentToken = 0;
 let _currentAudio: HTMLAudioElement | null = null;
+
+/** Forcefully stop everything currently playing. Resolves any in-flight
+ *  promises immediately so awaiters never hang. */
+function stopAll() {
+  _currentToken++; // invalidate every in-flight callback
+  if (_currentAudio) {
+    try { _currentAudio.onended = null; _currentAudio.onerror = null; } catch {}
+    try { _currentAudio.pause(); } catch {}
+    try { _currentAudio.src = ""; } catch {}
+    _currentAudio = null;
+  }
+  if (typeof window !== "undefined" && typeof speechSynthesis !== "undefined") {
+    try { speechSynthesis.cancel(); } catch {}
+  }
+}
 
 function playMP3(filename: string): Promise<boolean> {
   if (typeof window === "undefined") return Promise.resolve(false);
 
+  // New session — invalidate older callbacks and stop any playback
+  stopAll();
+  const myToken = ++_currentToken;
+
   return new Promise((resolve) => {
-    const url = `/audio/sofia/${filename}.mp3`;
     let settled = false;
     const finish = (ok: boolean) => {
       if (settled) return;
+      // Stale callback (a newer playback session is now active)
+      if (myToken !== _currentToken) return;
       settled = true;
       _currentAudio = null;
       resolve(ok);
     };
 
-    // Hard timeout — if nothing happens within 10s, give up so the
-    // calling code never hangs forever.
-    const timer = setTimeout(() => finish(false), 10000);
+    // Hard timeout — if nothing happens within 8s, give up
+    const timer = setTimeout(() => finish(false), 8000);
     const wrap = (ok: boolean) => { clearTimeout(timer); finish(ok); };
 
-    // Check cache
-    let audio = _audioCache.get(filename);
-    if (!audio) {
-      audio = new Audio(url);
-      audio.preload = "auto";
-    }
-
-    // Stop any current audio AND browser TTS
-    if (_currentAudio) {
-      _currentAudio.pause();
-      _currentAudio.currentTime = 0;
-    }
-    if (typeof speechSynthesis !== "undefined") {
-      speechSynthesis.cancel();
-    }
+    const url = `/audio/sofia/${filename}.mp3`;
+    const audio = new Audio(url);
+    audio.preload = "auto";
     _currentAudio = audio;
 
-    audio.onended = () => {
-      _audioCache.set(filename, audio!);
-      wrap(true);
-    };
+    audio.onended = () => wrap(true);
     audio.onerror = () => wrap(false);
 
     try {
       const playResult = audio.play();
-      // Some older browsers (and JSDOM) return undefined instead of a Promise.
       if (playResult && typeof playResult.catch === "function") {
         playResult.catch(() => wrap(false));
       }
@@ -224,19 +234,30 @@ const EMOTION_CONFIG: Record<SpeechEmotion, { rate: number; pitch: number }> = {
 };
 
 function speakOneTTS(text: string, rate: number, pitch: number): Promise<void> {
-  if (typeof speechSynthesis === "undefined") return Promise.resolve();
-  // Stop any MP3 playing
-  if (_currentAudio) { _currentAudio.pause(); _currentAudio.currentTime = 0; _currentAudio = null; }
+  if (typeof window === "undefined" || typeof speechSynthesis === "undefined") {
+    return Promise.resolve();
+  }
+
+  stopAll();
+  const myToken = ++_currentToken;
+
   return new Promise((resolve) => {
     let settled = false;
-    const finish = () => { if (!settled) { settled = true; resolve(); } };
-    // 8-second hard timeout in case onend/onerror never fire (some
-    // browsers stall the speechSynthesis queue silently).
+    const finish = () => {
+      if (settled) return;
+      if (myToken !== _currentToken) return; // stale
+      settled = true;
+      resolve();
+    };
+    // 8-second hard timeout in case onend/onerror never fire
     const timer = setTimeout(finish, 8000);
     const done = () => { clearTimeout(timer); finish(); };
 
-    speechSynthesis.cancel();
+    // Wait a tick so the previous cancel() really took effect, then
+    // queue the new utterance. If a newer session bumped the token
+    // in the meantime, we abort silently.
     setTimeout(() => {
+      if (myToken !== _currentToken) { done(); return; }
       try {
         const u = new SpeechSynthesisUtterance(text);
         const voice = _selectedVoice ?? selectBestVoice();
@@ -251,7 +272,7 @@ function speakOneTTS(text: string, rate: number, pitch: number): Promise<void> {
       } catch {
         done();
       }
-    }, 40);
+    }, 60);
   });
 }
 
@@ -372,14 +393,7 @@ export const speakSentence = sofiaReads;
 export const speakReview = (word: string) => track(speak(null, word, "normal"));
 
 export function stopVoice(): void {
-  if (_currentAudio) {
-    _currentAudio.pause();
-    _currentAudio.currentTime = 0;
-    _currentAudio = null;
-  }
-  if (typeof window !== "undefined" && typeof speechSynthesis !== "undefined") {
-    speechSynthesis.cancel();
-  }
+  stopAll();
   _speaking = false;
 }
 
@@ -388,5 +402,5 @@ export function isSpeaking(): boolean {
 }
 
 export function isVoiceReady(): boolean {
-  return _voiceReady || _audioCache.size > 0;
+  return _voiceReady;
 }

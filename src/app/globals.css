@@ -9,15 +9,18 @@
   --bg-primary: #1a1a2e;
   --bg-secondary: #16213e;
   --bg-card: #1f2937;
-  --text-primary: #e2e8f0;
-  --text-muted: #a0aec0;
-  --text-placeholder: #718096;
+  /* Text colors must keep enough contrast on the dark backgrounds.
+     Bumped from the previous dim values so muted/placeholder labels
+     remain readable. */
+  --text-primary: #f7fafc;
+  --text-muted: #cbd5e0;
+  --text-placeholder: #a0aec0;
   --border-light: #2d3748;
 
   /* Override design-tokens CSS variables (RGB format for Tailwind) */
   --color-background: 26 26 46;
   --color-surface: 22 33 62;
   --color-border: 45 55 72;
-  --color-text: 226 232 240;
-  --color-text-muted: 160 174 192;
+  --color-text: 247 250 252;
+  --color-text-muted: 203 213 224;
 }

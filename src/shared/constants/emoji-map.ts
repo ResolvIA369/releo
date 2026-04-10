@@ -64,23 +64,26 @@ export const EMOJI_MAP: Record<string, string> = {
   // sin: ausencia/negación, hacia: dirección
   en: "📦", de: "🤲", por: "🛤️", para: "🎁", sobre: "🔝",
   entre: "🫂", hasta: "🏁", desde: "🚦", sin: "🚫", hacia: "➡️",
-  // Pronombres
+  // Pronombres — mi/tu/su = posesión (cerca/intermedio/lejos)
   yo: "🙋", tú: "🫵", él: "👦", ella: "👧", nosotros: "👨‍👩‍👧‍👦",
-  mi: "💝", tu: "💝", su: "💝", este: "👈", ese: "👉",
-  // Tiempo
-  hoy: "📅", mañana: "🌅", ayer: "⏪", ahora: "⏰", después: "⏩",
+  mi: "🤲", tu: "👉", su: "👤",
+  // Demostrativos: este (cerca) vs ese (lejos)
+  este: "👇", ese: "👉",
+  // Tiempo — calendarios distintos para ayer/hoy/mañana, no soles
+  hoy: "📅", mañana: "📆", ayer: "🗓️", ahora: "⏰", después: "⏩",
   antes: "⏪", siempre: "♾️", nunca: "🚫", pronto: "⏳", tarde: "🌇",
-  // Números
-  uno: "1️⃣", dos: "2️⃣", tres: "3️⃣", cuatro: "4️⃣", cinco: "5️⃣",
-  seis: "6️⃣", siete: "7️⃣", ocho: "8️⃣", nueve: "9️⃣", diez: "🔟",
+  // Números — representados como cantidad (pelotas), no dígito
+  uno: "⚽", dos: "⚽⚽", tres: "⚽⚽⚽", cuatro: "⚽⚽⚽⚽", cinco: "⚽⚽⚽⚽⚽",
+  seis: "⚽⚽⚽⚽⚽⚽", siete: "⚽⚽⚽⚽⚽⚽⚽", ocho: "⚽⚽⚽⚽⚽⚽⚽⚽",
+  nueve: "⚽⚽⚽⚽⚽⚽⚽⚽⚽", diez: "⚽⚽⚽⚽⚽⚽⚽⚽⚽⚽",
 
   // ─── Phase 5: Cuentos Cortos ─────────────────────────────────────
   // Verbos Avanzados
   quiere: "💖", puede: "💪", sabe: "🧠", tiene: "🎁", hace: "🔨",
   dice: "💬", viene: "🚶", sale: "🚪", llega: "🏠", busca: "🔍",
-  // Adverbios
+  // Adverbios — aquí/allí distancia, solo = persona sola, junto = pareja
   muy: "💯", más: "➕", menos: "➖", bien: "👍", mal: "👎",
-  aquí: "📍", allí: "👆", también: "➕", solo: "1️⃣", junto: "🤝",
+  aquí: "👇", allí: "👉", también: "➕", solo: "🧍", junto: "🤝",
 };
 
 export function getEmoji(word: string): string {
