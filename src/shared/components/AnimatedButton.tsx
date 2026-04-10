@@ -29,7 +29,10 @@ export const AnimatedButton: React.FC<AnimatedButtonProps> = ({
     variant === "primary"
       ? { background: `linear-gradient(135deg, ${color ?? colors.brand.primary}, ${colors.brand.secondary})`, color: colors.text.inverse, border: "none", boxShadow: shadows.button }
       : variant === "secondary"
-        ? { backgroundColor: colors.bg.card, color: color ?? colors.text.secondary, border: `2px solid ${colors.border.light}` }
+        // Warm cream that always contrasts with dark text — works in
+        // both light and dark mode (the original used --bg-card which
+        // turns near-black in dark mode and made the label invisible).
+        ? { backgroundColor: "#FFF8E1", color: "#92400E", border: "2px solid #FFD54F", boxShadow: shadows.sm }
         : variant === "game"
           ? { backgroundColor: colors.bg.card, color: colors.text.primary, border: `2px solid ${color ?? colors.border.light}`, boxShadow: shadows.sm }
           : { backgroundColor: "transparent", color: colors.text.muted, border: "none" };
