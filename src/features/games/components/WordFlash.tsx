@@ -178,6 +178,9 @@ export function WordFlash({ words, phase, onComplete, onBack }: GameProps) {
 
   const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const cancelledRef = useRef(false);
+  // Blocks re-entry into handleCardTap / handleRepeatTimeout so
+  // Sofia never ends up speaking twice in parallel.
+  const repeatResolvingRef = useRef(false);
 
   const totalSteps = 3 + 3 + 1; // 3 pres passes + 3 repeat passes + 1 story
   const currentStep = ph.startsWith("pres") ? pass : ph.startsWith("repeat") ? 3 + pass : ph === "story" ? 7 : 0;
@@ -224,21 +227,22 @@ export function WordFlash({ words, phase, onComplete, onBack }: GameProps) {
       setShowRepeatTimer(false);
       setIsFlipped(false);
       await delay(400);
-      // End of pass — decide which video to show
-      setVideoMode((prev) => {
-        // We need to check correctInPass at this moment, but state is async.
-        // Use a ref-like trick: read from local closure via setState callback.
-        return prev;
-      });
       setPh("repeat_video");
     }
+    // Allow a new tap / timeout only after the advance fully completes
+    repeatResolvingRef.current = false;
   }, [wordIdx, sessionWords.length, delay]);
 
   const handleCardTap = useCallback(async () => {
     if (ph !== "repeat" || !isFlipped) return;
-    // Stop the countdown
+    // Re-entry guard: ignore taps once we're already resolving this word
+    if (repeatResolvingRef.current) return;
+    repeatResolvingRef.current = true;
+
+    // Stop the countdown + any audio Sofia might currently be on
     clearTimeout(repeatTimerRef.current);
     setShowRepeatTimer(false);
+    stopVoice();
 
     // Mark as recognized
     setTotalAttempts((a) => a + 1);
@@ -263,7 +267,11 @@ export function WordFlash({ words, phase, onComplete, onBack }: GameProps) {
 
   const handleRepeatTimeout = useCallback(async () => {
     if (ph !== "repeat" || !isFlipped) return;
+    if (repeatResolvingRef.current) return;
+    repeatResolvingRef.current = true;
+
     setShowRepeatTimer(false);
+    stopVoice();
     setTotalAttempts((a) => a + 1);
 
     // Sofia says the word so the child still hears it correctly
@@ -385,6 +393,7 @@ export function WordFlash({ words, phase, onComplete, onBack }: GameProps) {
         case "repeat": {
           // Show the word — child taps the card to say they read it
           setIsFlipped(true);
+          repeatResolvingRef.current = false;
           await delay(500);
           if (c()) return;
 
