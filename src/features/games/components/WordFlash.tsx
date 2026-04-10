@@ -125,7 +125,7 @@ type Phase =
   | "review_intro" | "review"
   | "farewell" | "affirmation" | "complete";
 
-const REPEAT_TIMER_SECONDS = 5;
+const REPEAT_TIMER_SECONDS = 7;
 
 export function WordFlash({ words, phase, onComplete, onBack }: GameProps) {
   const sessionWords = useMemo(() => words.slice(0, DEFAULT_SESSION_CONFIG.wordsPerSession), [words]);
