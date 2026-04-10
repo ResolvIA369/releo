@@ -46,6 +46,15 @@ export default function RootLayout({
     <html lang="es">
       <head>
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+        {/* Preload character images so Leo and Sofia appear without
+            delay the first time a game shows them. */}
+        <link rel="preload" as="image" href="/images/Leo/motivando.png" />
+        <link rel="preload" as="image" href="/images/Leo/felicitando.png" />
+        <link rel="preload" as="image" href="/images/Leo/animate.png" />
+        <link rel="preload" as="image" href="/images/Leo/esfuerzate.png" />
+        <link rel="preload" as="image" href="/images/sofia/sofia-default.png" />
+        <link rel="preload" as="image" href="/images/sofia/sofia-clapping.png" />
+        <link rel="preload" as="image" href="/images/sofia/sofia-motivating.png" />
       </head>
       <body>
         <ErrorBoundary>

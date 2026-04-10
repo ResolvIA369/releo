@@ -304,27 +304,27 @@ const STORIES: Record<number, { story5: string; previousStory?: string }> = {
     previousStory: "Hoy es bonito. Mañana vamos al parque. Ayer llovió. Ahora jugamos. Después comemos helado.",
   },
   39: {
-    story5: "Tengo un dedo pulgar que saluda. Mis dos ojos ven el mundo entero. Con tres saltos llego a la puerta. cuatro gatitos duermen en la cesta. Y con cinco dedos puedo contar una mano. ¡Los números están en todas partes!",
+    story5: "Tengo un dedo pulgar que saluda. Mis dos ojos ven el mundo entero. Con tres saltos llego a la puerta. Cuatro gatitos duermen en la cesta. Y con cinco dedos puedo contar una mano. ¡Los números están en todas partes!",
     previousStory: "Siempre abrazo a mamá. Nunca olvido dar gracias. Pronto es mi cumpleaños. Antes desayuno. A veces llego tarde.",
   },
   40: {
-    story5: "seis pájaros cantan en la ventana. siete estrellas brillan de noche. ocho crayones pintan un arcoíris. nueve hormiguitas marchan en fila. Y diez globos vuelan por el cielo. ¡Ya sé contar hasta diez!",
-    previousStory: "Tengo un dedo. Mis dos ojos ven. Con tres saltos llego. cuatro gatitos duermen. cinco dedos en la mano.",
+    story5: "Seis pájaros cantan en la ventana. Siete estrellas brillan de noche. Ocho crayones pintan un arcoíris. Nueve hormiguitas marchan en fila. Y diez globos vuelan por el cielo. ¡Ya sé contar hasta diez!",
+    previousStory: "Tengo un dedo. Mis dos ojos ven. Con tres saltos llego. Cuatro gatitos duermen. Cinco dedos en la mano.",
   },
 
   // ─── World 5 — El Libro Mágico (Phase 5) ───────────────────────────
 
   41: {
     story5: "El niño quiere aprender a leer y sabe que puede lograrlo. Él sabe que es inteligente porque tiene muchos libros en su cuarto. Todos los días hace algo nuevo y divertido. ¡Aprender es su superpoder!",
-    previousStory: "seis pájaros cantan. siete estrellas brillan. ocho crayones pintan. nueve hormiguitas marchan. diez globos vuelan.",
+    previousStory: "Seis pájaros cantan. Siete estrellas brillan. Ocho crayones pintan. Nueve hormiguitas marchan. Diez globos vuelan.",
   },
   42: {
     story5: "Sofía dice que hoy será un gran día. Ella viene a la escuela con una sonrisa enorme. Cuando sale al recreo juega con todos. Después llega a casa y abraza a mamá. Siempre busca nuevas aventuras. ¡Sofía es muy especial!",
-    previousStory: "El niño quiere aprender. puede lograrlo. sabe que es inteligente. tiene libros. hace cosas nuevas.",
+    previousStory: "El niño quiere aprender. Puede lograrlo. Sabe que es inteligente. Tiene libros. Hace cosas nuevas.",
   },
   43: {
     story5: "El perro es muy juguetón y corre más rápido que el gato. El gato come menos que el perro pero se porta bien todo el día. Nunca se porta mal porque es un gatito bueno. ¡Los dos son los mejores amigos!",
-    previousStory: "Sofía dice que será un gran día. viene a la escuela. sale al recreo. llega a casa. busca aventuras.",
+    previousStory: "Sofía dice que será un gran día. Viene a la escuela. Sale al recreo. Llega a casa. Busca aventuras.",
   },
   44: {
     story5: "Aquí en mi casa estoy seguro. Allí en el parque juego con mis amigos. También me gusta ir a la escuela porque nunca estoy solo. Siempre estamos junto a las personas que nos quieren. ¡La vida es una aventura hermosa!",
