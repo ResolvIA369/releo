@@ -1,8 +1,7 @@
-// Doman App Service Worker — Offline-first for educational content
-// NO fetch interception (iOS Safari PWA incompatible)
-// Cache static shell on install, clean old caches on activate
+// REleo App Service Worker — Offline-first for educational content
+// Bumping CACHE_NAME forces all clients to drop the old cache.
 
-const CACHE_NAME = "doman-v1";
+const CACHE_NAME = "releo-v3";
 
 const SHELL_URLS = [
   "/dashboard",
@@ -20,7 +19,7 @@ self.addEventListener("install", (event) => {
   self.skipWaiting();
 });
 
-// Activate: clean old caches
+// Activate: clean ALL old caches (any name that isn't the current one)
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
@@ -33,15 +32,19 @@ self.addEventListener("activate", (event) => {
 });
 
 // Fetch: network-first with cache fallback (only for navigation)
+// Critical: NEVER cache non-2xx responses, otherwise a transient
+// 500 from the origin would stick forever.
 self.addEventListener("fetch", (event) => {
   if (event.request.mode !== "navigate") return;
 
   event.respondWith(
     fetch(event.request)
       .then((response) => {
-        // Cache successful navigation responses
-        const clone = response.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+        // Only cache successful, basic (same-origin) navigation responses
+        if (response && response.ok && response.type === "basic") {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+        }
         return response;
       })
       .catch(() => {
