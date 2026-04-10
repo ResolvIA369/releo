@@ -7,7 +7,6 @@ import { colors, spacing, fonts, fontSizes, radii, shadows } from "@/shared/styl
 import { fadeInUp } from "@/shared/styles/animations";
 import { SofiaAvatar } from "@/shared/components/SofiaAvatar";
 import { LeoCompanion, useLeo } from "@/shared/components/LeoCompanion";
-import { RewardsProvider } from "@/shared/components/RewardsLayer";
 
 // Pause context so child games can react to pause state
 const PauseContext = createContext({ paused: false, pause: () => {}, resume: () => {} });
@@ -48,7 +47,6 @@ export const GameShell: React.FC<GameShellProps> = ({ title, icon, color, sessio
   return (
     <PauseContext.Provider value={{ paused, pause, resume }}>
     <LeoContext.Provider value={leo}>
-    <RewardsProvider>
       <div style={{ minHeight: "100vh", height: "100vh", backgroundColor: colors.bg.primary, fontFamily: fonts.body, position: "relative", display: "flex", flexDirection: "column", overflow: "hidden" }}>
         {/* Header */}
         <motion.div
@@ -169,7 +167,6 @@ export const GameShell: React.FC<GameShellProps> = ({ title, icon, color, sessio
         {/* Leo the Lion companion */}
         {!showMenu && <LeoCompanion mood={leo.mood} size="md" position="right" />}
       </div>
-    </RewardsProvider>
     </LeoContext.Provider>
     </PauseContext.Provider>
   );

@@ -9,6 +9,7 @@ import { EMOJI_MAP } from "@/shared/constants/emoji-map";
 import { SofiaAvatar } from "@/shared/components/SofiaAvatar";
 import { CelebrationGif } from "@/shared/components/CelebrationGif";
 import { AnimatedButton } from "@/shared/components/AnimatedButton";
+import { RewardsProvider } from "@/shared/components/RewardsLayer";
 import { WordFlash } from "./WordFlash";
 import { WordImageMatch } from "./WordImageMatch";
 import { MemoryCards } from "./MemoryCards";
@@ -283,12 +284,14 @@ export const WordPath: React.FC<Props> = ({ onBack }) => {
 
   if (step === "playing" && selectedGroup && GameComponent) {
     return (
-      <GameComponent
-        words={selectedGroup.words}
-        phase={phaseConfig.phase}
-        onComplete={handleGameComplete}
-        onBack={() => setStep("sequence")}
-      />
+      <RewardsProvider>
+        <GameComponent
+          words={selectedGroup.words}
+          phase={phaseConfig.phase}
+          onComplete={handleGameComplete}
+          onBack={() => setStep("sequence")}
+        />
+      </RewardsProvider>
     );
   }
 
