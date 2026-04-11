@@ -318,8 +318,16 @@ export function WordFlash({ words, phase, onComplete, onBack }: GameProps) {
     if (ph === "ready" || ph === "paused" || ph === "complete") return;
     cancelledRef.current = false;
 
+    // Local cancel flag closed over by this effect run only.
+    // React StrictMode (and any rapid effect re-mount) used to leak
+    // two parallel run() instances because both shared the
+    // cancelledRef which the second mount immediately reset to false.
+    // Each mount now has its own local "cancelled" that the previous
+    // run can never un-cancel.
+    let localCancelled = false;
+
     async function run() {
-      const c = () => cancelledRef.current;
+      const c = () => localCancelled || cancelledRef.current;
 
       switch (ph) {
         // ═══ GREETING ═════════════════════════════════════════════
@@ -562,7 +570,7 @@ export function WordFlash({ words, phase, onComplete, onBack }: GameProps) {
         case "farewell": {
           setIsSpeaking(true);
           const wordsList = sessionWords.map((w) => w.text).join(", ");
-          await sofiaPlayAudio("farewell", fillScript(SC.farewell, { name: childName, words_list: wordsList }), "excited");
+          await sofiaPlayAudio("farewell", fillScript(SC.farewell, { name: "", words_list: wordsList }), "excited");
           setIsSpeaking(false);
           if (c()) return;
           await delay(500);
@@ -615,7 +623,14 @@ export function WordFlash({ words, phase, onComplete, onBack }: GameProps) {
     }
 
     run();
-    return () => { cancelledRef.current = true; clearTimeout(timerRef.current); };
+    return () => {
+      localCancelled = true;
+      cancelledRef.current = true;
+      clearTimeout(timerRef.current);
+      // Hard-stop any audio that this effect run may have started so
+      // it cannot leak into the next phase as a "second voice".
+      stopVoice();
+    };
   }, [ph, tick]); // eslint-disable-line
 
   // ─── Render helpers ─────────────────────────────────────────────
