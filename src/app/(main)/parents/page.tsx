@@ -72,7 +72,21 @@ export default function ParentsPage() {
             <input
               type="number" value={answer} onChange={(e) => setAnswer(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter" && parseInt(answer) === correctAnswer) setUnlocked(true); }}
-              style={{ width: 80, fontSize: fontSizes.xl, textAlign: "center", padding: spacing.sm, borderRadius: radii.lg, border: `2px solid ${colors.border.light}`, outline: "none", fontFamily: fonts.display }}
+              style={{
+                width: 80,
+                fontSize: fontSizes.xl,
+                textAlign: "center",
+                padding: spacing.sm,
+                borderRadius: radii.lg,
+                border: `2px solid ${colors.border.light}`,
+                outline: "none",
+                fontFamily: fonts.display,
+                // Explicit colors so the digits stay readable regardless
+                // of the theme (default browser color was white on the
+                // dark card background).
+                backgroundColor: "#ffffff",
+                color: "#2d3748",
+              }}
             />
             <button
               onClick={() => { if (parseInt(answer) === correctAnswer) setUnlocked(true); }}
@@ -91,7 +105,7 @@ export default function ParentsPage() {
   // ─── Dashboard ──────────────────────────────────────────────
 
   return (
-    <div style={{ minHeight: "100vh", backgroundColor: "#f7fafc", fontFamily: fonts.body, padding: spacing.lg }}>
+    <div style={{ minHeight: "100vh", backgroundColor: colors.bg.primary, fontFamily: fonts.body, padding: spacing.lg }}>
       <motion.div variants={fadeInUp} initial="initial" animate="animate"
         style={{ maxWidth: 700, margin: "0 auto", display: "flex", flexDirection: "column", gap: spacing.lg }}>
 
