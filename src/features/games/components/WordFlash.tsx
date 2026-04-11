@@ -705,7 +705,16 @@ export function WordFlash({ words, phase, onComplete, onBack }: GameProps) {
           {onBack && <button onClick={onBack} style={closeBtn}>✕</button>}
           <button onClick={handlePause} style={closeBtn}>⏸</button>
         </div>
-        <div style={{ fontSize: fontSizes.xs, color: colors.text.placeholder, fontFamily: fonts.display }}>
+        <div style={{
+          fontSize: fontSizes.sm,
+          color: "#2d3748",
+          fontFamily: fonts.display,
+          fontWeight: "bold",
+          padding: "4px 12px",
+          borderRadius: 9999,
+          backgroundColor: "#EDF2F7",
+          border: "1px solid #CBD5E0",
+        }}>
           {ph.startsWith("pres") ? `Ronda 1 · Pasada ${pass + 1}/3` : ph.startsWith("repeat") ? `Ronda 2 · Pasada ${pass + 1}/3` : ph === "story" ? "Ronda 3 · Historia" : ph === "review" ? "Repaso" : ""}
         </div>
         {/* Timer + Mic */}
