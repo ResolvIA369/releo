@@ -14,17 +14,32 @@
 // previously fire in parallel.
 
 let _currentToken = 0;
-let _currentAudio: HTMLAudioElement | null = null;
+// Single shared audio element. Reusing one element (instead of
+// creating a new <audio> on every call) means stopping the previous
+// playback is immediate — no stale element can leak out a few
+// milliseconds of audio after the new clip has already started.
+let _sharedAudio: HTMLAudioElement | null = null;
+
+function getSharedAudio(): HTMLAudioElement | null {
+  if (typeof window === "undefined") return null;
+  if (!_sharedAudio) {
+    _sharedAudio = new Audio();
+    _sharedAudio.preload = "auto";
+  }
+  return _sharedAudio;
+}
 
 /** Forcefully stop everything currently playing. Resolves any in-flight
  *  promises immediately so awaiters never hang. */
 function stopAll() {
   _currentToken++; // invalidate every in-flight callback
-  if (_currentAudio) {
-    try { _currentAudio.onended = null; _currentAudio.onerror = null; } catch {}
-    try { _currentAudio.pause(); } catch {}
-    try { _currentAudio.src = ""; } catch {}
-    _currentAudio = null;
+  const a = _sharedAudio;
+  if (a) {
+    try { a.onended = null; a.onerror = null; } catch {}
+    try { a.volume = 0; } catch {} // silence immediately, even if pause() lags
+    try { a.pause(); } catch {}
+    try { a.currentTime = 0; } catch {}
+    try { a.removeAttribute("src"); a.load(); } catch {}
   }
   if (typeof window !== "undefined" && typeof speechSynthesis !== "undefined") {
     try { speechSynthesis.cancel(); } catch {}
@@ -45,7 +60,6 @@ function playMP3(filename: string): Promise<boolean> {
       // Stale callback (a newer playback session is now active)
       if (myToken !== _currentToken) return;
       settled = true;
-      _currentAudio = null;
       resolve(ok);
     };
 
@@ -54,17 +68,18 @@ function playMP3(filename: string): Promise<boolean> {
     const wrap = (ok: boolean) => { clearTimeout(timer); finish(ok); };
 
     const url = `/audio/sofia/${filename}.mp3`;
-    const audio = new Audio(url);
-    audio.preload = "auto";
-    _currentAudio = audio;
+    const audio = getSharedAudio();
+    if (!audio) { wrap(false); return; }
 
-    audio.onended = () => wrap(true);
-    audio.onerror = () => wrap(false);
+    audio.volume = 1;
+    audio.src = url;
+    audio.onended = () => { if (myToken === _currentToken) wrap(true); };
+    audio.onerror = () => { if (myToken === _currentToken) wrap(false); };
 
     try {
       const playResult = audio.play();
       if (playResult && typeof playResult.catch === "function") {
-        playResult.catch(() => wrap(false));
+        playResult.catch(() => { if (myToken === _currentToken) wrap(false); });
       }
     } catch {
       wrap(false);
