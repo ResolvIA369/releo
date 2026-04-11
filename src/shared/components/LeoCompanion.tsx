@@ -63,12 +63,16 @@ export function LeoCompanion({ mood = "idle", size = "md", position = "right" }:
       position: "fixed",
       bottom: 8,
       [position]: 8,
-      zIndex: 40,
+      // Low z-index so Leo never covers gameplay buttons or image
+      // grids. Celebration layers (confetti, coins, overlays) all
+      // render above this.
+      zIndex: 5,
       display: "flex",
       flexDirection: "column",
       alignItems: position === "right" ? "flex-end" : "flex-start",
       gap: 4,
       pointerEvents: "none",
+      opacity: 0.85,
     }}>
       <AnimatePresence>
         {message && (

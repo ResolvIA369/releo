@@ -37,7 +37,14 @@ interface GameSetupProps {
   gameName: string;
   gameColor: string;
   wordsPerBlock: 5 | 10;
-  onSelect: (words: DomanWord[], phase: PhaseNumber, worldId?: string) => void;
+  initialWorldIdx?: number | null;
+  onSelect: (
+    words: DomanWord[],
+    phase: PhaseNumber,
+    worldId: string,
+    worldIdx: number,
+    blockIdx: number,
+  ) => void;
 }
 
 export const GameSetup: React.FC<GameSetupProps> = ({
@@ -45,9 +52,10 @@ export const GameSetup: React.FC<GameSetupProps> = ({
   gameName,
   gameColor,
   wordsPerBlock,
+  initialWorldIdx = null,
   onSelect,
 }) => {
-  const [selectedWorldIdx, setSelectedWorldIdx] = useState<number | null>(null);
+  const [selectedWorldIdx, setSelectedWorldIdx] = useState<number | null>(initialWorldIdx);
 
   const world = selectedWorldIdx !== null ? WORLDS[selectedWorldIdx] : null;
   const phaseWords = selectedWorldIdx !== null ? WORDS_BY_PHASE[selectedWorldIdx] : [];
@@ -149,7 +157,7 @@ export const GameSetup: React.FC<GameSetupProps> = ({
             variants={staggerItem}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.97 }}
-            onClick={() => onSelect(block.words, world!.phase as PhaseNumber, world!.id)}
+            onClick={() => onSelect(block.words, world!.phase as PhaseNumber, world!.id, selectedWorldIdx!, idx)}
             style={{
               display: "flex", flexDirection: "column", gap: 4,
               padding: `${spacing.sm}px ${spacing.md}px`,

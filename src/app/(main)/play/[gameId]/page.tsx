@@ -7,6 +7,8 @@ import type { DomanWord, PhaseNumber } from "@/shared/types/doman";
 import { GAME_REGISTRY } from "@/features/games/config/game-registry";
 import { getSession, CURRICULUM } from "@/features/session/config/curriculum";
 import { useAppStore } from "@/shared/store/useAppStore";
+import { PHASE1_WORDS, PHASE2_WORDS, PHASE3_WORDS, PHASE4_WORDS, PHASE5_WORDS } from "@/shared/constants";
+import type { DomanWord as DomanWordType } from "@/shared/types/doman";
 import { GameSetup } from "@/features/games/components/GameSetup";
 import { WordFlash } from "@/features/games/components/WordFlash";
 import { WordImageMatch } from "@/features/games/components/WordImageMatch";
@@ -58,8 +60,11 @@ function GamePageInner() {
   const [selectedWords, setSelectedWords] = useState<DomanWord[] | null>(null);
   const [selectedPhase, setSelectedPhase] = useState<PhaseNumber>(1);
   const [selectedWorldId, setSelectedWorldId] = useState<string | undefined>(undefined);
+  const [selectedWorldIdx, setSelectedWorldIdx] = useState<number | null>(null);
+  const [selectedBlockIdx, setSelectedBlockIdx] = useState<number>(0);
   const [postGame, setPostGame] = useState<GameSessionState | null>(null);
   const [gameKey, setGameKey] = useState(0);
+  const [forceBlockSelection, setForceBlockSelection] = useState(false);
 
   // If word-flash comes with ?session=, load those words directly
   const preloadedSession = useMemo(() => {
@@ -109,10 +114,14 @@ function GamePageInner() {
           gameName={meta.name}
           gameColor={meta.color}
           wordsPerBlock={wordsPerBlock as 5 | 10}
-          onSelect={(words, phase, worldId) => {
+          initialWorldIdx={forceBlockSelection ? selectedWorldIdx : null}
+          onSelect={(words, phase, worldId, worldIdx, blockIdx) => {
             setSelectedWords(words);
             setSelectedPhase(phase);
             setSelectedWorldId(worldId);
+            setSelectedWorldIdx(worldIdx);
+            setSelectedBlockIdx(blockIdx);
+            setForceBlockSelection(false);
           }}
         />
       </div>
@@ -138,9 +147,47 @@ function GamePageInner() {
     setGameKey((k) => k + 1);
   };
 
-  const handleChangeWords = () => {
+  // Go all the way back to world selection
+  const handleChangeWorld = () => {
     setPostGame(null);
     setSelectedWords(null);
+    setSelectedWorldIdx(null);
+    setForceBlockSelection(false);
+  };
+
+  // Go back to the block grid of the current world (keeps world picked)
+  const handleChangeBlock = () => {
+    setPostGame(null);
+    setSelectedWords(null);
+    setForceBlockSelection(true);
+  };
+
+  // Compute the list of 5-word blocks for the current world and check
+  // whether there's a next one to play.
+  const PHASE_WORD_LISTS: DomanWordType[][] = [PHASE1_WORDS, PHASE2_WORDS, PHASE3_WORDS, PHASE4_WORDS, PHASE5_WORDS];
+  const blocksForCurrentWorld: DomanWordType[][] = useMemo(() => {
+    if (selectedWorldIdx === null) return [];
+    const phaseWords = PHASE_WORD_LISTS[selectedWorldIdx] ?? [];
+    const chunks: DomanWordType[][] = [];
+    for (let i = 0; i < phaseWords.length; i += wordsPerBlock) {
+      const c = phaseWords.slice(i, i + wordsPerBlock);
+      if (c.length < 3) break;
+      chunks.push(c);
+    }
+    return chunks;
+  }, [selectedWorldIdx, wordsPerBlock]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const hasNextBlock = selectedWorldIdx !== null && selectedBlockIdx + 1 < blocksForCurrentWorld.length;
+
+  const handleNextBlock = () => {
+    if (!hasNextBlock) return;
+    const nextIdx = selectedBlockIdx + 1;
+    const nextWords = blocksForCurrentWorld[nextIdx];
+    if (!nextWords) return;
+    setSelectedWords(nextWords);
+    setSelectedBlockIdx(nextIdx);
+    setPostGame(null);
+    setGameKey((k) => k + 1);
   };
 
   // ─── Post-game results ──────────────────────────────────────
@@ -210,11 +257,19 @@ function GamePageInner() {
           </motion.div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: spacing.sm, width: "100%", marginTop: spacing.md }}>
+            {hasNextBlock && (
+              <AnimatedButton onClick={handleNextBlock} color={meta.color}>
+                Siguiente grupo →
+              </AnimatedButton>
+            )}
             <AnimatedButton onClick={handlePlayAgain} color={meta.color}>
               Jugar de nuevo
             </AnimatedButton>
-            <AnimatedButton variant="secondary" onClick={handleChangeWords}>
+            <AnimatedButton variant="secondary" onClick={handleChangeBlock}>
               Cambiar palabras
+            </AnimatedButton>
+            <AnimatedButton variant="secondary" onClick={handleChangeWorld}>
+              Cambiar de mundo
             </AnimatedButton>
             <AnimatedButton variant="secondary" onClick={() => router.push("/dashboard")}>
               Volver al menu

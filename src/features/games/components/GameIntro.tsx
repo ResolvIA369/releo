@@ -53,12 +53,13 @@ export const GameIntro: React.FC<GameIntroProps> = ({
     cancelledRef.current = false;
 
     async function run() {
-      // Play pre-recorded rules audio, fallback to TTS
+      // Play the rules once so the child knows what to do. We do NOT
+      // auto-start after the audio anymore — the game only begins
+      // when the user taps "Empezar", no matter what.
       const mp3 = RULES_AUDIO[gameName] ?? null;
       if (mp3) {
         await sofiaPlayAudio(mp3, rulesText, "gentle");
       } else {
-        // No MP3 available — use word-by-word reading with Dalia MP3s
         const rulesWords = rulesText.split(/\s+/);
         for (const w of rulesWords) {
           if (cancelledRef.current) return;
@@ -66,34 +67,12 @@ export const GameIntro: React.FC<GameIntroProps> = ({
           await new Promise((r) => setTimeout(r, 150));
         }
       }
-      if (cancelledRef.current) return;
-
-      setShowBubble(false);
-
-      // Countdown 3-2-1
-      for (let i = 3; i >= 1; i--) {
-        if (cancelledRef.current) return;
-        setCountdown(i);
-        await new Promise((r) => setTimeout(r, 800));
-      }
-
-      if (!cancelledRef.current && !startedRef.current) {
-        startedRef.current = true;
-        onReady();
-      }
     }
 
     run();
 
-    // Safety net: no matter what happens with audio, after 18s
-    // force-start the game so the user is never blocked.
-    const safetyTimer = setTimeout(() => {
-      if (!startedRef.current) startNow();
-    }, 18000);
-
     return () => {
       cancelledRef.current = true;
-      clearTimeout(safetyTimer);
       stopVoice();
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps

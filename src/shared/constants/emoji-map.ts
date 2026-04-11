@@ -19,7 +19,7 @@ export const EMOJI_MAP: Record<string, string> = {
 
   // ─── Phase 2: Parejas de Palabras ────────────────────────────────
   // Colores
-  rojo: "🔴", azul: "🔵", verde: "🟢", amarillo: "🟡", blanco: "⚪",
+  rojo: "🔴", azul: "🔵", verde: "🟢", amarillo: "🟡", blanco: "🤍",
   negro: "⚫", rosa: "🩷", violeta: "🟣", marrón: "🟤",
   // Tamaños y Formas
   grande: "🐘", pequeño: "🐜", largo: "📏", corto: "✂️", alto: "🦒",

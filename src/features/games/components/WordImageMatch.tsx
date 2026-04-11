@@ -16,7 +16,7 @@ import { colors, spacing, radii, shadows, fontSizes, fonts } from "@/shared/styl
 import { fitWordFontSize } from "@/shared/utils/fitText";
 import { tapBounce, staggerContainer, staggerItem } from "@/shared/styles/animations";
 import { EMOJI_MAP } from "@/shared/constants/emoji-map";
-import { sofiaCelebrates, sofiaEncourages } from "@/shared/services/sofiaVoice";
+import { sofiaCelebrates, sofiaEncourages, sofiaNameWord } from "@/shared/services/sofiaVoice";
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -55,6 +55,13 @@ export const WordImageMatch: React.FC<GameProps> = ({ words, phase = 1, onComple
     setGamePhase("finished");
     finish().then(() => onComplete?.(state));
   }, [finished, gamePhase]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Sofia names the target word as soon as it appears so the child
+  // knows which image to look for. Runs once per word while playing.
+  useEffect(() => {
+    if (gamePhase !== "playing" || !currentWord) return;
+    sofiaNameWord(currentWord.text);
+  }, [gamePhase, currentWord]);
 
   // Options
   const options = useMemo(() => {
