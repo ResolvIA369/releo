@@ -131,6 +131,17 @@ export default function ParentsPage() {
             🖨️ Imprimir tarjetas
           </button>
           <button
+            onClick={() => window.open("/demo", "_blank")}
+            style={{
+              padding: `${spacing.sm}px ${spacing.lg}px`, borderRadius: radii.lg,
+              backgroundColor: "#667eea", color: "#fff",
+              border: "none",
+              fontSize: fontSizes.sm, fontWeight: "bold", cursor: "pointer",
+            }}
+          >
+            🎬 Ver videos demo
+          </button>
+          <button
             onClick={() => window.open("/onboarding-parents", "_blank")}
             style={{
               padding: `${spacing.sm}px ${spacing.lg}px`, borderRadius: radii.lg,

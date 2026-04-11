@@ -172,7 +172,7 @@ export default function ProfilePage() {
 
         {/* World progress */}
         <div style={{ backgroundColor: colors.bg.card, borderRadius: radii.xl, padding: spacing.md, boxShadow: shadows.sm }}>
-          <h3 style={{ fontSize: fontSizes.md, fontFamily: fonts.display, margin: `0 0 ${spacing.sm}px` }}>Mundos</h3>
+          <h3 style={{ fontSize: fontSizes.md, fontFamily: fonts.display, color: colors.text.primary, margin: `0 0 ${spacing.sm}px` }}>Mundos</h3>
           <div style={{ display: "flex", flexDirection: "column", gap: spacing.sm }}>
             {worlds.map((w) => (
               <div key={w.config.id} style={{ display: "flex", alignItems: "center", gap: spacing.sm, opacity: w.status === "locked" ? 0.4 : 1 }}>
@@ -220,15 +220,15 @@ export default function ProfilePage() {
         {/* Recent sessions */}
         {recentSessions.length > 0 && (
           <div style={{ backgroundColor: colors.bg.card, borderRadius: radii.xl, padding: spacing.md, boxShadow: shadows.sm }}>
-            <h3 style={{ fontSize: fontSizes.md, fontFamily: fonts.display, margin: `0 0 ${spacing.sm}px` }}>Historial</h3>
+            <h3 style={{ fontSize: fontSizes.md, fontFamily: fonts.display, color: colors.text.primary, margin: `0 0 ${spacing.sm}px` }}>Historial</h3>
             <div style={{ display: "flex", flexDirection: "column", gap: spacing.xs }}>
               {recentSessions.map((s) => {
                 const pct = s.wordsShown.length > 0 ? Math.round((s.wordsRecognized.length / s.wordsShown.length) * 100) : 0;
                 return (
                   <div key={s.sessionId} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: `${spacing.xs}px ${spacing.sm}px`, backgroundColor: colors.bg.secondary, borderRadius: radii.lg }}>
                     <div>
-                      <div style={{ fontSize: fontSizes.sm, fontWeight: "bold" }}>Fase {s.phase} — {s.wordsRecognized.length}/{s.wordsShown.length}</div>
-                      <div style={{ fontSize: fontSizes.xs, color: colors.text.placeholder }}>{formatDate(s.savedAt)}</div>
+                      <div style={{ fontSize: fontSizes.sm, fontWeight: "bold", color: colors.text.primary }}>Fase {s.phase} — {s.wordsRecognized.length}/{s.wordsShown.length}</div>
+                      <div style={{ fontSize: fontSizes.xs, color: colors.text.muted }}>{formatDate(s.savedAt)}</div>
                     </div>
                     <span style={{ fontSize: fontSizes.sm, fontWeight: "bold", color: pct >= 80 ? colors.success : colors.text.muted }}>{pct}%</span>
                   </div>
