@@ -112,12 +112,12 @@ export default function CardsPage() {
           </AnimatedButton>
         </div>
 
-        {/* Preview */}
+        {/* Preview — show ALL words */}
         <div ref={printRef} style={{
           display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
           gap: spacing.md,
         }}>
-          {phase.words.slice(0, 20).map((w) => (
+          {phase.words.map((w) => (
             <motion.div key={w.id}
               whileHover={{ scale: 1.03 }}
               style={{
@@ -140,11 +140,9 @@ export default function CardsPage() {
           ))}
         </div>
 
-        {phase.words.length > 20 && (
-          <p style={{ textAlign: "center", fontSize: fontSizes.sm, color: colors.text.placeholder, marginTop: spacing.md }}>
-            Mostrando 20 de {phase.words.length}. Todas se incluyen al imprimir.
-          </p>
-        )}
+        <p style={{ textAlign: "center", fontSize: fontSizes.sm, color: colors.text.muted, marginTop: spacing.md }}>
+          {phase.words.length} tarjetas en total
+        </p>
       </div>
     </div>
   );
