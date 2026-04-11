@@ -181,6 +181,9 @@ export function WordFlash({ words, phase, onComplete, onBack }: GameProps) {
   // Blocks re-entry into handleCardTap / handleRepeatTimeout so
   // Sofia never ends up speaking twice in parallel.
   const repeatResolvingRef = useRef(false);
+  // True when the next "repeat" word should be spoken automatically
+  // by Sofia (because the previous one timed out).
+  const autoNameNextRef = useRef(false);
 
   const totalSteps = 3 + 3 + 1; // 3 pres passes + 3 repeat passes + 1 story
   const currentStep = ph.startsWith("pres") ? pass : ph.startsWith("repeat") ? 3 + pass : ph === "story" ? 7 : 0;
@@ -268,19 +271,23 @@ export function WordFlash({ words, phase, onComplete, onBack }: GameProps) {
   const handleRepeatTimeout = useCallback(async () => {
     if (ph !== "repeat" || !isFlipped) return;
     if (repeatResolvingRef.current) return;
+    // Block all interaction (no coin if the child taps now)
     repeatResolvingRef.current = true;
 
     setShowRepeatTimer(false);
     stopVoice();
     setTotalAttempts((a) => a + 1);
 
-    // Sofia says the word so the child still hears it correctly
-    setIsSpeaking(true);
-    await sofiaNameWord(currentWord.text);
-    setIsSpeaking(false);
+    // Wait 3 seconds in silence (Leo stays at the bottom of the bar)
+    // so the child realizes time ran out before moving on.
+    await delay(3000);
+
+    // Mark the next "repeat" word so Sofia auto-names it for the
+    // child as soon as it appears.
+    autoNameNextRef.current = true;
 
     await advanceRepeatWord();
-  }, [ph, isFlipped, currentWord, advanceRepeatWord]);
+  }, [ph, isFlipped, advanceRepeatWord, delay]);
 
   // ─── Keyboard support (desktop) ────────────────────────────────
   // Space / Enter: tap card during repeat phase
@@ -397,8 +404,20 @@ export function WordFlash({ words, phase, onComplete, onBack }: GameProps) {
           await delay(500);
           if (c()) return;
 
-          // Start the 5-second countdown. If the child does not tap
-          // in time, advance to the next word automatically.
+          // If the previous word timed out, Sofia helps the child by
+          // naming this new word as it appears.
+          if (autoNameNextRef.current) {
+            autoNameNextRef.current = false;
+            setIsSpeaking(true);
+            await sofiaNameWord(currentWord.text);
+            setIsSpeaking(false);
+            if (c()) return;
+            await delay(300);
+            if (c()) return;
+          }
+
+          // Start the countdown. If the child does not tap in time,
+          // advance to the next word automatically.
           setRepeatTimerKey((k) => k + 1);
           setShowRepeatTimer(true);
           clearTimeout(repeatTimerRef.current);
