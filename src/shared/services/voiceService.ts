@@ -80,31 +80,14 @@ function createUtterance(
 }
 
 function createWebSpeechProvider(): VoiceProvider {
-  const synth = typeof window !== "undefined" ? window.speechSynthesis : null;
-
+  // DISABLED on purpose. The browser's default Spanish voice is male
+  // on most platforms which contradicts Sofia's character. Returns a
+  // no-op provider so any accidental call falls through silently and
+  // sofiaVoice.ts (MP3-only) handles all real playback.
   return {
-    get isAvailable() {
-      return synth !== null;
-    },
-
-    async speak({ text, emotion = "neutral", rate, lang = "es-MX" }) {
-      if (!synth) return;
-      synth.cancel();
-
-      const key = makeKey(text, emotion);
-      // Use pre-built utterance if available, otherwise create on-demand
-      const utterance = audioBuffer.get(key) ?? createUtterance(text, emotion, rate, lang);
-
-      return new Promise<void>((resolve) => {
-        utterance.onend = () => resolve();
-        utterance.onerror = () => resolve();
-        synth.speak(utterance);
-      });
-    },
-
-    stop() {
-      synth?.cancel();
-    },
+    get isAvailable() { return false; },
+    async speak() { /* no-op */ },
+    stop() { /* no-op */ },
   };
 }
 
@@ -284,14 +267,8 @@ export async function preload(
       if (url) elevenLabsBuffer.set(key, url);
     });
     await Promise.all(fetches);
-  } else if (typeof window !== "undefined" && window.speechSynthesis) {
-    // Web Speech API: pre-build utterance objects
-    for (const { text, emotion = "neutral" } of items) {
-      const key = makeKey(text, emotion);
-      if (audioBuffer.has(key)) continue;
-      audioBuffer.set(key, createUtterance(text, emotion));
-    }
   }
+  // No Web Speech preload — MP3-only playback handled by sofiaVoice.
 }
 
 /**

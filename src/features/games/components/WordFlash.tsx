@@ -325,7 +325,7 @@ export function WordFlash({ words, phase, onComplete, onBack }: GameProps) {
         // ═══ GREETING ═════════════════════════════════════════════
         case "greeting": {
           setIsSpeaking(true);
-          await sofiaPlayAudio("intro", fillScript(SC.introduction, { name: childName }), "excited");
+          await sofiaPlayAudio("intro", fillScript(SC.introduction, { name: "" }), "excited");
           setIsSpeaking(false);
           if (c()) return;
           await delay(800);
@@ -364,7 +364,7 @@ export function WordFlash({ words, phase, onComplete, onBack }: GameProps) {
         }
 
         case "pres_sofia": {
-          const phrase = fillScript(SC.round1.betweenTandas[pass], { name: childName });
+          const phrase = fillScript(SC.round1.betweenTandas[pass], { name: "" });
           const mp3Names = ["round1-between1", "round1-between2", "round1-between3"];
           setIsSpeaking(true);
           await sofiaPlayAudio(mp3Names[pass], phrase, "excited");
@@ -387,7 +387,7 @@ export function WordFlash({ words, phase, onComplete, onBack }: GameProps) {
         // ═══ ROUND 2: REPETITION (3 passes with mic) ════════════
         case "repeat_intro": {
           setIsSpeaking(true);
-          await sofiaPlayAudio("round2-intro", fillScript(SC.round2.intro, { name: childName }), "gentle");
+          await sofiaPlayAudio("round2-intro", fillScript(SC.round2.intro, { name: "" }), "gentle");
           setIsSpeaking(false);
           if (c()) return;
           await delay(1000);
@@ -441,9 +441,9 @@ export function WordFlash({ words, phase, onComplete, onBack }: GameProps) {
 
         case "repeat_sofia": {
           const phrases = [
-            pn("¡Lo estás haciendo increíble, {name}! ¡Tu voz suena hermosa!", childName),
-            pn("¡Casi terminamos, {name}! ¡Una más y listo!", childName),
-            pn("¡LO LOGRASTE, {name}! ¡APRENDISTE 5 PALABRAS NUEVAS!", childName),
+            "¡Lo estás haciendo increíble! ¡Tu voz suena hermosa!",
+            "¡Casi terminamos! ¡Una más y listo!",
+            "¡Lo lograste! ¡Aprendiste 5 palabras nuevas!",
           ];
           const mp3s = ["flash-increible", "flash-casi", "flash-lograste"];
           setIsSpeaking(true);
@@ -473,7 +473,7 @@ export function WordFlash({ words, phase, onComplete, onBack }: GameProps) {
         // ═══ ROUND 3: STORY ═════════════════════════════════════
         case "story_intro": {
           setIsSpeaking(true);
-          await sofiaPlayAudio("round3-intro", fillScript(SC.round3.intro, { name: childName }), "gentle");
+          await sofiaPlayAudio("round3-intro", fillScript(SC.round3.intro, { name: "" }), "gentle");
           setIsSpeaking(false);
           if (c()) return;
           await delay(800);
@@ -502,7 +502,7 @@ export function WordFlash({ words, phase, onComplete, onBack }: GameProps) {
           if (c()) return;
           setCurrentSentence("");
           setIsSpeaking(true);
-          await sofiaPlayAudio("frase-historia-linda", pn("¡Qué linda historia, {name}! ¿Viste todas las palabras que aprendiste?", childName), "excited");
+          await sofiaPlayAudio("frase-historia-linda", "¡Qué linda historia! ¿Viste todas las palabras que aprendiste?", "excited");
           setIsSpeaking(false);
           if (c()) return;
           await delay(1000);
@@ -520,7 +520,7 @@ export function WordFlash({ words, phase, onComplete, onBack }: GameProps) {
         // ═══ REVIEW OF PREVIOUS SESSION ══════════════════════════
         case "review_intro": {
           setIsSpeaking(true);
-          await sofiaPlayAudio("review-intro", fillScript(SC.review.intro, { name: childName }), "gentle");
+          await sofiaPlayAudio("review-intro", fillScript(SC.review.intro, { name: "" }), "gentle");
           setIsSpeaking(false);
           if (c()) return;
           await delay(800);
@@ -549,7 +549,7 @@ export function WordFlash({ words, phase, onComplete, onBack }: GameProps) {
           if (c()) return;
           setDisplayWord("");
           setIsSpeaking(true);
-          await sofiaPlayAudio("frase-recordaste", pn("¡Las recordaste todas, {name}! ¡Qué memoria tan buena!", childName), "excited");
+          await sofiaPlayAudio("frase-recordaste", "¡Las recordaste todas! ¡Qué memoria tan buena!", "excited");
           setIsSpeaking(false);
           if (c()) return;
           await delay(1000);
@@ -583,7 +583,7 @@ export function WordFlash({ words, phase, onComplete, onBack }: GameProps) {
 
         case "affirmation": {
           setIsSpeaking(true);
-          await sofiaPlayAudio("repeat-conmigo", pn("Repite conmigo, {name}:", childName), "gentle");
+          await sofiaPlayAudio("repeat-conmigo", "Repetí conmigo:", "gentle");
           setIsSpeaking(false);
           if (c()) return;
           await delay(400);
@@ -598,7 +598,7 @@ export function WordFlash({ words, phase, onComplete, onBack }: GameProps) {
           if (c()) return;
 
           setIsSpeaking(true);
-          await sofiaPlayAudio("chau-chau", pn("¡Nos vemos en la próxima clase, {name}! ¡Chau chau!", childName), "excited");
+          await sofiaPlayAudio("chau-chau", "¡Nos vemos en la próxima clase! ¡Chau chau!", "excited");
           setIsSpeaking(false);
           if (c()) return;
           await delay(1500);

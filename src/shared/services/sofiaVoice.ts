@@ -188,134 +188,28 @@ function findMP3ForText(text: string): string | null {
   return PHRASE_TO_MP3[cleaned] ?? null;
 }
 
-// ─── Web Speech API (fallback) ────────────────────────────────────
-
-const FEMALE_VOICE_PRIORITY = [
-  "Google español", "Google español de Estados Unidos",
-  "Paulina", "Mónica", "Angelica", "Francisca",
-  "Microsoft Sabina Online", "Microsoft Sabina",
-  "Microsoft Helena Online", "Microsoft Helena",
-  "Microsoft Dalia Online", "Dalia", "Sabina", "Helena",
-];
-const MALE_NAMES = ["Jorge", "Diego", "Andrés", "Carlos", "Pablo", "Juan", "Enrique"];
-
-let _selectedVoice: SpeechSynthesisVoice | null = null;
-let _voiceReady = false;
-
-function selectBestVoice(): SpeechSynthesisVoice | null {
-  if (typeof window === "undefined") return null;
-  const voices = speechSynthesis.getVoices();
-  const spanish = voices.filter((v) => v.lang.startsWith("es"));
-  for (const name of FEMALE_VOICE_PRIORITY) {
-    const match = spanish.find((v) => v.name.includes(name));
-    if (match) return match;
-  }
-  const nonMale = spanish.find((v) => !MALE_NAMES.some((m) => v.name.includes(m)));
-  if (nonMale) return nonMale;
-  return spanish[0] ?? null;
-}
-
-if (typeof window !== "undefined" && typeof speechSynthesis !== "undefined") {
-  speechSynthesis.onvoiceschanged = () => {
-    _selectedVoice = selectBestVoice();
-    _voiceReady = _selectedVoice !== null;
-  };
-  _selectedVoice = selectBestVoice();
-  _voiceReady = _selectedVoice !== null;
-}
+// ─── Speech emotion type (kept for the public API) ───────────────
+// The actual playback is always an MP3, no TTS path remains.
 
 export type SpeechEmotion = "normal" | "excited" | "gentle" | "encouraging";
 
-const EMOTION_CONFIG: Record<SpeechEmotion, { rate: number; pitch: number }> = {
-  normal:      { rate: 0.85, pitch: 1.05 },
-  excited:     { rate: 0.95, pitch: 1.18 },
-  gentle:      { rate: 0.75, pitch: 1.00 },
-  encouraging: { rate: 0.88, pitch: 1.12 },
-};
+// speakOneTTS used to call speechSynthesis.speak(), but the system
+// Spanish voice is male on most platforms which collided with Sofia.
+// We removed this code path entirely — see speak() below.
 
-function speakOneTTS(text: string, rate: number, pitch: number): Promise<void> {
-  if (typeof window === "undefined" || typeof speechSynthesis === "undefined") {
-    return Promise.resolve();
-  }
+// speakWithTTS removed: every call to speak() now plays an MP3 or
+// stays silent. There is no longer any fallback that could trigger
+// the browser's default Spanish (male) voice.
 
-  stopAll();
-  const myToken = ++_currentToken;
+// ─── Unified speak: MP3 only, no TTS fallback ────────────────────
+//
+// IMPORTANT: We deliberately do NOT fall back to the browser
+// SpeechSynthesis API. The default Spanish voice on most systems is
+// male, which contradicts Sofia's character and produced "the man
+// speaking on top of Elena" reports. If a phrase has no MP3 we
+// stay silent — better silent than wrong voice.
 
-  return new Promise((resolve) => {
-    let settled = false;
-    const finish = () => {
-      if (settled) return;
-      if (myToken !== _currentToken) return; // stale
-      settled = true;
-      resolve();
-    };
-    // 8-second hard timeout in case onend/onerror never fire
-    const timer = setTimeout(finish, 8000);
-    const done = () => { clearTimeout(timer); finish(); };
-
-    // Wait a tick so the previous cancel() really took effect, then
-    // queue the new utterance. If a newer session bumped the token
-    // in the meantime, we abort silently.
-    setTimeout(() => {
-      if (myToken !== _currentToken) { done(); return; }
-      try {
-        const u = new SpeechSynthesisUtterance(text);
-        const voice = _selectedVoice ?? selectBestVoice();
-        if (voice) u.voice = voice;
-        u.lang = "es-MX";
-        u.rate = rate;
-        u.pitch = pitch;
-        u.volume = 1.0;
-        u.onend = done;
-        u.onerror = done;
-        speechSynthesis.speak(u);
-      } catch {
-        done();
-      }
-    }, 60);
-  });
-}
-
-function wait(ms: number): Promise<void> {
-  return new Promise((r) => setTimeout(r, ms));
-}
-
-async function speakWithTTS(text: string, emotion: SpeechEmotion = "normal"): Promise<void> {
-  if (typeof window === "undefined") return;
-  const { rate, pitch } = EMOTION_CONFIG[emotion];
-
-  if (text.split(/\s+/).length <= 5) {
-    await wait(50);
-    await speakOneTTS(text, rate, pitch);
-    return;
-  }
-
-  const segments = text
-    .split(/([,;:!?.])\s*/)
-    .reduce<string[]>((acc, part, i, arr) => {
-      if (i % 2 === 0) {
-        const punct = arr[i + 1] || "";
-        if (part.trim()) acc.push(part.trim() + punct);
-      }
-      return acc;
-    }, []);
-
-  await wait(50);
-  for (let i = 0; i < segments.length; i++) {
-    await speakOneTTS(segments[i], rate, pitch);
-    if (i < segments.length - 1) {
-      const seg = segments[i];
-      const pause = seg.endsWith("!") || seg.endsWith("?") ? 400
-        : seg.endsWith(".") ? 350
-        : seg.endsWith(",") || seg.endsWith(";") ? 200 : 150;
-      await wait(pause);
-    }
-  }
-}
-
-// ─── Unified speak: MP3 first, TTS fallback ──────────────────────
-
-async function speak(mp3Name: string | null, text: string, emotion: SpeechEmotion): Promise<void> {
+async function speak(mp3Name: string | null, text: string, _emotion: SpeechEmotion): Promise<void> {
   // Try explicit MP3 name first
   if (mp3Name && mp3Name.length > 0) {
     const played = await playMP3(mp3Name);
@@ -327,8 +221,7 @@ async function speak(mp3Name: string | null, text: string, emotion: SpeechEmotio
     const played = await playMP3(autoMp3);
     if (played) return;
   }
-  // Fallback to TTS
-  await speakWithTTS(text, emotion);
+  // No MP3 available — stay silent (intentionally no TTS fallback)
 }
 
 // ─── State tracking ──────────────────────────────────────────────
@@ -402,5 +295,6 @@ export function isSpeaking(): boolean {
 }
 
 export function isVoiceReady(): boolean {
-  return _voiceReady;
+  // Always ready: MP3 playback only depends on the network.
+  return true;
 }
