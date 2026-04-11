@@ -127,7 +127,7 @@ type Phase =
 
 const REPEAT_TIMER_SECONDS = 7;
 
-export function WordFlash({ words, phase, onComplete, onBack }: GameProps) {
+export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: GameProps) {
   const sessionWords = useMemo(() => words.slice(0, DEFAULT_SESSION_CONFIG.wordsPerSession), [words]);
   const session = useGameSession({ phase, words: sessionWords, affirmation: "" });
   const profile = useAppStore((s) => s.profile);
@@ -311,6 +311,39 @@ export function WordFlash({ words, phase, onComplete, onBack }: GameProps) {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [ph, isFlipped, handleCardTap]); // eslint-disable-line
+
+  // ─── Demo mode autoplay ────────────────────────────────────────
+  // When the game is launched from /demo we auto-start immediately
+  // and auto-tap every Round 2 card ~1.5s after it flips so the
+  // video looks like a child who always answers correctly. We also
+  // auto-advance the end-of-pass celebration video so the demo
+  // keeps flowing.
+
+  useEffect(() => {
+    if (!isDemo) return;
+    if (ph === "ready") {
+      const t = setTimeout(() => handleStart(), 400);
+      return () => clearTimeout(t);
+    }
+  }, [isDemo, ph]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!isDemo) return;
+    if (ph === "repeat" && isFlipped && !repeatResolvingRef.current) {
+      const t = setTimeout(() => {
+        if (!repeatResolvingRef.current) handleCardTap();
+      }, 1500);
+      return () => clearTimeout(t);
+    }
+  }, [isDemo, ph, isFlipped, handleCardTap]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!isDemo) return;
+    if (ph === "repeat_video") {
+      const t = setTimeout(() => setPh("repeat_sofia"), 4500);
+      return () => clearTimeout(t);
+    }
+  }, [isDemo, ph]);
 
   // ─── Main state machine ────────────────────────────────────────
 
