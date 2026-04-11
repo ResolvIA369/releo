@@ -4,6 +4,16 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─── Global text color follows the theme ────────────────────────── */
+/* Many components set inline backgroundColor but omit `color`. Without
+   this default, the browser uses black and inline dark-mode backgrounds
+   become unreadable. Setting body color to the theme variable makes
+   every unstyled text element inherit the correct color. */
+html, body {
+  color: var(--text-primary, #2d3748);
+  background-color: var(--bg-primary, #f8f9fc);
+}
+
 /* ─── Dark Theme Overrides ────────────────────────────────────────── */
 [data-theme="dark"] {
   --bg-primary: #1a1a2e;

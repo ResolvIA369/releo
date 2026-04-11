@@ -151,7 +151,7 @@ export default function ParentsPage() {
             { label: "Sesiones esta semana", value: sessionsThisWeek, color: colors.info },
             { label: "Racha de días", value: progress.streakDays, color: colors.warning },
           ].map((m) => (
-            <div key={m.label} style={{ backgroundColor: "#fff", borderRadius: radii.xl, padding: spacing.md, boxShadow: shadows.sm }}>
+            <div key={m.label} style={{ backgroundColor: colors.bg.card, borderRadius: radii.xl, padding: spacing.md, boxShadow: shadows.sm }}>
               <div style={{ fontSize: fontSizes["2xl"], fontWeight: "bold", color: m.color, fontFamily: fonts.display }}>{m.value}</div>
               <div style={{ fontSize: fontSizes.xs, color: colors.text.muted, marginTop: 4 }}>{m.label}</div>
             </div>
@@ -159,7 +159,7 @@ export default function ParentsPage() {
         </div>
 
         {/* Progress by world */}
-        <div style={{ backgroundColor: "#fff", borderRadius: radii.xl, padding: spacing.lg, boxShadow: shadows.sm }}>
+        <div style={{ backgroundColor: colors.bg.card, borderRadius: radii.xl, padding: spacing.lg, boxShadow: shadows.sm }}>
           <h3 style={{ fontSize: fontSizes.lg, fontFamily: fonts.display, margin: `0 0 ${spacing.md}px` }}>Progreso por Mundo</h3>
           <div style={{ display: "flex", flexDirection: "column", gap: spacing.md }}>
             {worlds.map((w) => (
@@ -181,7 +181,7 @@ export default function ParentsPage() {
         </div>
 
         {/* Level evolution */}
-        <div style={{ backgroundColor: "#fff", borderRadius: radii.xl, padding: spacing.lg, boxShadow: shadows.sm }}>
+        <div style={{ backgroundColor: colors.bg.card, borderRadius: radii.xl, padding: spacing.lg, boxShadow: shadows.sm }}>
           <h3 style={{ fontSize: fontSizes.lg, fontFamily: fonts.display, margin: `0 0 ${spacing.md}px` }}>Evolución del Lector</h3>
           <div style={{ display: "flex", gap: spacing.sm, flexWrap: "wrap" }}>
             {READER_LEVELS.map((lvl) => (
@@ -204,7 +204,7 @@ export default function ParentsPage() {
         </div>
 
         {/* Session history */}
-        <div style={{ backgroundColor: "#fff", borderRadius: radii.xl, padding: spacing.lg, boxShadow: shadows.sm }}>
+        <div style={{ backgroundColor: colors.bg.card, borderRadius: radii.xl, padding: spacing.lg, boxShadow: shadows.sm }}>
           <h3 style={{ fontSize: fontSizes.lg, fontFamily: fonts.display, margin: `0 0 ${spacing.md}px` }}>
             Historial de Sesiones ({sessions.length} total)
           </h3>
@@ -223,8 +223,8 @@ export default function ParentsPage() {
                     <div style={{ display: "flex", alignItems: "center", gap: spacing.sm }}>
                       <span style={{ fontSize: fontSizes.xs }}>{stars}</span>
                       <div>
-                        <div style={{ fontSize: fontSizes.sm }}>Fase {s.phase} — {s.wordsRecognized.length}/{s.wordsShown.length}</div>
-                        <div style={{ fontSize: 10, color: colors.text.placeholder }}>{new Date(s.savedAt).toLocaleString("es")}</div>
+                        <div style={{ fontSize: fontSizes.sm, color: colors.text.primary, fontWeight: "bold" }}>Fase {s.phase} — {s.wordsRecognized.length}/{s.wordsShown.length}</div>
+                        <div style={{ fontSize: 10, color: colors.text.muted }}>{new Date(s.savedAt).toLocaleString("es")}</div>
                       </div>
                     </div>
                     <span style={{ fontSize: fontSizes.sm, fontWeight: "bold", color: pct >= 80 ? colors.success : colors.text.muted }}>{pct}%</span>
@@ -236,7 +236,7 @@ export default function ParentsPage() {
         </div>
 
         {/* Recommendations */}
-        <div style={{ backgroundColor: "#fff", borderRadius: radii.xl, padding: spacing.lg, boxShadow: shadows.sm }}>
+        <div style={{ backgroundColor: colors.bg.card, borderRadius: radii.xl, padding: spacing.lg, boxShadow: shadows.sm }}>
           <h3 style={{ fontSize: fontSizes.lg, fontFamily: fonts.display, margin: `0 0 ${spacing.md}px` }}>💡 Recomendaciones</h3>
           <ul style={{ fontSize: fontSizes.sm, color: colors.text.muted, lineHeight: 1.8, paddingLeft: spacing.lg, margin: 0 }}>
             {progress.streakDays < 3 && <li>Intenta practicar todos los días para mantener una racha</li>}
