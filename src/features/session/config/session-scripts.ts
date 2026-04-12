@@ -28,47 +28,49 @@ export interface SessionScript {
 }
 
 export const DEFAULT_SESSION_SCRIPT: SessionScript = {
-  introduction: "¡Hola, {name}, mi pequeño genio! Soy la Seño Sofía y hoy vamos a descubrir palabras mágicas juntos. {name}, antes de empezar quiero que sepas algo muy importante: tú eres una persona increíble, eres muy inteligente y eres capaz de aprender todo lo que te propongas. Ahora, presta mucha atención. Lo que vamos a hacer es esto: te voy a ir mostrando unas palabras muy especiales para que las vayas conociendo y aprendiendo. Solo tienes que mirarlas y escucharme. ¿Estás listo, {name}? ¡Vamos!",
+  introduction: "¡Hola! Soy la Seño Sofía y hoy vamos a descubrir palabras mágicas juntos. Antes de empezar quiero que sepas algo muy importante: sos una persona increíble, sos muy inteligente y sos capaz de aprender todo lo que te propongas. Ahora, prestá mucha atención. Te voy a ir mostrando unas palabras muy especiales para que las vayas conociendo y aprendiendo. Solo tenés que mirarlas y escucharme. ¿Estás listo? ¡Vamos!",
 
   round1: {
     betweenTandas: [
-      "¡Excelente esfuerzo, {name}! Tu cerebro está brillando y absorbiendo todo. Vamos a verlas una vez más, ¡concéntrate!",
-      "¡Lo haces cada vez mejor, {name}! Eres un campeón. Vamos por la última tanda de esta ronda, ¡tú puedes!",
-      "¡Guau, {name}! Ya casi las tienes todas grabadas en tu cabecita. Ahora prepárate, porque en la siguiente parte te toca a ti decirme qué dicen las palabras.",
+      "¡Excelente esfuerzo! Tu cerebro está brillando y absorbiendo todo. Vamos a verlas una vez más, ¡concentrate!",
+      "¡Lo hacés cada vez mejor! Sos un campeón. Vamos por la última tanda de esta ronda, ¡vos podés!",
+      "¡Guau! Ya casi las tenés todas grabadas en tu cabecita.",
     ],
   },
 
   round2: {
-    intro: "¡Guau, {name}! Ya casi las tienes todas grabadas en tu cabecita. Ahora prepárate, porque en la siguiente parte te toca a ti decirme qué dicen las palabras.",
-    askWord: "{name}, ¿qué dice aquí?",
-    onCorrect: "¡Eso es, {name}! ¡Dice {word}! ¡Sigamos!",
-    onFail: "¡No pasa nada, {name}! Esta palabra es {word}. ¡Sigue intentando, lo haces genial!",
+    // NOTE: this phrase must be DIFFERENT from round1.betweenTandas[2]
+    // to avoid Sofia repeating the same line back-to-back.
+    intro: "¡Ahora preparate! En esta parte te toca a vos decirme qué dicen las palabras. ¡Vamos!",
+    askWord: "¿Qué dice acá?",
+    onCorrect: "¡Eso es! ¡Dice {word}! ¡Sigamos!",
+    onFail: "¡No pasa nada! Esta palabra es {word}. ¡Seguí intentando, lo hacés genial!",
   },
 
   round3: {
-    intro: "¡Ahora escucha esta historia muy bonita con las palabras que aprendiste!",
+    intro: "¡Ahora escuchá esta historia muy linda con las palabras que aprendiste!",
   },
 
   review: {
-    intro: "¡Espera, {name}! No te vayas todavía. Antes de terminar, vamos a ver si recuerdas a los amigos que conocimos ayer. ¿Te acuerdas de ellos? ¡Vamos a saludarlos muy rápido para ver cuánto has crecido!",
-    askFirst: "{name}, ¿te acuerdas qué dice aquí?",
-    askMiddle: "{name}, ¿y aquí qué dice?",
-    askGeneric: "{name}, ¿qué dice aquí?",
-    askSecondToLast: "{name}, ¿quién nos falta? ¿Qué dice aquí?",
-    askLast: "{name}, ¿y el último? ¿Qué dice aquí?",
+    intro: "¡Esperá! No te vayas todavía. Antes de terminar, vamos a ver si te acordás de las palabras que conocimos ayer. ¿Te acordás? ¡Vamos a repasarlas rápido!",
+    askFirst: "¿Te acordás qué dice acá?",
+    askMiddle: "¿Y acá qué dice?",
+    askGeneric: "¿Qué dice acá?",
+    askSecondToLast: "¿Quién nos falta? ¿Qué dice acá?",
+    askLast: "¿Y el último? ¿Qué dice acá?",
     onCorrect: [
-      "¡Eso es! ¡Es {word}! ¡Qué buena memoria tienes!",
+      "¡Eso es! ¡Es {word}! ¡Qué buena memoria tenés!",
       "¡Excelente! ¡Dice {word}! ¡Vas muy bien!",
-      "¡Sí! ¡Dice {word}! ¡Eres un genio!",
+      "¡Sí! ¡Dice {word}! ¡Sos un genio!",
       "¡Exacto! ¡Dice {word}! ¡Qué alegría!",
-      "¡Increíble, {name}! ¡Dice {word}! ¡Te las acuerdas todas!",
+      "¡Increíble! ¡Dice {word}! ¡Te las acordás todas!",
     ],
-    onFail: "¡No te preocupes, {name}! Esta es {word}. ¡Sigamos!",
-    reviewStoryIntro: "¡Qué bien lo hiciste, {name}! Mira cómo se veía la historia de ayer:",
-    complete: "¡Te las acuerdas todas, {name}! ¡Qué memoria tan buena!",
+    onFail: "¡No te preocupes! Esta es {word}. ¡Sigamos!",
+    reviewStoryIntro: "¡Qué bien lo hiciste! Mirá cómo se veía la historia de ayer:",
+    complete: "¡Te las acordás todas! ¡Qué memoria tan buena!",
   },
 
-  farewell: "¡Increíble trabajo el de hoy, {name}! Has aprendido 5 palabras nuevas: {words_list}, y lo has hecho de maravilla. Recuerda siempre que eres una persona única, especial y muy valiosa. Estoy muy orgullosa de ti. ¡Te mando un gran abrazo y nos vemos en nuestra próxima aventura de aprendizaje! ¡Adiós!",
+  farewell: "¡Increíble trabajo el de hoy! Aprendiste 5 palabras nuevas: {words_list}, y lo hiciste de maravilla. Recordá siempre que sos una persona única, especial y muy valiosa. Estoy muy orgullosa de vos. ¡Te mando un gran abrazo y nos vemos en nuestra próxima aventura de aprendizaje!",
 };
 
 export function fillScript(

@@ -19,12 +19,12 @@ interface GameCompleteScreenProps {
 }
 
 function getStars(correct: number, total: number): number {
-  if (total === 0) return 0;
+  if (total === 0 || correct === 0) return 0;
   const r = correct / total;
   return r >= 0.9 ? 3 : r >= 0.7 ? 2 : 1;
 }
 
-const MESSAGES = ["¡Sigue practicando!", "¡Buen trabajo!", "¡Muy bien!", "¡Perfecto!"];
+const MESSAGES = ["¡Seguí practicando!", "¡Seguí practicando!", "¡Buen trabajo!", "¡Muy bien!", "¡Perfecto!"];
 
 interface ChestCoin {
   id: number;
@@ -97,14 +97,20 @@ export const GameCompleteScreen: React.FC<GameCompleteScreenProps> = ({
         <CelebrationGif size={180} />
       </div>
 
-      {/* Stars */}
+      {/* Stars — 0 stars shows a motivational emoji instead */}
       <div style={{ display: "flex", gap: spacing.md }}>
-        {[0, 1, 2].map((i) => (
-          <motion.span key={i} variants={starPop} initial="initial" animate="animate"
-            transition={{ delay: 0.3 + i * 0.2 }}
-            style={{ fontSize: 48, filter: i < stars ? "none" : "grayscale(1) opacity(0.25)" }}
-          >⭐</motion.span>
-        ))}
+        {stars === 0 ? (
+          <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }}
+            transition={{ type: "spring", damping: 8 }}
+            style={{ fontSize: 64 }}>💪</motion.span>
+        ) : (
+          [0, 1, 2].map((i) => (
+            <motion.span key={i} variants={starPop} initial="initial" animate="animate"
+              transition={{ delay: 0.3 + i * 0.2 }}
+              style={{ fontSize: 48, filter: i < stars ? "none" : "grayscale(1) opacity(0.25)" }}
+            >⭐</motion.span>
+          ))
+        )}
       </div>
 
       <motion.h2 initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }}

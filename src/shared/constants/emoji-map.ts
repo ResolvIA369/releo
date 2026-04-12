@@ -1,3 +1,16 @@
+// Dynamic date label for hoy/mañana/ayer (real date in Spanish).
+// Computed once at module load; stale after midnight but that's
+// fine for a kids' app session.
+function spanishDate(offset: number): string {
+  try {
+    const d = new Date();
+    d.setDate(d.getDate() + offset);
+    return `📅 ${d.toLocaleDateString("es-AR", { day: "numeric", month: "long" })}`;
+  } catch {
+    return "📅";
+  }
+}
+
 export const EMOJI_MAP: Record<string, string> = {
   // ─── Phase 1: Palabras Sencillas ─────────────────────────────────
   // Familia
@@ -43,14 +56,14 @@ export const EMOJI_MAP: Record<string, string> = {
   abre: "🔓", cierra: "🔒", sube: "🧗", baja: "🪜", toca: "👆",
   lava: "🧼", limpia: "🧹", pinta: "🎨", dibuja: "✏️",
   // Ropa
-  camisa: "👔", pantalón: "👖", zapato: "👟", gorra: "🧢", pollera: "🥻",
-  media: "🧦", vestido: "👗", abrigo: "🧥", bufanda: "🧣", piyama: "🛌",
+  camisa: "👔", pantalón: "👖", zapato: "👞", gorra: "🧢", pollera: "🥻",
+  media: "🧦", vestido: "👗", abrigo: "🧥", bufanda: "🧣", piyama: "😴",
   // Escuela
-  libro: "📖", lápiz: "✏️", papel: "📄", tijeras: "✂️", pegamento: "🧴",
-  mochila: "🎒", maestra: "👩‍🏫", amigo: "🤝", clase: "📚", recreo: "🛝",
+  libro: "📖", lápiz: "✏️", papel: "📄", tijeras: "✂️", pegamento: "🪥",
+  mochila: "🎒", maestra: "👩‍🏫", amigo: "👦👦", clase: "📚", recreo: "🛝",
   // Lugares
   parque: "🎡", tienda: "🛍️", escuela: "🏫", hospital: "🏥", iglesia: "⛪",
-  playa: "🏖️", campo: "🌾", ciudad: "🏙️", calle: "🛣️", jardín: "🌹",
+  playa: "🏖️", campo: "🌿🌾", ciudad: "🏙️", calle: "🚶🚗", jardín: "🌻🌺",
 
   // ─── Phase 4: Frases Completas ───────────────────────────────────
   // Artículos y Conectores
@@ -69,8 +82,9 @@ export const EMOJI_MAP: Record<string, string> = {
   mi: "🤲", tu: "👉", su: "👤",
   // Demostrativos: este (cerca) vs ese (lejos)
   este: "👇", ese: "👉",
-  // Tiempo — calendarios distintos para ayer/hoy/mañana, no soles
-  hoy: "📅", mañana: "📆", ayer: "🗓️", ahora: "⏰", después: "⏩",
+  // Tiempo — fechas reales en español (calculadas al cargar el módulo)
+  hoy: spanishDate(0), mañana: spanishDate(1), ayer: spanishDate(-1),
+  ahora: "⏰", después: "⏩",
   antes: "⏪", siempre: "♾️", nunca: "🚫", pronto: "⏳", tarde: "🌇",
   // Números — cantidad: 1-5 con puntos, 6-10 = mano(5) + puntos extra
   uno: "🔴", dos: "🔴🔴", tres: "🔴🔴🔴", cuatro: "🔴🔴🔴🔴", cinco: "🖐️",
