@@ -383,6 +383,9 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
           if (c()) return;
           setIsSpeaking(true);
           await sofiaNameWord(currentWord.text);
+          // Small buffer so the audio pipeline fully flushes before
+          // stopVoice() in the effect cleanup can cut the tail.
+          await delay(250);
           setIsSpeaking(false);
           if (c()) return;
           await delay(900);
@@ -816,7 +819,7 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
                 </div>
               }
               back={
-                <div style={{ width: "100%", height: "100%", borderRadius: 20, backgroundColor: "#fff", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: shadows.lg, position: "relative", padding: "16px 24px", overflow: "hidden" }}>
+                <div style={{ width: "100%", height: "100%", borderRadius: 20, backgroundColor: "#fff", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: shadows.lg, position: "relative", padding: "16px 32px" }}>
                   <span style={{ fontSize: fitWordFontSize(cardWord, baseFontSize), fontWeight: "bold", color: fontColor, fontFamily: "Arial Rounded MT Bold, Arial, sans-serif", textAlign: "center", lineHeight: 1.1, wordBreak: "keep-all", whiteSpace: "nowrap", maxWidth: "100%" }}>
                     {cardWord}
                   </span>

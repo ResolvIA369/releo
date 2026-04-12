@@ -356,6 +356,9 @@ export const WordPath: React.FC<Props> = ({ onBack }) => {
               <AnimatedButton color={GAME_SEQUENCE[gameIdx + 1].color} onClick={handleNextGame}>
                 Siguiente: {GAME_SEQUENCE[gameIdx + 1].icon} {GAME_SEQUENCE[gameIdx + 1].name}
               </AnimatedButton>
+              <AnimatedButton color={currentGame.color} onClick={() => setStep("playing")}>
+                🔄 Jugar de nuevo
+              </AnimatedButton>
               <AnimatedButton variant="secondary" onClick={() => { setStep("group"); setSelectedGroup(null); setGameIdx(0); }}>
                 Cambiar palabras
               </AnimatedButton>

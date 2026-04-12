@@ -14,6 +14,7 @@ import { GameCompleteScreen } from "@/shared/components/GameCompleteScreen";
 import { colors, spacing, fontSizes, fonts, radii, shadows } from "@/shared/styles/design-tokens";
 import { sofiaNameWord, sofiaCelebrates, sofiaEncourages } from "@/shared/services/sofiaVoice";
 import { EMOJI_MAP } from "@/shared/constants/emoji-map";
+import { fitWordFontSize } from "@/shared/utils/fitText";
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -218,10 +219,10 @@ export const WordRain: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
           <span style={{ fontSize: 14 }}>{fallDuration <= 5.5 ? "🔥" : "💨"}</span>
         </div>
 
-        {/* Rain area */}
+        {/* Rain area — overflow visible so word buttons are never clipped */}
         <div style={{
           position: "relative", width: "100%", maxWidth: 600, height: 450,
-          borderRadius: radii.xl, overflow: "hidden",
+          borderRadius: radii.xl,
           background: "linear-gradient(180deg, #ebf8ff 0%, #bee3f8 60%, #90cdf4 100%)",
           border: `2px solid ${colors.border.light}`,
         }}>
@@ -256,7 +257,8 @@ export const WordRain: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
                       backgroundColor: "rgba(255,255,255,0.95)",
                       borderRadius: radii.xl, border: `3px solid ${GAME_COLOR}40`,
                       boxShadow: shadows.md, cursor: "pointer",
-                      fontSize: fontSizes.xl, fontWeight: "bold",
+                      fontSize: fitWordFontSize(drop.word.text, fontSizes.xl),
+                      fontWeight: "bold",
                       fontFamily: fonts.display, color: "#2d3748",
                       whiteSpace: "nowrap", zIndex: 10,
                       minWidth: 80, textAlign: "center",
