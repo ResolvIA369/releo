@@ -9,11 +9,12 @@ import React, {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useRef,
   useState,
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { burstAt, bigCelebration } from "@/shared/utils/confetti";
+import { burstAt, bigCelebration, stopConfetti } from "@/shared/utils/confetti";
 
 // ─── Types ───────────────────────────────────────────────────────
 
@@ -45,6 +46,15 @@ export const useRewards = () => useContext(RewardsContext);
 export function RewardsProvider({ children }: { children: React.ReactNode }) {
   const [coins, setCoins] = useState<FlyingCoin[]>([]);
   const idRef = useRef(0);
+
+  // Clean up confetti particles when this provider unmounts (game
+  // transition, "Jugar de nuevo", etc.) so they don't leak into the
+  // next screen.
+  useEffect(() => {
+    return () => {
+      stopConfetti();
+    };
+  }, []);
 
   const dropCoin = useCallback((x: number, y: number) => {
     const id = ++idRef.current;

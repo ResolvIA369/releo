@@ -44,12 +44,16 @@ export const GameCompleteScreen: React.FC<GameCompleteScreenProps> = ({
   const [storedCount, setStoredCount] = useState(0);
   const firedRef = useRef(false);
 
-  // Coins to drop = 1 per correct + 5 bonus
-  const totalCoins = correct + 5;
+  // Only award coins if the player got at least 1 correct.
+  // 0/5 = no reward (no coins, no chest, no confetti).
+  const totalCoins = correct > 0 ? correct + 5 : 0;
 
   useEffect(() => {
     if (firedRef.current) return;
     firedRef.current = true;
+
+    // No celebration if 0 correct
+    if (totalCoins === 0) return;
 
     // 1. Big celebration burst
     setTimeout(() => bigBurst(), 200);
@@ -80,7 +84,6 @@ export const GameCompleteScreen: React.FC<GameCompleteScreenProps> = ({
     const persistDelay = initialDelay + totalCoins * 110 + 800;
     setTimeout(() => {
       addCoins(totalCoins);
-      // Close chest after coins are stored
       setTimeout(() => setChestOpen(false), 600);
     }, persistDelay);
   }, [bigBurst, totalCoins, addCoins]);

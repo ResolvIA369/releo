@@ -29,7 +29,7 @@ function shuffle<T>(arr: T[]): T[] {
 
 const GAME_COLOR = "#3182ce";
 const OPTIONS_COUNT = 4;
-const SECONDS_PER_WORD = 5;
+const SECONDS_PER_WORD = 7;
 
 type Phase = "intro" | "playing" | "feedback" | "finished";
 

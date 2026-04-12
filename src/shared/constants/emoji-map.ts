@@ -22,11 +22,11 @@ export const EMOJI_MAP: Record<string, string> = {
   rojo: "🔴", azul: "🔵", verde: "🟢", amarillo: "🟡", blanco: "🤍",
   negro: "⚫", rosa: "🩷", violeta: "🟣", marrón: "🟤",
   // Tamaños y Formas
-  grande: "🐘", pequeño: "🐜", largo: "📏", corto: "✂️", alto: "🦒",
+  grande: "🐘", pequeño: "🐜", largo: "🦒", corto: "✂️", alto: "🦒",
   bajo: "🐢", gordo: "🎈", flaco: "🪡", redondo: "⚽", cuadrado: "🟧",
   // Opuestos
   arriba: "⬆️", abajo: "⬇️", dentro: "📦", fuera: "🌤️", cerca: "🤏",
-  lejos: "🔭", rápido: "⚡", lento: "🐌", caliente: "🔥", frío: "🧊",
+  lejos: "🔭", rápido: "🐆", lento: "🐌", caliente: "🔥", frío: "🧊",
   // Emociones
   feliz: "😄", triste: "😢", enojado: "😠", asustado: "😨",
   cansado: "😴", contento: "😊", tranquilo: "😌", sorprendido: "😲",
@@ -38,9 +38,9 @@ export const EMOJI_MAP: Record<string, string> = {
   // ─── Phase 3: Oraciones Sencillas ────────────────────────────────
   // Verbos Cotidianos
   come: "🍽️", bebe: "🥤", duerme: "😴", juega: "🎮", corre: "🏃",
-  salta: "🤸", lee: "📖", escribe: "✍️", canta: "🎤", baila: "💃",
+  salta: "🤾", lee: "📖", escribe: "✍️", canta: "🎤", baila: "💃",
   // Verbos de Acción
-  abre: "🔓", cierra: "🔒", sube: "🧗", baja: "🪂", toca: "👆",
+  abre: "🔓", cierra: "🔒", sube: "🧗", baja: "🪜", toca: "👆",
   lava: "🧼", limpia: "🧹", pinta: "🎨", dibuja: "✏️",
   // Ropa
   camisa: "👔", pantalón: "👖", zapato: "👟", gorra: "🧢", pollera: "🥻",
@@ -57,7 +57,7 @@ export const EMOJI_MAP: Record<string, string> = {
   // el/la/los/las → personas (masc/fem, sing/plur)
   // un/una/unos/unas → objetos contables (1 vs 2)
   el: "👨", la: "👩", los: "👬", las: "👭", un: "☝️",
-  una: "☝️", unos: "✌️", unas: "✌️", y: "🔗", con: "🤝",
+  una: "☝️", unos: "🚗🌳", unas: "🌺🏠", y: "🔗", con: "🤝",
   // Preposiciones
   // en: dentro de, de: posesión, por: a través de, para: dar a alguien,
   // sobre: encima de, entre: en medio, hasta: meta, desde: punto de origen,
@@ -72,10 +72,10 @@ export const EMOJI_MAP: Record<string, string> = {
   // Tiempo — calendarios distintos para ayer/hoy/mañana, no soles
   hoy: "📅", mañana: "📆", ayer: "🗓️", ahora: "⏰", después: "⏩",
   antes: "⏪", siempre: "♾️", nunca: "🚫", pronto: "⏳", tarde: "🌇",
-  // Números — representados como cantidad (pelotas), no dígito
-  uno: "⚽", dos: "⚽⚽", tres: "⚽⚽⚽", cuatro: "⚽⚽⚽⚽", cinco: "⚽⚽⚽⚽⚽",
-  seis: "⚽⚽⚽⚽⚽⚽", siete: "⚽⚽⚽⚽⚽⚽⚽", ocho: "⚽⚽⚽⚽⚽⚽⚽⚽",
-  nueve: "⚽⚽⚽⚽⚽⚽⚽⚽⚽", diez: "⚽⚽⚽⚽⚽⚽⚽⚽⚽⚽",
+  // Números — cantidad: 1-5 con puntos, 6-10 = mano(5) + puntos extra
+  uno: "🔴", dos: "🔴🔴", tres: "🔴🔴🔴", cuatro: "🔴🔴🔴🔴", cinco: "🖐️",
+  seis: "🖐️🔴", siete: "🖐️🔴🔴", ocho: "🖐️🔴🔴🔴",
+  nueve: "🖐️🔴🔴🔴🔴", diez: "🖐️🖐️",
 
   // ─── Phase 5: Cuentos Cortos ─────────────────────────────────────
   // Verbos Avanzados
