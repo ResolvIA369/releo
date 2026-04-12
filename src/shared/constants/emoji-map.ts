@@ -13,15 +13,18 @@ function spanishDate(offset: number): string {
 
 export const EMOJI_MAP: Record<string, string> = {
   // ─── Phase 1: Palabras Sencillas ─────────────────────────────────
-  // Familia
+  // Familia — diferenciados visualmente:
+  // hermano/a = adolescente normal, primo/a = con gorra,
+  // tío/a = bigotes+anteojos (🥸) / anteojos (👓)
   mamá: "👩", papá: "👨", bebé: "👶", abuela: "👵", abuelo: "👴",
-  hermano: "👦", hermana: "👧", tío: "👨", tía: "👩", primo: "👦",
+  hermano: "🧑", hermana: "👧", tío: "🥸", tía: "👓", primo: "🧢", prima: "🧢",
   // Cuerpo
   mano: "🙋", pie: "🦶", ojo: "👁️", nariz: "👃", boca: "👄",
   oreja: "👂", pelo: "💇", dedo: "☝️", brazo: "💪", pierna: "🦵",
   // Casa
-  casa: "🏠", mesa: "🍽️", silla: "🪑", cama: "🛏️", puerta: "🚪",
-  ventana: "🪟", cocina: "🧑‍🍳", baño: "🚿", piso: "🟫", techo: "🛖",
+  // Casa — mesa = mueble 4 patas, cocina = horno a gas (espacio)
+  casa: "🏠", mesa: "🪵", silla: "🪑", cama: "🛏️", puerta: "🚪",
+  ventana: "🪟", cocina: "🔥🍳", baño: "🚿", piso: "🟫", techo: "🛖",
   // Animales
   perro: "🐶", gato: "🐱", caballo: "🐴", vaca: "🐮", pájaro: "🐦",
   pez: "🐟", pato: "🦆", conejo: "🐰", ratón: "🐭", oso: "🐻", pollo: "🐔",
@@ -35,8 +38,9 @@ export const EMOJI_MAP: Record<string, string> = {
   rojo: "🔴", azul: "🔵", verde: "🟢", amarillo: "🟡", blanco: "🤍",
   negro: "⚫", rosa: "🩷", violeta: "🟣", marrón: "🟤",
   // Tamaños y Formas
-  grande: "🐘", pequeño: "🐜", largo: "🦒", corto: "✂️", alto: "🦒",
-  bajo: "🐢", gordo: "🎈", flaco: "🪡", redondo: "⚽", cuadrado: "🟧",
+  // Tamaños — alto/bajo comparados con puerta como referencia
+  grande: "🐘", pequeño: "🐜", largo: "🦒", corto: "✂️", alto: "🧍🚪",
+  bajo: "🧒🚪", gordo: "🎈", flaco: "🪡", redondo: "⚽", cuadrado: "🟧",
   // Opuestos
   arriba: "⬆️", abajo: "⬇️", dentro: "📦", fuera: "🌤️", cerca: "🤏",
   lejos: "🔭", rápido: "🐆", lento: "🐌", caliente: "🔥", frío: "🧊",
