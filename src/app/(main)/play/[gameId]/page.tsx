@@ -80,6 +80,27 @@ function GamePageInner() {
 
   const wordsPerBlock = GAMES_WITH_10_WORDS.includes(gameId) ? 10 : 5;
 
+  // Compute the list of N-word blocks for the current world. IMPORTANT:
+  // useMemo must be called unconditionally before any early return, or
+  // we break React's rule of hooks between renders.
+  const PHASE_WORD_LISTS: DomanWordType[][] = useMemo(
+    () => [PHASE1_WORDS, PHASE2_WORDS, PHASE3_WORDS, PHASE4_WORDS, PHASE5_WORDS],
+    [],
+  );
+  const blocksForCurrentWorld: DomanWordType[][] = useMemo(() => {
+    if (selectedWorldIdx === null) return [];
+    const phaseWords = PHASE_WORD_LISTS[selectedWorldIdx] ?? [];
+    const chunks: DomanWordType[][] = [];
+    for (let i = 0; i < phaseWords.length; i += wordsPerBlock) {
+      const c = phaseWords.slice(i, i + wordsPerBlock);
+      if (c.length < 3) break;
+      chunks.push(c);
+    }
+    return chunks;
+  }, [selectedWorldIdx, wordsPerBlock, PHASE_WORD_LISTS]);
+
+  const hasNextBlock = selectedWorldIdx !== null && selectedBlockIdx + 1 < blocksForCurrentWorld.length;
+
   // ─── Not found ──────────────────────────────────────────────
 
   if (!meta || !GameComponent) {
@@ -161,23 +182,6 @@ function GamePageInner() {
     setSelectedWords(null);
     setForceBlockSelection(true);
   };
-
-  // Compute the list of 5-word blocks for the current world and check
-  // whether there's a next one to play.
-  const PHASE_WORD_LISTS: DomanWordType[][] = [PHASE1_WORDS, PHASE2_WORDS, PHASE3_WORDS, PHASE4_WORDS, PHASE5_WORDS];
-  const blocksForCurrentWorld: DomanWordType[][] = useMemo(() => {
-    if (selectedWorldIdx === null) return [];
-    const phaseWords = PHASE_WORD_LISTS[selectedWorldIdx] ?? [];
-    const chunks: DomanWordType[][] = [];
-    for (let i = 0; i < phaseWords.length; i += wordsPerBlock) {
-      const c = phaseWords.slice(i, i + wordsPerBlock);
-      if (c.length < 3) break;
-      chunks.push(c);
-    }
-    return chunks;
-  }, [selectedWorldIdx, wordsPerBlock]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const hasNextBlock = selectedWorldIdx !== null && selectedBlockIdx + 1 < blocksForCurrentWorld.length;
 
   const handleNextBlock = () => {
     if (!hasNextBlock) return;
