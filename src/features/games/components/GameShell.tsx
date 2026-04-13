@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, createContext, useContext } from "react";
+import React, { useState, useCallback, useEffect, createContext, useContext } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { GameSessionState } from "../types";
 import { colors, spacing, fonts, fontSizes, radii, shadows } from "@/shared/styles/design-tokens";
@@ -43,6 +43,9 @@ export const GameShell: React.FC<GameShellProps> = ({ title, icon, color, sessio
 
   const pause = useCallback(() => setPaused(true), []);
   const resume = useCallback(() => { setPaused(false); setShowMenu(false); }, []);
+
+  // Scroll to top when a game mounts so the "Empezar" button is visible
+  useEffect(() => { window.scrollTo(0, 0); }, []);
 
   return (
     <PauseContext.Provider value={{ paused, pause, resume }}>

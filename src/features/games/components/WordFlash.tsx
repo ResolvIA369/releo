@@ -383,9 +383,6 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
           if (c()) return;
           setIsSpeaking(true);
           await sofiaNameWord(currentWord.text);
-          // Small buffer so the audio pipeline fully flushes before
-          // stopVoice() in the effect cleanup can cut the tail.
-          await delay(250);
           setIsSpeaking(false);
           if (c()) return;
           await delay(900);
@@ -663,9 +660,14 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
       localCancelled = true;
       cancelledRef.current = true;
       clearTimeout(timerRef.current);
-      // Hard-stop any audio that this effect run may have started so
-      // it cannot leak into the next phase as a "second voice".
-      stopVoice();
+      clearTimeout(repeatTimerRef.current);
+      // NOTE: we intentionally do NOT call stopVoice() here. The
+      // previous run()'s localCancelled flag prevents it from starting
+      // new audio, and the next run()'s first playMP3 call internally
+      // does stopAll() which cleanly replaces whatever is still playing.
+      // Calling stopVoice() here was causing "audio cortado" because it
+      // killed audio in the gap between cleanup and the new effect mount
+      // — before the new audio had even started loading.
     };
   }, [ph, tick]); // eslint-disable-line
 

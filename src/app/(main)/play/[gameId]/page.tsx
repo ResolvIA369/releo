@@ -24,6 +24,7 @@ import { SofiaAvatar } from "@/shared/components/SofiaAvatar";
 import { CelebrationGif } from "@/shared/components/CelebrationGif";
 import { AnimatedButton } from "@/shared/components/AnimatedButton";
 import { RewardsProvider } from "@/shared/components/RewardsLayer";
+import { ErrorBoundary } from "@/shared/components/ErrorBoundary";
 import type { GameId, GameProps, GameSessionState } from "@/features/games/types";
 import type { FC } from "react";
 import { colors, fonts, fontSizes, spacing, radii } from "@/shared/styles/design-tokens";
@@ -287,16 +288,18 @@ function GamePageInner() {
   // ─── Playing ────────────────────────────────────────────────
 
   return (
-    <RewardsProvider>
-      <GameComponent
-        key={gameKey}
-        words={activeWords}
-        phase={activePhase}
-        worldId={selectedWorldId}
-        onComplete={handleComplete}
-        onBack={() => router.push("/dashboard")}
-      />
-    </RewardsProvider>
+    <ErrorBoundary key={`eb-${gameKey}`}>
+      <RewardsProvider>
+        <GameComponent
+          key={gameKey}
+          words={activeWords}
+          phase={activePhase}
+          worldId={selectedWorldId}
+          onComplete={handleComplete}
+          onBack={() => router.push("/dashboard")}
+        />
+      </RewardsProvider>
+    </ErrorBoundary>
   );
 }
 

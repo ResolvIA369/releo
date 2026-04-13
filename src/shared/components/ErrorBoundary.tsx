@@ -11,21 +11,30 @@ interface Props {
 interface State {
   hasError: boolean;
   error: Error | null;
+  retryCount: number;
 }
 
 export class ErrorBoundary extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
-    this.state = { hasError: false, error: null };
+    this.state = { hasError: false, error: null, retryCount: 0 };
   }
 
-  static getDerivedStateFromError(error: Error): State {
+  static getDerivedStateFromError(error: Error): Partial<State> {
     return { hasError: true, error };
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
     console.error("[ErrorBoundary]", error.message, info.componentStack);
   }
+
+  handleRetry = () => {
+    this.setState((s) => ({
+      hasError: false,
+      error: null,
+      retryCount: s.retryCount + 1,
+    }));
+  };
 
   render() {
     if (this.state.hasError) {
@@ -40,28 +49,38 @@ export class ErrorBoundary extends React.Component<Props, State> {
         }}>
           <span style={{ fontSize: 64, marginBottom: spacing.md }}>😕</span>
           <h2 style={{ fontSize: fontSizes["2xl"], fontFamily: fonts.display, color: colors.text.primary, margin: 0 }}>
-            Algo salio mal
+            Algo salió mal
           </h2>
           <p style={{ fontSize: fontSizes.md, color: colors.text.muted, marginTop: spacing.sm, maxWidth: 400 }}>
-            Hubo un problema cargando esta sección. Intenta recargar la página.
+            Hubo un problema. Tocá el botón para reintentar.
           </p>
-          {this.state.error && (
-            <pre style={{ fontSize: fontSizes.xs, color: colors.error, marginTop: spacing.md, maxWidth: 400, overflow: "auto", textAlign: "left", padding: spacing.sm, backgroundColor: "#fff0f0", borderRadius: radii.sm }}>
-              {this.state.error.message}
-            </pre>
-          )}
-          <button
-            onClick={() => window.location.reload()}
-            style={{
-              marginTop: spacing.lg, padding: `${spacing.sm}px ${spacing.lg}px`,
-              borderRadius: radii.lg, border: "none",
-              backgroundColor: colors.brand.primary, color: "#fff",
-              fontSize: fontSizes.md, fontFamily: fonts.display,
-              cursor: "pointer",
-            }}
-          >
-            Recargar
-          </button>
+          <div style={{ display: "flex", gap: spacing.md, marginTop: spacing.lg }}>
+            <button
+              onClick={this.handleRetry}
+              style={{
+                padding: `${spacing.sm}px ${spacing.lg}px`,
+                borderRadius: radii.lg, border: "none",
+                backgroundColor: colors.brand.primary, color: "#fff",
+                fontSize: fontSizes.md, fontFamily: fonts.display,
+                cursor: "pointer",
+              }}
+            >
+              🔄 Reintentar
+            </button>
+            <button
+              onClick={() => window.location.reload()}
+              style={{
+                padding: `${spacing.sm}px ${spacing.lg}px`,
+                borderRadius: radii.lg,
+                backgroundColor: "#FFF8E1", color: "#92400E",
+                border: "2px solid #FFD54F",
+                fontSize: fontSizes.md, fontFamily: fonts.display,
+                cursor: "pointer",
+              }}
+            >
+              Recargar página
+            </button>
+          </div>
         </div>
       );
     }
