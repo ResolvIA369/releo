@@ -267,7 +267,7 @@ export const MemoryCards: React.FC<GameProps> = ({ words, phase = 1, onComplete,
 
   return (
     <GameShell title="Rompecabezas" icon="🧩" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})}>
-      <div style={{ display: "flex", gap: spacing.md, paddingTop: spacing.md, maxWidth: 620, margin: "0 auto" }}>
+      <div style={{ display: "flex", gap: spacing.md, paddingTop: spacing.md, maxWidth: "min(620px, calc(100vw - 32px))", margin: "0 auto" }}>
         <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: spacing.lg }}>
           {/* Counter */}
           <span style={{ fontSize: fontSizes.sm, color: colors.text.placeholder }}>
@@ -348,7 +348,7 @@ export const MemoryCards: React.FC<GameProps> = ({ words, phase = 1, onComplete,
           {/* Puzzle pieces — scattered */}
           <div style={{
             display: "flex", flexWrap: "wrap", gap: spacing.md,
-            justifyContent: "center", maxWidth: 560,
+            justifyContent: "center", maxWidth: "min(560px, calc(100vw - 32px))",
           }}>
             <AnimatePresence>
               {remainingPieces.map((piece) => {

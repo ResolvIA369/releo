@@ -330,7 +330,7 @@ function TrainGame({ words, phase = 1, difficulty, onComplete, onBack }: GamePro
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: spacing.md, paddingTop: spacing.sm }}>
       {/* Round + target */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", maxWidth: 660 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", maxWidth: "min(660px, calc(100vw - 32px))" }}>
         <span style={{ fontSize: fontSizes.sm, color: colors.text.placeholder }}>
           {roundIdx + 1} / {totalRounds}
         </span>
@@ -354,7 +354,7 @@ function TrainGame({ words, phase = 1, difficulty, onComplete, onBack }: GamePro
 
       {/* Tracks area */}
       <div style={{
-        width: "100%", maxWidth: 660,
+        width: "100%", maxWidth: "min(660px, calc(100vw - 32px))",
         overflow: "hidden", borderRadius: radii.xl,
         backgroundColor: "#e8f5e9", border: `2px solid ${colors.border.light}`,
         padding: `${spacing.xl}px 0 ${spacing.lg}px`,
@@ -370,7 +370,7 @@ function TrainGame({ words, phase = 1, difficulty, onComplete, onBack }: GamePro
       </div>
 
       {/* Progress bar */}
-      <div style={{ width: "100%", maxWidth: 660, display: "flex", alignItems: "center", gap: spacing.sm }}>
+      <div style={{ width: "100%", maxWidth: "min(660px, calc(100vw - 32px))", display: "flex", alignItems: "center", gap: spacing.sm }}>
         <span style={{ fontSize: 14 }}>🚂</span>
         <div style={{ flex: 1, height: 6, backgroundColor: colors.bg.secondary, borderRadius: radii.pill, overflow: "hidden" }}>
           <div style={{

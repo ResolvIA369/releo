@@ -158,7 +158,7 @@ export const BitsReading: React.FC<GameProps> = ({ words, phase = 1, onComplete,
   return (
     <GameShell title="Burbujas Magicas" icon="🫧" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})}>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: spacing.md, paddingTop: spacing.sm }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", maxWidth: 600 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", maxWidth: "min(600px, calc(100vw - 32px))" }}>
           <span style={{ fontSize: fontSizes.sm, color: colors.text.placeholder }}>{roundIdx + 1}/{totalRounds}</span>
           {target && (
             <motion.div key={roundIdx} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
@@ -170,7 +170,7 @@ export const BitsReading: React.FC<GameProps> = ({ words, phase = 1, onComplete,
         </div>
 
         <div style={{
-          position: "relative", width: "100%", maxWidth: 600, height: 420,
+          position: "relative", width: "100%", maxWidth: "min(600px, calc(100vw - 32px))", height: "min(420px, 55vh)",
           borderRadius: radii.xl, overflow: "hidden",
           background: "linear-gradient(180deg, #e8daef 0%, #d2b4de 40%, #bb8fce 100%)",
           border: `2px solid ${colors.border.light}`,

@@ -158,7 +158,7 @@ export const CategoryGame: React.FC<GameProps> = ({ words, phase = 1, onComplete
   return (
     <GameShell title="Categorias" icon="🗂️" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})}>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: spacing.lg, paddingTop: spacing.md }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", maxWidth: 600 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", maxWidth: "min(600px, calc(100vw - 32px))" }}>
           <span style={{ fontSize: fontSizes.sm, color: colors.text.placeholder }}>{roundIdx + 1} / {roundWords.length}</span>
         </div>
 
@@ -188,7 +188,7 @@ export const CategoryGame: React.FC<GameProps> = ({ words, phase = 1, onComplete
         </p>
 
         {/* Category bins with scores */}
-        <div style={{ display: "flex", flexDirection: "column", gap: spacing.md, width: "100%", maxWidth: 600 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: spacing.md, width: "100%", maxWidth: "min(600px, calc(100vw - 32px))" }}>
           {categories.map((cat) => {
             const catScore = score[cat] ?? 0;
             const isCorrectCat = feedbackType === "correct" && currentWord?.categoryDisplay === cat;

@@ -51,8 +51,8 @@ export default function DashboardPage() {
 
         <motion.div variants={staggerContainer} initial="initial" animate="animate"
           style={{
-            display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
-            gap: spacing.md, maxWidth: 900, margin: "0 auto",
+            display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(260px, calc(100vw - 64px)), 1fr))",
+            gap: spacing.md, maxWidth: "min(900px, calc(100vw - 32px))", margin: "0 auto",
           }}>
           {GAME_REGISTRY.filter((g) => g.id !== "word-flash").map((game) => (
             <motion.div key={game.id} variants={staggerItem}

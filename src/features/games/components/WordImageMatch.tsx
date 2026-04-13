@@ -162,7 +162,7 @@ export const WordImageMatch: React.FC<GameProps> = ({ words, phase = 1, onComple
 
   return (
     <GameShell title="Empareja Palabra-Imagen" icon="🖼️" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})}>
-      <div style={{ display: "flex", gap: spacing.md, paddingTop: spacing.md, maxWidth: 620, margin: "0 auto" }}>
+      <div style={{ display: "flex", gap: spacing.md, paddingTop: spacing.md, maxWidth: "min(620px, calc(100vw - 32px))", margin: "0 auto" }}>
         {/* Main content */}
         <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: spacing.lg }}>
           {/* Counter */}

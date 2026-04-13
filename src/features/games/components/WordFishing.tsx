@@ -190,7 +190,7 @@ export const WordFishing: React.FC<GameProps> = ({ words, phase = 1, onComplete,
 
   return (
     <GameShell title="Pesca de Palabras" icon="🎣" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})}>
-      <div style={{ display: "flex", gap: spacing.md, paddingTop: spacing.sm, maxWidth: 660, margin: "0 auto" }}>
+      <div style={{ display: "flex", gap: spacing.md, paddingTop: spacing.sm, maxWidth: "min(660px, calc(100vw - 32px))", margin: "0 auto" }}>
         <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: spacing.md }}>
           {/* Target + counter */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
@@ -210,7 +210,7 @@ export const WordFishing: React.FC<GameProps> = ({ words, phase = 1, onComplete,
 
           {/* Ocean */}
           <div style={{
-            position: "relative", width: "100%", height: 400,
+            position: "relative", width: "100%", height: "min(400px, 50vh)",
             borderRadius: radii.xl, overflow: "hidden",
             background: "linear-gradient(180deg, #b3e5fc 0%, #4fc3f7 25%, #0288d1 60%, #01579b 100%)",
             border: `2px solid ${colors.border.light}`,

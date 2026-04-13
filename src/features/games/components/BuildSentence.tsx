@@ -245,7 +245,7 @@ export const BuildSentence: React.FC<GameProps> = ({ words, phase = 1, onComplet
 
   return (
     <GameShell title="Construye la Frase" icon="🧱" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})}>
-      <div style={{ display: "flex", gap: spacing.md, paddingTop: spacing.md, maxWidth: 620, margin: "0 auto" }}>
+      <div style={{ display: "flex", gap: spacing.md, paddingTop: spacing.md, maxWidth: "min(620px, calc(100vw - 32px))", margin: "0 auto" }}>
         <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: spacing.lg }}>
         {/* Header: round */}
         <span style={{ fontSize: fontSizes.sm, color: colors.text.placeholder }}>
@@ -264,7 +264,7 @@ export const BuildSentence: React.FC<GameProps> = ({ words, phase = 1, onComplet
             backgroundColor: colors.bg.secondary,
             borderRadius: radii.xl,
             width: "100%",
-            maxWidth: 560,
+            maxWidth: "min(560px, calc(100vw - 32px))",
             position: "relative",
           }}
         >
@@ -299,7 +299,7 @@ export const BuildSentence: React.FC<GameProps> = ({ words, phase = 1, onComplet
           initial="initial"
           animate="animate"
           key={roundIdx}
-          style={{ display: "flex", flexWrap: "wrap", gap: spacing.sm, justifyContent: "center", maxWidth: 560 }}
+          style={{ display: "flex", flexWrap: "wrap", gap: spacing.sm, justifyContent: "center", maxWidth: "min(560px, calc(100vw - 32px))" }}
         >
           {shuffledWords.map((word, i) => {
             if (placedIndices.has(i)) return null;

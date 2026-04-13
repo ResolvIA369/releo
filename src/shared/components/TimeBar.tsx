@@ -58,7 +58,8 @@ export function TimeBar({
 
   // Leo rides the top of the bar — anchored to where the colored
   // fill ends. He bobs slightly when urgent (panicked).
-  const LEO_SIZE = 96;
+  // Scale Leo down on narrow screens so he doesn't dominate the layout
+  const LEO_SIZE = typeof window !== "undefined" && window.innerWidth < 430 ? 64 : 96;
   const leoBottom = `calc(${pct}% - ${LEO_SIZE / 2}px)`;
 
   return (

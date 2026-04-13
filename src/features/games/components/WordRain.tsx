@@ -204,7 +204,7 @@ export const WordRain: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
     <GameShell title="Lluvia de Palabras" icon="🌧️" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})}>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: spacing.md, paddingTop: spacing.sm }}>
         {/* Target + counter */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", maxWidth: 600 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", maxWidth: "min(600px, calc(100vw - 32px))" }}>
           <span style={{ fontSize: fontSizes.sm, color: colors.text.placeholder }}>{roundIdx + 1}/{totalRounds}</span>
           {targetWord && (
             <motion.div key={roundIdx} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
@@ -221,7 +221,7 @@ export const WordRain: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
 
         {/* Rain area — overflow visible so word buttons are never clipped */}
         <div style={{
-          position: "relative", width: "100%", maxWidth: 600, height: 450,
+          position: "relative", width: "100%", maxWidth: "min(600px, calc(100vw - 32px))", height: "min(450px, 60vh)",
           borderRadius: radii.xl,
           background: "linear-gradient(180deg, #ebf8ff 0%, #bee3f8 60%, #90cdf4 100%)",
           border: `2px solid ${colors.border.light}`,
