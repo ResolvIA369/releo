@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useEffect, useRef, useState, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { SofiaSpeechBubble } from "@/shared/components/doman-visuals/SofiaSpeechBubble";
+import React, { useEffect, useRef, useCallback } from "react";
+import { motion } from "framer-motion";
+import { SofiaAvatar } from "@/shared/components/SofiaAvatar";
 import { sofiaPlayAudio, sofiaNameWord, stopVoice } from "@/shared/services/sofiaVoice";
-import { colors, fonts, fontSizes, spacing, radii, shadows } from "@/shared/styles/design-tokens";
+import { AudioWaves } from "@/shared/components/doman-visuals";
+import { fonts, fontSizes, spacing, radii, shadows } from "@/shared/styles/design-tokens";
 
 // Map game names to their pre-recorded audio files
 const RULES_AUDIO: Record<string, string> = {
@@ -32,15 +33,13 @@ interface GameIntroProps {
 export const GameIntro: React.FC<GameIntroProps> = ({
   gameName,
   rulesText,
-  color = colors.brand.primary,
+  color = "#667eea",
   onReady,
 }) => {
-  const [countdown, setCountdown] = useState<number | null>(null);
-  const [showBubble, setShowBubble] = useState(true);
   const startedRef = useRef(false);
   const cancelledRef = useRef(false);
+  const [isSpeaking, setIsSpeaking] = React.useState(false);
 
-  // Skip the intro and jump straight into the game
   const startNow = useCallback(() => {
     if (startedRef.current) return;
     startedRef.current = true;
@@ -53,28 +52,23 @@ export const GameIntro: React.FC<GameIntroProps> = ({
     cancelledRef.current = false;
 
     async function run() {
-      // Play the rules once so the child knows what to do. We do NOT
-      // auto-start after the audio anymore — the game only begins
-      // when the user taps "Empezar", no matter what.
+      setIsSpeaking(true);
       const mp3 = RULES_AUDIO[gameName] ?? null;
       if (mp3) {
         await sofiaPlayAudio(mp3, rulesText, "gentle");
       } else {
-        const rulesWords = rulesText.split(/\s+/);
-        for (const w of rulesWords) {
+        const words = rulesText.split(/\s+/);
+        for (const w of words) {
           if (cancelledRef.current) return;
           await sofiaNameWord(w.replace(/[¡!¿?.,:;]/g, "").toLowerCase());
           await new Promise((r) => setTimeout(r, 150));
         }
       }
+      setIsSpeaking(false);
     }
 
     run();
-
-    return () => {
-      cancelledRef.current = true;
-      stopVoice();
-    };
+    return () => { cancelledRef.current = true; stopVoice(); };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
@@ -85,43 +79,32 @@ export const GameIntro: React.FC<GameIntroProps> = ({
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        minHeight: 400,
-        gap: spacing.xl,
+        minHeight: "min(400px, 60vh)",
+        gap: spacing.lg,
         cursor: "pointer",
+        padding: spacing.md,
       }}
     >
+      {/* Game title */}
       <motion.h2
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        style={{ fontSize: fontSizes["2xl"], fontFamily: fonts.display, color, margin: 0 }}
+        style={{
+          fontSize: fontSizes["2xl"],
+          fontFamily: fonts.display,
+          color,
+          margin: 0,
+          textAlign: "center",
+        }}
       >
         {gameName}
       </motion.h2>
 
-      <SofiaSpeechBubble text={rulesText} visible={showBubble} worldColor={color} />
+      {/* Sofia speaks the rules — no text bubble, just her avatar */}
+      <SofiaAvatar size={200} speaking={isSpeaking} mood="motivating" />
+      <AudioWaves active={isSpeaking} color={color} />
 
-      <AnimatePresence mode="wait">
-        {countdown !== null && (
-          <motion.span
-            key={countdown}
-            initial={{ scale: 0.5, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 1.5, opacity: 0 }}
-            transition={{ duration: 0.25 }}
-            style={{
-              fontSize: 72,
-              fontWeight: "bold",
-              fontFamily: fonts.display,
-              color,
-              marginTop: spacing.md,
-            }}
-          >
-            {countdown}
-          </motion.span>
-        )}
-      </AnimatePresence>
-
-      {/* Always-visible "Empezar" button so the user never feels stuck. */}
+      {/* Empezar button */}
       <motion.button
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
@@ -133,7 +116,6 @@ export const GameIntro: React.FC<GameIntroProps> = ({
           startNow();
         }}
         style={{
-          marginTop: spacing.md,
           padding: `${spacing.md}px ${spacing.xl}px`,
           backgroundColor: color,
           color: "#fff",
