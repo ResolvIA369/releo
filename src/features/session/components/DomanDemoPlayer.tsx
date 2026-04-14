@@ -101,19 +101,19 @@ export const DomanDemoPlayer: React.FC<DomanDemoPlayerProps> = ({
         overflow: "hidden",
       }}
     >
-      {/* Session counter for multi-session demos */}
+      {/* Session counter — positioned at bottom to not overlap the round label */}
       {totalSessions > 1 && (
         <div
           style={{
             position: "absolute",
-            top: 12,
+            bottom: 12,
             left: "50%",
             transform: "translateX(-50%)",
             zIndex: 50,
-            padding: "6px 16px",
+            padding: "4px 14px",
             borderRadius: 9999,
-            backgroundColor: "rgba(0, 0, 0, 0.08)",
-            fontSize: 14,
+            backgroundColor: "rgba(0, 0, 0, 0.06)",
+            fontSize: 12,
             fontWeight: "bold",
             fontFamily: "Arial Rounded MT Bold, Arial, sans-serif",
             color: session.worldColor,

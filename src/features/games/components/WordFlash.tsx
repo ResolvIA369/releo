@@ -369,7 +369,7 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
           await sofiaPlayAudio("intro", fillScript(SC.introduction, { name: "" }), "excited");
           setIsSpeaking(false);
           if (c()) return;
-          await delay(800);
+          await delay(400);
           if (c()) return;
           setPass(0); setWordIdx(0); setDotsCompleted(0);
           setPh("presentation");
@@ -411,7 +411,7 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
           await sofiaPlayAudio(mp3Names[pass], phrase, "excited");
           setIsSpeaking(false);
           if (c()) return;
-          await delay(800);
+          await delay(400);
           if (c()) return;
 
           const nextPass = pass + 1;
@@ -431,7 +431,7 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
           await sofiaPlayAudio("round2-intro", fillScript(SC.round2.intro, { name: "" }), "gentle");
           setIsSpeaking(false);
           if (c()) return;
-          await delay(1000);
+          await delay(500);
           if (c()) return;
           setWordIdx(0); setDotsCompleted(0);
           setPh("repeat");
@@ -505,7 +505,8 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
         }
 
         case "celebration": {
-          await delay(3000); // confetti + stars
+          await delay(4000); // confetti + stars — enough time for the
+          // animation to fully play and the child to enjoy it
           if (c()) return;
           setPh("story_intro");
           break;
@@ -517,7 +518,7 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
           await sofiaPlayAudio("round3-intro", fillScript(SC.round3.intro, { name: "" }), "gentle");
           setIsSpeaking(false);
           if (c()) return;
-          await delay(800);
+          await delay(400);
           if (c()) return;
           setPh("story");
           break;
@@ -623,26 +624,28 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
         }
 
         case "affirmation": {
+          const aff = "Yo puedo, yo creo en mí, yo soy inteligente";
+          setAffirmationText(aff);
           setIsSpeaking(true);
           await sofiaPlayAudio("repeat-conmigo", "Repetí conmigo:", "gentle");
           setIsSpeaking(false);
           if (c()) return;
-          await delay(400);
+          await delay(300);
+          if (c()) return;
 
-          const aff = "Yo soy inteligente y puedo aprender cualquier cosa";
-          setAffirmationText(aff);
           setIsSpeaking(true);
           await sofiaPlayAudio("afirmacion-principal", aff, "gentle");
           setIsSpeaking(false);
           if (c()) return;
-          await delay(3000);
+          await delay(2000);
           if (c()) return;
 
+          setAffirmationText("");
           setIsSpeaking(true);
           await sofiaPlayAudio("chau-chau", "¡Nos vemos en la próxima clase! ¡Chau chau!", "excited");
           setIsSpeaking(false);
           if (c()) return;
-          await delay(1500);
+          await delay(1000);
           await session.endSession();
           // Notify parent that session is complete (triggers progression update)
           onComplete?.({
