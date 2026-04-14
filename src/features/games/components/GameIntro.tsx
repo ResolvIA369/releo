@@ -102,13 +102,14 @@ export const GameIntro: React.FC<GameIntroProps> = ({
       <SofiaAvatar size={200} speaking={isSpeaking} mood="motivating" />
       <AudioWaves active={isSpeaking} color={color} />
 
-      {/* Empezar button */}
+      {/* Empezar button — disabled while Sofia is speaking the rules */}
       <motion.button
         initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
+        animate={{ opacity: isSpeaking ? 0.4 : 1, y: 0 }}
         transition={{ delay: 0.5 }}
-        whileHover={{ scale: 1.04 }}
-        whileTap={{ scale: 0.96 }}
+        whileHover={isSpeaking ? {} : { scale: 1.04 }}
+        whileTap={isSpeaking ? {} : { scale: 0.96 }}
+        disabled={isSpeaking}
         onClick={() => startNow()}
         style={{
           padding: `${spacing.md}px ${spacing.xl}px`,
@@ -119,12 +120,12 @@ export const GameIntro: React.FC<GameIntroProps> = ({
           fontSize: fontSizes.lg,
           fontWeight: "bold",
           fontFamily: fonts.display,
-          cursor: "pointer",
+          cursor: isSpeaking ? "not-allowed" : "pointer",
           boxShadow: shadows.button,
           minHeight: 56,
         }}
       >
-        ▶ Empezar
+        {isSpeaking ? "🔊 Escuchá a Sofía..." : "▶ Empezar"}
       </motion.button>
     </div>
   );
