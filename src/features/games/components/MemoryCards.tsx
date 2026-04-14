@@ -190,8 +190,13 @@ export const MemoryCards: React.FC<GameProps> = ({ words, phase = 1, onComplete,
           await sofiaCelebrates(`¡${currentWord?.text}!`);
           await new Promise((r) => setTimeout(r, 600));
 
+          // Reset visual state BEFORE advancing so the UI never
+          // shows stale pieces from the previous word.
           setFeedbackType(null);
           setBurstPos(null);
+          setShowWord(false);
+          setPlaced([]);
+          setPieces([]);
           setRoundIdx((i) => i + 1);
           setGamePhase("announcing");
         }
@@ -219,6 +224,8 @@ export const MemoryCards: React.FC<GameProps> = ({ words, phase = 1, onComplete,
       setTimeout(() => {
         setFeedbackType(null);
         setShowWord(false);
+        setPlaced([]);
+        setPieces([]);
         setRoundIdx((i) => i + 1);
         setGamePhase("announcing");
       }, 800);
