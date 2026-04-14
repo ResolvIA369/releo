@@ -63,8 +63,10 @@ function playMP3(filename: string): Promise<boolean> {
       resolve(ok);
     };
 
-    // Hard timeout — if nothing happens within 8s, give up
-    const timer = setTimeout(() => finish(false), 8000);
+    // Safety timeout — only fires if the audio truly hangs (e.g.
+    // network stall). Set to 120s so long audios like the intro
+    // (30s) and stories (15-30s) are never cut short.
+    const timer = setTimeout(() => finish(false), 120000);
     const wrap = (ok: boolean) => { clearTimeout(timer); finish(ok); };
 
     const url = `/audio/sofia/${filename}.mp3`;
