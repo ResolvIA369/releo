@@ -73,7 +73,14 @@ function playMP3(filename: string): Promise<boolean> {
 
     audio.volume = 1;
     audio.src = url;
-    audio.onended = () => { if (myToken === _currentToken) wrap(true); };
+    audio.onended = () => {
+      if (myToken !== _currentToken) return;
+      // Wait 300ms after the browser reports "ended" so the audio
+      // pipeline fully flushes to the speakers. Without this, the
+      // caller's next action (e.g. starting a new audio) can cut
+      // the tail of the current clip.
+      setTimeout(() => wrap(true), 300);
+    };
     audio.onerror = () => { if (myToken === _currentToken) wrap(false); };
 
     try {

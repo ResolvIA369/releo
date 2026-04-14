@@ -369,7 +369,7 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
           await sofiaPlayAudio("intro", fillScript(SC.introduction, { name: "" }), "excited");
           setIsSpeaking(false);
           if (c()) return;
-          await delay(400);
+          await delay(600);
           if (c()) return;
           setPass(0); setWordIdx(0); setDotsCompleted(0);
           setPh("presentation");
@@ -411,7 +411,7 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
           await sofiaPlayAudio(mp3Names[pass], phrase, "excited");
           setIsSpeaking(false);
           if (c()) return;
-          await delay(400);
+          await delay(600);
           if (c()) return;
 
           const nextPass = pass + 1;
@@ -431,7 +431,7 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
           await sofiaPlayAudio("round2-intro", fillScript(SC.round2.intro, { name: "" }), "gentle");
           setIsSpeaking(false);
           if (c()) return;
-          await delay(500);
+          await delay(800);
           if (c()) return;
           setWordIdx(0); setDotsCompleted(0);
           setPh("repeat");
@@ -518,7 +518,7 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
           await sofiaPlayAudio("round3-intro", fillScript(SC.round3.intro, { name: "" }), "gentle");
           setIsSpeaking(false);
           if (c()) return;
-          await delay(400);
+          await delay(600);
           if (c()) return;
           setPh("story");
           break;
