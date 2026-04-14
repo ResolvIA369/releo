@@ -73,7 +73,6 @@ export const GameIntro: React.FC<GameIntroProps> = ({
 
   return (
     <div
-      onClick={startNow}
       style={{
         display: "flex",
         flexDirection: "column",
@@ -81,7 +80,6 @@ export const GameIntro: React.FC<GameIntroProps> = ({
         justifyContent: "center",
         minHeight: "min(400px, 60vh)",
         gap: spacing.lg,
-        cursor: "pointer",
         padding: spacing.md,
       }}
     >
@@ -111,10 +109,7 @@ export const GameIntro: React.FC<GameIntroProps> = ({
         transition={{ delay: 0.5 }}
         whileHover={{ scale: 1.04 }}
         whileTap={{ scale: 0.96 }}
-        onClick={(e) => {
-          e.stopPropagation();
-          startNow();
-        }}
+        onClick={() => startNow()}
         style={{
           padding: `${spacing.md}px ${spacing.xl}px`,
           backgroundColor: color,
