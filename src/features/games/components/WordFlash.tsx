@@ -973,7 +973,7 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
             key={`${videoMode}-${pass}`}
             src={videoMode === "celebration"
               ? `/videos/leo-celebration-${pass + 1}.mp4`
-              : `/videos/leo-motivation.mp4`}
+              : `/videos/sofia-esfuerzo.mp4`}
             autoPlay
             playsInline
             controls={false}
