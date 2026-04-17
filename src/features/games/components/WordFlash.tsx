@@ -378,27 +378,30 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
         }
 
         // ═══ ROUND 1: PRESENTATION (3 passes) ═══════════════════
+        // Doman method: words must flash QUICKLY — the child's brain
+        // captures the word in a fraction of a second. Lingering too
+        // long actually reduces retention.
         case "presentation": {
           setIsFlipped(true);
-          await delay(800); // time to see the card flip
+          await delay(600);
           if (c()) return;
           setIsSpeaking(true);
           await sofiaNameWord(currentWord.text);
           setIsSpeaking(false);
           if (c()) return;
-          await delay(1500); // let the child absorb the word
+          await delay(900);
           if (c()) return;
           setDotsCompleted(wordIdx + 1);
 
           if (wordIdx < sessionWords.length - 1) {
             setIsFlipped(false);
-            await delay(600); // pause between words
+            await delay(400);
             if (c()) return;
             setWordIdx((i) => i + 1);
             setTick((t) => t + 1);
           } else {
             setIsFlipped(false);
-            await delay(600);
+            await delay(400);
             if (c()) return;
             setPh("pres_sofia");
           }
@@ -579,16 +582,16 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
             if (c()) return;
             setDisplayWord(previousWords[i]);
             setIsFlipped(true);
-            await delay(800);
+            await delay(600);
             if (c()) return;
             setIsSpeaking(true);
             await sofiaNameWord(previousWords[i]);
             setIsSpeaking(false);
             if (c()) return;
-            await delay(1200); // more time to see each review word
+            await delay(800);
             if (c()) return;
             setIsFlipped(false);
-            await delay(500);
+            await delay(400);
           }
           if (c()) return;
           setDisplayWord("");
@@ -609,7 +612,7 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
           await sofiaPlayAudio("farewell", fillScript(SC.farewell, { name: "", words_list: wordsList }), "excited");
           setIsSpeaking(false);
           if (c()) return;
-          await delay(800);
+          await delay(500);
 
           for (const w of sessionWords) {
             if (c()) return;
@@ -617,7 +620,7 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
             setIsSpeaking(true);
             await sofiaNameWord(w.text);
             setIsSpeaking(false);
-            await delay(1200); // let each word sink in
+            await delay(600);
           }
           if (c()) return;
           setDisplayWord("");
