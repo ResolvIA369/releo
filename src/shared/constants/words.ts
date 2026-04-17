@@ -422,18 +422,77 @@ export const WORD_PAIR_EXAMPLES: WordPairExample[] = [
 // ═══════════════════════════════════════════════════════════════════════
 
 export const SENTENCE_EXAMPLES: SentenceExample[] = [
+  // ─── Phase 1: Familia + casa + cuerpo + animales + comida ────
+  { fullText: "mamá y papá", phase: 1 },
+  { fullText: "abuela y abuelo", phase: 1 },
+  { fullText: "hermano y hermana", phase: 1 },
+  { fullText: "perro y gato", phase: 1 },
+  { fullText: "mano y pie", phase: 1 },
+  { fullText: "ojo y nariz", phase: 1 },
+  { fullText: "pan con leche", phase: 1 },
+  { fullText: "agua y huevo", phase: 1 },
+  { fullText: "mesa y silla", phase: 1 },
+  { fullText: "casa y puerta", phase: 1 },
+  { fullText: "manzana y banana", phase: 1 },
+  { fullText: "uva y pera", phase: 1 },
+
+  // ─── Phase 2: Colores + tamaños + opuestos + emociones + naturaleza ──
+  { fullText: "rojo y azul", phase: 2 },
+  { fullText: "grande y pequeño", phase: 2 },
+  { fullText: "arriba y abajo", phase: 2 },
+  { fullText: "feliz y contento", phase: 2 },
+  { fullText: "sol y luna", phase: 2 },
+  { fullText: "rápido y lento", phase: 2 },
+  { fullText: "caliente y frío", phase: 2 },
+  { fullText: "cerca y lejos", phase: 2 },
+  { fullText: "dentro y fuera", phase: 2 },
+  { fullText: "árbol y flor", phase: 2 },
+  { fullText: "estrella y nube", phase: 2 },
+  { fullText: "río y mar", phase: 2 },
+
+  // ─── Phase 3: Verbos + ropa + escuela + lugares ──────────────
   { fullText: "mamá come pan", phase: 3 },
   { fullText: "papá lee libro", phase: 3 },
   { fullText: "el perro corre", phase: 3 },
   { fullText: "bebé duerme", phase: 3 },
   { fullText: "gato bebe leche", phase: 3 },
   { fullText: "hermana canta", phase: 3 },
-  { fullText: "abuela cocina sopa", phase: 3 },
-  { fullText: "el pato nada", phase: 3 },
-  { fullText: "niño salta", phase: 3 },
+  { fullText: "abuela cocina", phase: 3 },
   { fullText: "hermano dibuja", phase: 3 },
   { fullText: "mamá abre puerta", phase: 3 },
-  { fullText: "papá sube", phase: 3 },
+  { fullText: "papá baja", phase: 3 },
+  { fullText: "camisa y pantalón", phase: 3 },
+  { fullText: "zapato y gorra", phase: 3 },
+  { fullText: "libro y lápiz", phase: 3 },
+  { fullText: "escuela y parque", phase: 3 },
+  { fullText: "mamá lava plato", phase: 3 },
+  { fullText: "hermana pinta", phase: 3 },
+  { fullText: "niño salta", phase: 3 },
+  { fullText: "ella baila", phase: 3 },
+  { fullText: "él escribe", phase: 3 },
+  { fullText: "mamá limpia casa", phase: 3 },
+
+  // ─── Phase 4: Artículos + preposiciones + pronombres + tiempo + números ──
+  { fullText: "el gato y la gata", phase: 4 },
+  { fullText: "un perro grande", phase: 4 },
+  { fullText: "yo y tú", phase: 4 },
+  { fullText: "hoy y mañana", phase: 4 },
+  { fullText: "uno dos tres", phase: 4 },
+  { fullText: "en la casa", phase: 4 },
+  { fullText: "para mi mamá", phase: 4 },
+  { fullText: "sobre la mesa", phase: 4 },
+  { fullText: "entre tú y yo", phase: 4 },
+  { fullText: "sin zapatos", phase: 4 },
+  { fullText: "cuatro y cinco", phase: 4 },
+  { fullText: "siempre y nunca", phase: 4 },
+
+  // ─── Phase 5: Verbos avanzados + adverbios ───────────────────
+  { fullText: "quiere y puede", phase: 5 },
+  { fullText: "muy bien", phase: 5 },
+  { fullText: "dice y busca", phase: 5 },
+  { fullText: "aquí y allí", phase: 5 },
+  { fullText: "más y menos", phase: 5 },
+  { fullText: "también junto", phase: 5 },
 ];
 
 // ═══════════════════════════════════════════════════════════════════════

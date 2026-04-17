@@ -309,7 +309,17 @@ export const WordPath: React.FC<Props> = ({ onBack }) => {
         justifyContent: "center", gap: spacing.lg, minHeight: "70vh",
         maxWidth: 400, margin: "0 auto",
       }}>
-        <CelebrationGif size={180} />
+        {/* Celebration / motivation video */}
+        <div style={{ borderRadius: 16, overflow: "hidden", maxWidth: "min(280px, 85vw)" }}>
+          <video
+            src={stars >= 2
+              ? `/videos/leo-celebration-${((lastResult?.correctAttempts ?? 0) % 3) + 1}.mp4`
+              : "/videos/sofia-esfuerzo.mp4"}
+            autoPlay playsInline controls={false}
+            onError={(e) => { (e.target as HTMLVideoElement).style.display = "none"; }}
+            style={{ width: "100%", borderRadius: 16, display: "block", backgroundColor: "transparent" }}
+          />
+        </div>
 
         <div style={{ display: "flex", gap: spacing.sm, fontSize: 40 }}>
           {[0, 1, 2].map((i) => (

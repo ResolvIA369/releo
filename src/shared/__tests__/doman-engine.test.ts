@@ -250,9 +250,10 @@ describe("Cross-reference coherence", () => {
     }
   });
 
-  it("SENTENCE_EXAMPLES all have phase 3", () => {
+  it("SENTENCE_EXAMPLES all have valid phase", () => {
     for (const sentence of SENTENCE_EXAMPLES) {
-      expect(sentence.phase).toBe(3);
+      expect(sentence.phase).toBeGreaterThanOrEqual(1);
+      expect(sentence.phase).toBeLessThanOrEqual(5);
       expect(sentence.fullText.length).toBeGreaterThan(0);
     }
   });

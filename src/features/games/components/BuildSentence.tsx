@@ -14,7 +14,7 @@ import { GameCompleteScreen } from "@/shared/components/GameCompleteScreen";
 import { TimeBar } from "@/shared/components/TimeBar";
 import { FeedbackFlash } from "@/shared/components/FeedbackFlash";
 import { QuickCelebration } from "@/shared/components/QuickCelebration";
-import { SENTENCE_EXAMPLES } from "@/shared/constants";
+import { SENTENCE_EXAMPLES, PHRASE_EXAMPLES } from "@/shared/constants";
 import { colors, spacing, radii, shadows, fontSizes, fonts } from "@/shared/styles/design-tokens";
 import { tapBounce, staggerContainer, staggerItem } from "@/shared/styles/animations";
 
@@ -93,8 +93,11 @@ export const BuildSentence: React.FC<GameProps> = ({ words, phase = 1, onComplet
   const sentences = useMemo(() => {
     const wordTexts = new Set(words.map((w) => w.text.toLowerCase()));
 
-    // Filter SENTENCE_EXAMPLES to those whose words overlap with the prop words
-    const relevant = SENTENCE_EXAMPLES.filter((s) =>
+    // Use ALL curated examples (both sentence and phrase)
+    const allExamples = [...SENTENCE_EXAMPLES, ...PHRASE_EXAMPLES];
+
+    // Prefer sentences that use words from the current set
+    const relevant = allExamples.filter((s) =>
       s.fullText.split(" ").some((w) => wordTexts.has(w.toLowerCase()))
     ).map((s) => ({
       text: s.fullText,
@@ -103,16 +106,10 @@ export const BuildSentence: React.FC<GameProps> = ({ words, phase = 1, onComplet
 
     const picked = shuffle(relevant).slice(0, TOTAL_ROUNDS);
 
-    // Fill remaining rounds from the words prop
-    if (picked.length < TOTAL_ROUNDS) {
-      const generated = buildSentencesFromWords(words, TOTAL_ROUNDS - picked.length);
-      picked.push(...generated);
-    }
-
-    // If still not enough (very few words passed), use any SENTENCE_EXAMPLES as last resort
+    // Fill remaining with any curated sentence (never random generation)
     if (picked.length < TOTAL_ROUNDS) {
       const fallback = shuffle(
-        SENTENCE_EXAMPLES.map((s) => ({ text: s.fullText, words: s.fullText.split(" ") }))
+        allExamples.map((s) => ({ text: s.fullText, words: s.fullText.split(" ") }))
       );
       for (const fb of fallback) {
         if (picked.length >= TOTAL_ROUNDS) break;

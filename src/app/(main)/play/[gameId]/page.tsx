@@ -217,7 +217,17 @@ function GamePageInner() {
             gap: spacing.lg, maxWidth: 400, width: "100%",
           }}
         >
-          <CelebrationGif size={180} />
+          {/* Celebration / motivation video */}
+          <div style={{ borderRadius: 16, overflow: "hidden", maxWidth: "min(320px, 85vw)" }}>
+            <video
+              src={stars >= 2
+                ? `/videos/leo-celebration-${((postGame.correctAttempts ?? 0) % 3) + 1}.mp4`
+                : "/videos/sofia-esfuerzo.mp4"}
+              autoPlay playsInline controls={false}
+              onError={(e) => { (e.target as HTMLVideoElement).style.display = "none"; }}
+              style={{ width: "100%", borderRadius: 16, display: "block", backgroundColor: "transparent" }}
+            />
+          </div>
 
           <div style={{ display: "flex", gap: spacing.sm, fontSize: 48 }}>
             {[0, 1, 2].map((i) => (

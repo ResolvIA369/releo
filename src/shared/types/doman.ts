@@ -80,7 +80,7 @@ export interface WordPairExample {
 
 export interface SentenceExample {
   fullText: string;
-  phase: 3 | 4;
+  phase: 1 | 2 | 3 | 4 | 5;
 }
 
 // ─── Stories (Phase 5) ───────────────────────────────────────────────
