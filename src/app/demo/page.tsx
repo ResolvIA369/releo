@@ -346,10 +346,12 @@ function DemoSelector() {
         <Section title="📥 Descargar videos">
           <div style={{ display: "flex", flexDirection: "column", gap: spacing.sm }}>
             {[
-              { file: "leo-celebration-1.mp4", label: "Leo celebrando (pasada 1)" },
-              { file: "leo-celebration-2.mp4", label: "Leo celebrando (pasada 2)" },
-              { file: "leo-celebration-3.mp4", label: "Leo celebrando (pasada 3)" },
-              { file: "sofia-esfuerzo.mp4", label: "Sofía felicitando por esfuerzo" },
+              { file: "leo-celebration-1.mp4", label: "Leo celebrando 1" },
+              { file: "leo-celebration-2.mp4", label: "Leo celebrando 2" },
+              { file: "leo-celebration-3.mp4", label: "Leo celebrando 3" },
+              { file: "sofia-celebration-1.mp4", label: "Sofía celebrando 1" },
+              { file: "sofia-celebration-2.mp4", label: "Sofía celebrando 2" },
+              { file: "sofia-leo-celebration-1.mp4", label: "Sofía y Leo celebrando" },
               { file: "leo-motivation.mp4", label: "Leo motivando" },
             ].map(({ file, label }) => (
               <a

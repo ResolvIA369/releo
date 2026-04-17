@@ -24,6 +24,7 @@ import { SofiaAvatar } from "@/shared/components/SofiaAvatar";
 import { CelebrationGif } from "@/shared/components/CelebrationGif";
 import { AnimatedButton } from "@/shared/components/AnimatedButton";
 import { RewardsProvider } from "@/shared/components/RewardsLayer";
+import { pickEndVideo } from '@/shared/utils/videoPool';
 import { ErrorBoundary } from "@/shared/components/ErrorBoundary";
 import type { GameId, GameProps, GameSessionState } from "@/features/games/types";
 import type { FC } from "react";
@@ -220,9 +221,7 @@ function GamePageInner() {
           {/* Celebration / motivation video */}
           <div style={{ borderRadius: 16, overflow: "hidden", maxWidth: "min(320px, 85vw)" }}>
             <video
-              src={stars >= 2
-                ? `/videos/leo-celebration-${((postGame.correctAttempts ?? 0) % 3) + 1}.mp4`
-                : "/videos/sofia-esfuerzo.mp4"}
+              src={pickEndVideo(stars)}
               autoPlay playsInline controls={false}
               onError={(e) => { (e.target as HTMLVideoElement).style.display = "none"; }}
               style={{ width: "100%", borderRadius: 16, display: "block", backgroundColor: "transparent" }}

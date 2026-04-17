@@ -15,6 +15,7 @@ import { FlipCard } from "@/shared/components/FlipCard";
 import { QuickCelebration } from "@/shared/components/QuickCelebration";
 import { AudioWaves, ProgressLine } from "@/shared/components/doman-visuals";
 import { colors, spacing, fonts, fontSizes, radii, shadows } from "@/shared/styles/design-tokens";
+import { pickCelebrationVideo, pickMotivationVideo } from '@/shared/utils/videoPool';
 import { fitWordFontSize } from "@/shared/utils/fitText";
 import { useRewards } from "@/shared/components/RewardsLayer";
 import { TimeBar } from "@/shared/components/TimeBar";
@@ -974,9 +975,7 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
         <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: spacing.lg, gap: spacing.md }}>
           <video
             key={`${videoMode}-${pass}`}
-            src={videoMode === "celebration"
-              ? `/videos/leo-celebration-${pass + 1}.mp4`
-              : `/videos/sofia-esfuerzo.mp4`}
+            src={videoMode === "celebration" ? pickCelebrationVideo() : pickMotivationVideo()}
             autoPlay
             playsInline
             controls={false}

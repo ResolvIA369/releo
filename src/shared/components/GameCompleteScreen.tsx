@@ -6,6 +6,7 @@ import { AnimatedButton } from "./AnimatedButton";
 import { CelebrationGif } from "./CelebrationGif";
 import { colors, spacing, fonts, fontSizes } from "@/shared/styles/design-tokens";
 import { fadeInUp, starPop } from "@/shared/styles/animations";
+import { pickEndVideo } from "@/shared/utils/videoPool";
 import { useRewards } from "./RewardsLayer";
 import { useAppStore } from "@/shared/store/useAppStore";
 
@@ -99,7 +100,7 @@ export const GameCompleteScreen: React.FC<GameCompleteScreenProps> = ({
         style={{ borderRadius: 16, overflow: "hidden", maxWidth: "min(360px, 90vw)" }}
       >
         <video
-          src={stars >= 2 ? `/videos/leo-celebration-${(correct % 3) + 1}.mp4` : "/videos/sofia-esfuerzo.mp4"}
+          src={pickEndVideo(stars)}
           autoPlay
           playsInline
           muted={false}

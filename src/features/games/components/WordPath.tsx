@@ -8,6 +8,7 @@ import { PHASE1_WORDS, PHASE2_WORDS, PHASE3_WORDS, PHASE4_WORDS, PHASE5_WORDS } 
 import { EMOJI_MAP } from "@/shared/constants/emoji-map";
 import { SofiaAvatar } from "@/shared/components/SofiaAvatar";
 import { CelebrationGif } from "@/shared/components/CelebrationGif";
+import { pickEndVideo } from '@/shared/utils/videoPool';
 import { AnimatedButton } from "@/shared/components/AnimatedButton";
 import { RewardsProvider } from "@/shared/components/RewardsLayer";
 import { WordFlash } from "./WordFlash";
@@ -312,9 +313,7 @@ export const WordPath: React.FC<Props> = ({ onBack }) => {
         {/* Celebration / motivation video */}
         <div style={{ borderRadius: 16, overflow: "hidden", maxWidth: "min(280px, 85vw)" }}>
           <video
-            src={stars >= 2
-              ? `/videos/leo-celebration-${((lastResult?.correctAttempts ?? 0) % 3) + 1}.mp4`
-              : "/videos/sofia-esfuerzo.mp4"}
+            src={pickEndVideo(stars)}
             autoPlay playsInline controls={false}
             onError={(e) => { (e.target as HTMLVideoElement).style.display = "none"; }}
             style={{ width: "100%", borderRadius: 16, display: "block", backgroundColor: "transparent" }}

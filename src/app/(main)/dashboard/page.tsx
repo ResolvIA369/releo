@@ -151,7 +151,7 @@ export default function DashboardPage() {
           </div>
         </motion.button>
 
-        {/* 3. Por Palabras (abajo) */}
+        {/* 3. Por Palabras */}
         <motion.button variants={staggerItem}
           whileHover={{ y: -4, boxShadow: shadows.glow("#667eea") }}
           whileTap={{ scale: 0.98 }}
@@ -172,7 +172,59 @@ export default function DashboardPage() {
               Por Palabras
             </div>
             <div style={{ fontSize: fontSizes.sm, color: colors.text.muted, marginTop: 2 }}>
-              Elige palabras y practica con 5 juegos seguidos
+              Elegí palabras y practicá con 5 juegos seguidos
+            </div>
+          </div>
+        </motion.button>
+
+        {/* 4. Aprender con Videos */}
+        <motion.button variants={staggerItem}
+          whileHover={{ y: -4, boxShadow: shadows.glow("#ed8936") }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => router.push("/demo")}
+          style={{
+            display: "flex", alignItems: "center", gap: spacing.lg,
+            padding: spacing.xl, backgroundColor: colors.bg.card,
+            border: `2px solid ${colors.border.light}`, borderRadius: radii.xl,
+            cursor: "pointer", textAlign: "left", boxShadow: shadows.sm,
+          }}>
+          <div style={{
+            width: 64, height: 64, borderRadius: radii.lg, flexShrink: 0,
+            background: "linear-gradient(135deg, #ed8936, #f6ad55)",
+            display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32,
+          }}>🎬</div>
+          <div>
+            <div style={{ fontSize: fontSizes.xl, fontFamily: fonts.display, fontWeight: "bold", color: "#ed8936" }}>
+              Aprender con Videos
+            </div>
+            <div style={{ fontSize: fontSizes.sm, color: colors.text.muted, marginTop: 2 }}>
+              Mirá sesiones y juegos como videos
+            </div>
+          </div>
+        </motion.button>
+
+        {/* 5. Método Doman */}
+        <motion.button variants={staggerItem}
+          whileHover={{ y: -4, boxShadow: shadows.glow("#9f7aea") }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => router.push("/onboarding-parents")}
+          style={{
+            display: "flex", alignItems: "center", gap: spacing.lg,
+            padding: spacing.xl, backgroundColor: colors.bg.card,
+            border: `2px solid ${colors.border.light}`, borderRadius: radii.xl,
+            cursor: "pointer", textAlign: "left", boxShadow: shadows.sm,
+          }}>
+          <div style={{
+            width: 64, height: 64, borderRadius: radii.lg, flexShrink: 0,
+            background: "linear-gradient(135deg, #9f7aea, #b794f4)",
+            display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32,
+          }}>📚</div>
+          <div>
+            <div style={{ fontSize: fontSizes.xl, fontFamily: fonts.display, fontWeight: "bold", color: "#9f7aea" }}>
+              Método Doman
+            </div>
+            <div style={{ fontSize: fontSizes.sm, color: colors.text.muted, marginTop: 2 }}>
+              Conocé cómo funciona este método de lectura
             </div>
           </div>
         </motion.button>
