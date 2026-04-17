@@ -1048,12 +1048,11 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
         </div>
       )}
 
-      {/* Farewell word display */}
+      {/* Farewell word display — word only, no emoji/image */}
       {ph === "farewell" && displayWord && (
         <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <motion.div key={displayWord} initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}
-            style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, padding: "0 24px", maxWidth: "100%" }}>
-            <span style={{ fontSize: 64 }}>{EMOJI_MAP[displayWord] ?? ""}</span>
+            style={{ padding: "0 24px", maxWidth: "100%" }}>
             <span style={{ fontSize: fitWordFontSize(displayWord, 72), fontWeight: "bold", fontFamily: "Arial Rounded MT Bold, Arial, sans-serif", color: "#2d3748", whiteSpace: "nowrap", maxWidth: "100%" }}>
               {displayWord}
             </span>

@@ -216,6 +216,40 @@ function DemoSelector() {
           </p>
         </Section>
 
+        {/* Download videos */}
+        <Section title="📥 Descargar videos">
+          <div style={{ display: "flex", flexDirection: "column", gap: spacing.sm }}>
+            {[
+              { file: "leo-celebration-1.mp4", label: "Leo celebrando (pasada 1)" },
+              { file: "leo-celebration-2.mp4", label: "Leo celebrando (pasada 2)" },
+              { file: "leo-celebration-3.mp4", label: "Leo celebrando (pasada 3)" },
+              { file: "sofia-esfuerzo.mp4", label: "Sofía felicitando por esfuerzo" },
+              { file: "leo-motivation.mp4", label: "Leo motivando" },
+            ].map(({ file, label }) => (
+              <a
+                key={file}
+                href={`/videos/${file}`}
+                download={file}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: `${spacing.sm}px ${spacing.md}px`,
+                  backgroundColor: colors.bg.card,
+                  border: `1px solid ${colors.border.light}`,
+                  borderRadius: radii.lg,
+                  textDecoration: "none",
+                  color: colors.text.primary,
+                  fontSize: fontSizes.sm,
+                }}
+              >
+                <span>🎬 {label}</span>
+                <span style={{ fontSize: fontSizes.xs, color: colors.brand.primary, fontWeight: "bold" }}>Descargar</span>
+              </a>
+            ))}
+          </div>
+        </Section>
+
         {/* Info */}
         <div style={{
           padding: spacing.md,
