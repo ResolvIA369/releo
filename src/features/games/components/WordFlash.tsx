@@ -340,7 +340,8 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
   useEffect(() => {
     if (!isDemo) return;
     if (ph === "repeat_video") {
-      const t = setTimeout(() => setPh("repeat_sofia"), 4500);
+      // 9 seconds so the 8-second videos play fully before auto-advancing
+      const t = setTimeout(() => setPh("repeat_sofia"), 9000);
       return () => clearTimeout(t);
     }
   }, [isDemo, ph]);
@@ -470,13 +471,14 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
         }
 
         case "repeat_video": {
-          // Decide which video to show based on this pass's score.
+          // Pick which video to play:
+          // - 3 celebration videos rotate per pass (pass 0→1, 1→2, 2→3)
+          // - motivation video for low score
           const mode = correctInPass > 2 ? "celebration" : "motivation";
           setVideoMode(mode);
-          // Reset for next pass
           setCorrectInPass(0);
-          // The video element renders inside the JSX and calls
-          // setPh("repeat_sofia") when it ends.
+          // The video element renders inside the JSX. It advances to
+          // repeat_sofia when: onEnded fires OR the user taps Continuar.
           break;
         }
 
@@ -968,8 +970,10 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
       {ph === "repeat_video" && (
         <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: spacing.lg, gap: spacing.md }}>
           <video
-            key={videoMode}
-            src={`/videos/leo-${videoMode}.mp4`}
+            key={`${videoMode}-${pass}`}
+            src={videoMode === "celebration"
+              ? `/videos/leo-celebration-${pass + 1}.mp4`
+              : `/videos/leo-motivation.mp4`}
             autoPlay
             playsInline
             controls={false}
