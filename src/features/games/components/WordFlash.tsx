@@ -984,7 +984,7 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
               maxHeight: "min(70vh, 540px)",
               borderRadius: 24,
               boxShadow: shadows.lg,
-              backgroundColor: "#000",
+              backgroundColor: "transparent",
             }}
           />
           <button
