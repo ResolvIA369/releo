@@ -169,6 +169,7 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
   const [repeatTimerKey, setRepeatTimerKey] = useState(0);
   const [showRepeatTimer, setShowRepeatTimer] = useState(false);
   const [videoMode, setVideoMode] = useState<"celebration" | "motivation">("motivation");
+  const [videoUrl, setVideoUrl] = useState("");
   const repeatTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   // Story state
   const [currentSentence, setCurrentSentence] = useState("");
@@ -331,9 +332,11 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
   useEffect(() => {
     if (!isDemo) return;
     if (ph === "repeat" && isFlipped && !repeatResolvingRef.current) {
+      // 3.5 seconds: gives ~2s of suspense with the timer bar visible
+      // before the "child" taps the correct answer
       const t = setTimeout(() => {
         if (!repeatResolvingRef.current) handleCardTap();
-      }, 1500);
+      }, 3500);
       return () => clearTimeout(t);
     }
   }, [isDemo, ph, isFlipped, handleCardTap]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -475,14 +478,11 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
         }
 
         case "repeat_video": {
-          // Pick which video to play:
-          // - 3 celebration videos rotate per pass (pass 0→1, 1→2, 2→3)
-          // - motivation video for low score
           const mode = correctInPass > 2 ? "celebration" : "motivation";
           setVideoMode(mode);
+          // Pick the URL ONCE here so re-renders don't change it
+          setVideoUrl(mode === "celebration" ? pickCelebrationVideo() : pickMotivationVideo());
           setCorrectInPass(0);
-          // The video element renders inside the JSX. It advances to
-          // repeat_sofia when: onEnded fires OR the user taps Continuar.
           break;
         }
 
@@ -971,11 +971,11 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
       )}
 
       {/* End-of-pass video (Round 2): celebration if >2 correct, else motivation */}
-      {ph === "repeat_video" && (
+      {ph === "repeat_video" && videoUrl && (
         <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: spacing.lg, gap: spacing.md }}>
           <video
-            key={`${videoMode}-${pass}`}
-            src={videoMode === "celebration" ? pickCelebrationVideo() : pickMotivationVideo()}
+            key={videoUrl}
+            src={videoUrl}
             autoPlay
             playsInline
             controls={false}
@@ -986,7 +986,6 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
               maxHeight: "min(70vh, 540px)",
               borderRadius: 24,
               boxShadow: shadows.lg,
-              backgroundColor: "transparent",
             }}
           />
           <button
