@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import type { GameProps } from "../types";
 import type { DomanWord } from "@/shared/types/doman";
 import { useGameState } from "../hooks/useGameState";
+import { useDemoAutoplay } from "../hooks/useDemoAutoplay";
 import { GameShell, usePause, useLeoContext } from "./GameShell";
 import { useRewards } from "@/shared/components/RewardsLayer";
 import { GameIntro } from "./GameIntro";
@@ -31,7 +32,7 @@ const SECONDS_PER_ROUND = 10;
 
 type Phase = "intro" | "announcing" | "fishing" | "catching" | "feedback" | "finished";
 
-export const WordFishing: React.FC<GameProps> = ({ words, phase = 1, onComplete, onBack }) => {
+export const WordFishing: React.FC<GameProps> = ({ words, phase = 1, onComplete, onBack, isDemo = false }) => {
   const { state, recordAttempt, finish, reset } = useGameState("word-fishing", { phase });
   const { paused } = usePause();
   const leo = useLeoContext();
@@ -86,6 +87,13 @@ export const WordFishing: React.FC<GameProps> = ({ words, phase = 1, onComplete,
     });
     return () => { c = true; };
   }, [gamePhase, roundIdx, paused]); // eslint-disable-line react-hooks/exhaustive-deps
+
+
+  // Demo: auto-select correct answer
+  useDemoAutoplay(isDemo, gamePhase === "fishing" && !!target, () => {
+    const btn = document.querySelector(`[data-word-id="${target?.id}"]`) as HTMLElement;
+    if (btn) btn.click();
+  }, 1500);
 
   // Game end
   useEffect(() => {
@@ -292,7 +300,7 @@ export const WordFishing: React.FC<GameProps> = ({ words, phase = 1, onComplete,
                     x: goesRight ? [-140, 500, -140] : [500, -140, 500],
                   }}
                   transition={{ repeat: Infinity, duration: fish.speed, ease: "linear" }}
-                  onClick={(e) => handleTap(fish, e)}
+                  data-word-id={fish.word.id} onClick={(e) => handleTap(fish, e)}
                   disabled={gamePhase !== "fishing" || !!feedbackType}
                   style={{
                     position: "absolute", top: `${yPos}%`, left: 0,

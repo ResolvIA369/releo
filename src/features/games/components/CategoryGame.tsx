@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import type { GameProps } from "../types";
 import type { DomanWord } from "@/shared/types/doman";
 import { useGameState } from "../hooks/useGameState";
+import { useDemoAutoplay } from "../hooks/useDemoAutoplay";
 import { GameShell, usePause } from "./GameShell";
 import { useRewards } from "@/shared/components/RewardsLayer";
 import { GameIntro } from "./GameIntro";
@@ -33,7 +34,7 @@ type Phase = "intro" | "announcing" | "playing" | "feedback" | "finished";
 
 const WORDS_BY_PHASE = [PHASE1_WORDS, PHASE2_WORDS, PHASE3_WORDS, PHASE4_WORDS, PHASE5_WORDS];
 
-export const CategoryGame: React.FC<GameProps> = ({ words, phase = 1, onComplete, onBack }) => {
+export const CategoryGame: React.FC<GameProps> = ({ words, phase = 1, onComplete, onBack, isDemo = false }) => {
   const { state, recordAttempt, finish, reset } = useGameState("category-sort", { phase });
   const { rewardCorrect } = useRewards();
   const { paused } = usePause();
@@ -74,6 +75,15 @@ export const CategoryGame: React.FC<GameProps> = ({ words, phase = 1, onComplete
     });
     return () => { cancelled = true; };
   }, [gamePhase, roundIdx, paused]); // eslint-disable-line react-hooks/exhaustive-deps
+
+
+  // Demo: auto-select correct answer
+  useDemoAutoplay(isDemo, gamePhase === "playing" && !feedbackType && !!currentWord, () => {
+    const cat = currentWord?.categoryDisplay;
+    if (!cat) return;
+    const btn = document.querySelector(`[data-category="${cat}"]`) as HTMLElement;
+    if (btn) btn.click();
+  }, 1500);
 
   // Game end
   useEffect(() => {
@@ -141,7 +151,7 @@ export const CategoryGame: React.FC<GameProps> = ({ words, phase = 1, onComplete
           gameIcon="🗂️"
           rulesText="¡Pon cada palabra en su categoria! Yo te digo la palabra y tu eliges donde va."
           color={GAME_COLOR}
-          onReady={() => setGamePhase("announcing")}
+          isDemo={isDemo} onReady={() => setGamePhase("announcing")}
         />
       </GameShell>
     );
@@ -198,7 +208,7 @@ export const CategoryGame: React.FC<GameProps> = ({ words, phase = 1, onComplete
               <motion.button
                 key={cat}
                 {...(feedbackType ? {} : tapBounce)}
-                onClick={(e) => handleCategoryTap(cat, e)}
+                data-category={cat} onClick={(e) => handleCategoryTap(cat, e)}
                 disabled={!!feedbackType || gamePhase !== "playing"}
                 animate={isCorrectCat ? { scale: [1, 1.05, 1] } : {}}
                 style={{

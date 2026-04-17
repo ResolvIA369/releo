@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import type { GameProps } from "../types";
 import type { DomanWord } from "@/shared/types/doman";
 import { useGameState } from "../hooks/useGameState";
+import { useDemoAutoplay } from "../hooks/useDemoAutoplay";
 import { GameShell, usePause } from "./GameShell";
 import { useRewards } from "@/shared/components/RewardsLayer";
 import { GameIntro } from "./GameIntro";
@@ -106,7 +107,7 @@ interface PuzzlePiece {
 
 type Phase = "intro" | "announcing" | "playing" | "feedback" | "finished";
 
-export const MemoryCards: React.FC<GameProps> = ({ words, phase = 1, onComplete, onBack }) => {
+export const MemoryCards: React.FC<GameProps> = ({ words, phase = 1, onComplete, onBack, isDemo = false }) => {
   const { state, recordAttempt, finish, reset } = useGameState("memory-cards", { phase });
   const { rewardCorrect } = useRewards();
   const { paused } = usePause();
@@ -153,6 +154,14 @@ export const MemoryCards: React.FC<GameProps> = ({ words, phase = 1, onComplete,
 
     return () => { cancelled = true; };
   }, [gamePhase, roundIdx, paused]); // eslint-disable-line react-hooks/exhaustive-deps
+
+
+  // Demo: auto-select correct answer
+  useDemoAutoplay(isDemo, gamePhase === "playing" && !feedbackType && placed.length < syllables.length, () => {
+    const nextIdx = placed.length;
+    const btn = document.querySelector(`[data-piece-idx="${nextIdx}"]`) as HTMLElement;
+    if (btn) btn.click();
+  }, 800);
 
   // ─── Game end ───────────────────────────────────────────────
 
@@ -249,7 +258,7 @@ export const MemoryCards: React.FC<GameProps> = ({ words, phase = 1, onComplete,
           gameIcon="🧩"
           rulesText="¡Arma la palabra! Yo te digo una palabra y tú tocas las sílabas en orden para armarla."
           color={GAME_COLOR}
-          onReady={() => setGamePhase("announcing")}
+          isDemo={isDemo} onReady={() => setGamePhase("announcing")}
         />
       </GameShell>
     );
@@ -369,7 +378,7 @@ export const MemoryCards: React.FC<GameProps> = ({ words, phase = 1, onComplete,
                     transition={{ type: "spring", damping: 10 }}
                     whileHover={{ scale: 1.08, y: -4 }}
                     whileTap={{ scale: 0.92 }}
-                    onClick={(e) => handlePieceTap(piece, e)}
+                    data-piece-idx={piece.index} onClick={(e) => handlePieceTap(piece, e)}
                     disabled={!!feedbackType}
                     style={{
                       padding: `${spacing.md}px ${spacing.lg}px`,

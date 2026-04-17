@@ -27,6 +27,7 @@ interface GameIntroProps {
   gameIcon: string;
   rulesText: string;
   color?: string;
+  isDemo?: boolean;
   onReady: () => void;
 }
 
@@ -34,6 +35,7 @@ export const GameIntro: React.FC<GameIntroProps> = ({
   gameName,
   rulesText,
   color = "#667eea",
+  isDemo = false,
   onReady,
 }) => {
   const startedRef = useRef(false);
@@ -65,6 +67,10 @@ export const GameIntro: React.FC<GameIntroProps> = ({
         }
       }
       setIsSpeaking(false);
+      // In demo mode, auto-start after Sofia finishes the rules
+      if (isDemo && !cancelledRef.current) {
+        setTimeout(() => startNow(), 500);
+      }
     }
 
     run();

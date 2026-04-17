@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import type { GameProps } from "../types";
 import type { PhaseNumber } from "@/shared/types/doman";
 import { useGameState } from "../hooks/useGameState";
+import { useDemoAutoplay } from "../hooks/useDemoAutoplay";
 import { GameShell, usePause } from "./GameShell";
 import { GameIntro } from "./GameIntro";
 import { GameCompleteScreen } from "@/shared/components/GameCompleteScreen";
@@ -187,7 +188,7 @@ const AUTO_PLAY_INTERVAL = 2500;
 
 type Phase = "intro" | "reading" | "celebrating" | "finished";
 
-export const StoryReader: React.FC<GameProps> = ({ words, phase = 1, worldId, onComplete, onBack }) => {
+export const StoryReader: React.FC<GameProps> = ({ words, phase = 1, worldId, onComplete, onBack, isDemo = false }) => {
   const { state, recordAttempt, finish, reset } = useGameState("story-reader", { phase });
   const { paused } = usePause();
 
@@ -243,6 +244,12 @@ export const StoryReader: React.FC<GameProps> = ({ words, phase = 1, worldId, on
     }
   }, [isSpeaking, readWords, nextWord, paused, story, recordAttempt, storiesCompleted, totalStories, finish, onComplete, state]);
 
+
+  // Demo: auto-select correct answer
+  useDemoAutoplay(isDemo, gamePhase === "reading" && !isSpeaking && !storyDone, () => {
+    if (nextWord < story.words.length) readWordAt(nextWord);
+  }, 500);
+
   // ─── Auto-play ──────────────────────────────────────────────
 
   useEffect(() => {
@@ -277,7 +284,7 @@ export const StoryReader: React.FC<GameProps> = ({ words, phase = 1, worldId, on
           gameIcon="📖"
           rulesText="¡Vamos a leer un cuento juntos! Toca cada palabra en orden y Sofía te la lee."
           color={GAME_COLOR}
-          onReady={() => setGamePhase("reading")}
+          isDemo={isDemo} onReady={() => setGamePhase("reading")}
         />
       </GameShell>
     );

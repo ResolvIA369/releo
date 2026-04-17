@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import type { GameProps, GameSessionState } from "../types";
 import type { DomanWord } from "@/shared/types/doman";
 import { useGameState } from "../hooks/useGameState";
+import { useDemoAutoplay } from "../hooks/useDemoAutoplay";
 import { GameShell, usePause } from "./GameShell";
 import { useRewards } from "@/shared/components/RewardsLayer";
 import { FeedbackFlash } from "@/shared/components/FeedbackFlash";
@@ -29,7 +30,7 @@ const WORDS_PER_GAME = 10;
 type Difficulty = 1 | 2 | 3;
 type Phase = "difficulty" | "announcing" | "moving" | "feedback" | "finished";
 
-function TrainGame({ words, phase = 1, difficulty, onComplete, onBack }: GameProps & { difficulty: Difficulty }) {
+function TrainGame({ words, phase = 1, difficulty, onComplete, onBack, isDemo = false }: GameProps & { difficulty: Difficulty }) {
   const wagonsPerTrack = 3;
   const totalTracks = difficulty;
   const totalOptions = wagonsPerTrack * totalTracks;
@@ -42,6 +43,12 @@ function TrainGame({ words, phase = 1, difficulty, onComplete, onBack }: GamePro
   const [gamePhase, setGamePhase] = useState<Phase>("announcing");
   const [roundIdx, setRoundIdx] = useState(0);
   const [targetWord, setTargetWord] = useState<DomanWord | null>(null);
+
+  // Demo: auto-tap correct wagon
+  useDemoAutoplay(isDemo, gamePhase === "moving" && !!targetWord, () => {
+    const btn = document.querySelector(`[data-word-id="${targetWord?.id}"]`) as HTMLElement;
+    if (btn) btn.click();
+  }, 2000);
   const [tracks, setTracks] = useState<DomanWord[][]>([]);
   const [tappedId, setTappedId] = useState<string | null>(null);
   const [feedbackType, setFeedbackType] = useState<"correct" | "wrong" | null>(null);
@@ -232,6 +239,7 @@ function TrainGame({ words, phase = 1, difficulty, onComplete, onBack }: GamePro
     return (
       <motion.button
         key={word.id}
+        data-word-id={word.id}
         onClick={(e) => handleTap(word, e)}
         disabled={gamePhase !== "moving"}
         whileTap={gamePhase === "moving" ? { scale: 0.9 } : {}}
@@ -396,7 +404,7 @@ const emptySession: GameSessionState = {
 };
 
 export const WordTrain: React.FC<GameProps> = (props) => {
-  const [difficulty, setDifficulty] = useState<Difficulty | null>(null);
+  const [difficulty, setDifficulty] = useState<Difficulty | null>(props.isDemo ? 1 : null);
 
   if (difficulty === null) {
     return (

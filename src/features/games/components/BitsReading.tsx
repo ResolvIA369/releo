@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import type { GameProps } from "../types";
 import type { DomanWord } from "@/shared/types/doman";
 import { useGameState } from "../hooks/useGameState";
+import { useDemoAutoplay } from "../hooks/useDemoAutoplay";
 import { GameShell, usePause } from "./GameShell";
 import { useRewards } from "@/shared/components/RewardsLayer";
 import { GameIntro } from "./GameIntro";
@@ -39,7 +40,7 @@ interface Bubble {
 
 type Phase = "intro" | "announcing" | "popping" | "feedback" | "finished";
 
-export const BitsReading: React.FC<GameProps> = ({ words, phase = 1, onComplete, onBack }) => {
+export const BitsReading: React.FC<GameProps> = ({ words, phase = 1, onComplete, onBack, isDemo = false }) => {
   const { state, recordAttempt, finish, reset } = useGameState("daily-bits", { phase });
   const { rewardCorrect } = useRewards();
   const { paused } = usePause();
@@ -197,7 +198,7 @@ export const BitsReading: React.FC<GameProps> = ({ words, phase = 1, onComplete,
                 <motion.button key={bubble.word.id}
                   initial={{ scale: 0 }} animate={{ scale: 1 }}
                   whileHover={{ scale: 1.12 }} whileTap={{ scale: 0.85 }}
-                  onClick={(e) => handlePop(bubble, e)}
+                  data-word-id={bubble.word.id} onClick={(e) => handlePop(bubble, e)}
                   disabled={!!feedbackType || gamePhase !== "popping"}
                   style={{
                     position: "absolute", left: `${bubble.x}%`, top: `${bubble.y}%`,

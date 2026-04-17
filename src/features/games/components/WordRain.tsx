@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import type { GameProps } from "../types";
 import type { DomanWord } from "@/shared/types/doman";
 import { useGameState } from "../hooks/useGameState";
+import { useDemoAutoplay } from "../hooks/useDemoAutoplay";
 import { GameShell, usePause } from "./GameShell";
 import { useRewards } from "@/shared/components/RewardsLayer";
 import { GameIntro } from "./GameIntro";
@@ -42,7 +43,7 @@ interface Drop {
 
 type Phase = "intro" | "announcing" | "dropping" | "feedback" | "finished";
 
-export const WordRain: React.FC<GameProps> = ({ words, phase = 1, onComplete, onBack }) => {
+export const WordRain: React.FC<GameProps> = ({ words, phase = 1, onComplete, onBack, isDemo = false }) => {
   const { state, recordAttempt, finish, reset } = useGameState("word-rain", { phase });
   const { paused } = usePause();
   const { rewardCorrect } = useRewards();
@@ -186,7 +187,7 @@ export const WordRain: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
           gameIcon="🌧️"
           rulesText="¡Palabras caen del cielo! Yo te digo cual atrapar. ¡Tocala antes de que llegue al suelo!"
           color={GAME_COLOR}
-          onReady={() => setGamePhase("announcing")}
+          isDemo={isDemo} onReady={() => setGamePhase("announcing")}
         />
       </GameShell>
     );
@@ -249,7 +250,7 @@ export const WordRain: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
                     animate={paused ? {} : { y: 450, opacity: 1 }}
                     transition={{ duration: fallDuration, delay: drop.delay, ease: "linear" }}
                     onAnimationComplete={() => onDropLand(drop.word.id === targetWord?.id)}
-                    onClick={(e) => handleTap(drop, e)}
+                    data-word-id={drop.word.id} onClick={(e) => handleTap(drop, e)}
                     disabled={!!feedbackType}
                     style={{
                       position: "absolute", left: `${leftPct}%`, transform: "translateX(-50%)",

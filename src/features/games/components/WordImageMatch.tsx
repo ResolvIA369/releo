@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import type { GameProps } from "../types";
 import type { DomanWord } from "@/shared/types/doman";
 import { useGameState } from "../hooks/useGameState";
+import { useDemoAutoplay } from "../hooks/useDemoAutoplay";
 import { GameShell, usePause } from "./GameShell";
 import { useRewards } from "@/shared/components/RewardsLayer";
 import { GameIntro } from "./GameIntro";
@@ -33,7 +34,7 @@ const SECONDS_PER_WORD = 7;
 
 type Phase = "intro" | "playing" | "feedback" | "finished";
 
-export const WordImageMatch: React.FC<GameProps> = ({ words, phase = 1, onComplete, onBack }) => {
+export const WordImageMatch: React.FC<GameProps> = ({ words, phase = 1, onComplete, onBack, isDemo = false }) => {
   const { state, recordAttempt, finish, reset } = useGameState("word-image-match", { phase });
   const { rewardCorrect } = useRewards();
   const { paused } = usePause();
@@ -48,6 +49,13 @@ export const WordImageMatch: React.FC<GameProps> = ({ words, phase = 1, onComple
   const totalWords = Math.min(words.length, 10);
   const currentWord = currentIndex < totalWords ? words[currentIndex] : null;
   const finished = currentIndex >= totalWords;
+
+
+  // Demo: auto-select correct answer
+  useDemoAutoplay(isDemo, gamePhase === "playing" && !feedbackType && !!currentWord, () => {
+    const btn = document.querySelector(`[data-word-id="${currentWord?.id}"]`) as HTMLElement;
+    if (btn) btn.click();
+  }, 1500);
 
   // Game end
   useEffect(() => {
@@ -144,7 +152,7 @@ export const WordImageMatch: React.FC<GameProps> = ({ words, phase = 1, onComple
           gameIcon="🖼️"
           rulesText="Voy a mostrarte una palabra. ¡Toca la imagen que le corresponde antes de que se acabe el tiempo!"
           color={GAME_COLOR}
-          onReady={() => setGamePhase("playing")}
+          isDemo={isDemo} onReady={() => setGamePhase("playing")}
         />
       </GameShell>
     );
@@ -212,7 +220,7 @@ export const WordImageMatch: React.FC<GameProps> = ({ words, phase = 1, onComple
                   key={word.id}
                   variants={staggerItem}
                   {...(feedbackType ? {} : tapBounce)}
-                  onClick={(e) => handleSelect(word, e)}
+                  data-word-id={word.id} onClick={(e) => handleSelect(word, e)}
                   disabled={!!feedbackType}
                   style={{
                     padding: spacing.lg, borderRadius: radii.xl,

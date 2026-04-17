@@ -7,6 +7,7 @@ import type { DomanWord } from "@/shared/types/doman";
 import { useGameState } from "../hooks/useGameState";
 import { sofiaReads, sofiaCelebrates } from "@/shared/services/sofiaVoice";
 import { GameShell } from "./GameShell";
+import { useDemoAutoplay } from "../hooks/useDemoAutoplay";
 import { useRewards } from "@/shared/components/RewardsLayer";
 import { GameIntro } from "./GameIntro";
 import { GameCompleteScreen } from "@/shared/components/GameCompleteScreen";
@@ -75,7 +76,7 @@ const TOTAL_ROUNDS = 5;
 
 type Phase = "intro" | "playing" | "finished";
 
-export const BuildSentence: React.FC<GameProps> = ({ words, phase = 1, onComplete, onBack }) => {
+export const BuildSentence: React.FC<GameProps> = ({ words, phase = 1, onComplete, onBack, isDemo = false }) => {
   const { state, recordAttempt, finish, reset } = useGameState("phrase-builder", { phase });
   const { rewardCorrect } = useRewards();
 
@@ -222,7 +223,7 @@ export const BuildSentence: React.FC<GameProps> = ({ words, phase = 1, onComplet
           gameIcon="🧱"
           rulesText="¡Ordena las palabras para formar la oración!"
           color={GAME_COLOR}
-          onReady={() => setGamePhase("playing")}
+          isDemo={isDemo} onReady={() => setGamePhase("playing")}
         />
       </GameShell>
     );
@@ -308,7 +309,7 @@ export const BuildSentence: React.FC<GameProps> = ({ words, phase = 1, onComplet
                 key={`${word}-${i}`}
                 variants={staggerItem}
                 {...tapBounce}
-                onClick={() => handleWordTap(i)}
+                data-build-word={word} onClick={() => handleWordTap(i)}
                 disabled={!!feedbackType || isAdvancing}
                 style={{
                   padding: `${spacing.sm}px ${spacing.md}px`,
