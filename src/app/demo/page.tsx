@@ -181,225 +181,88 @@ function DemoSelector() {
           </p>
         </div>
 
-        {/* Single session */}
-        <Section title="Sesión individual">
-          <div style={{ display: "flex", gap: spacing.md, alignItems: "center" }}>
+        {/* Flash de Palabras */}
+        <Section title="⚡ Flash de Palabras">
+          <div style={{ display: "flex", gap: spacing.sm, alignItems: "center", flexWrap: "wrap" }}>
             <select
               value={selectedSession}
               onChange={(e) => setSelectedSession(parseInt(e.target.value, 10))}
               style={{
-                flex: 1,
+                flex: 1, minWidth: 180,
                 padding: `${spacing.sm}px ${spacing.md}px`,
                 borderRadius: radii.lg,
                 border: `2px solid ${colors.border.light}`,
-                fontSize: fontSizes.md,
+                fontSize: fontSizes.sm,
                 fontFamily: fonts.body,
-                backgroundColor: colors.bg.card,
-                outline: "none",
-                cursor: "pointer",
+                backgroundColor: "#fff", color: "#2d3748",
               }}
             >
               {CURRICULUM.map((s) => {
                 const world = WORLDS.find((w) => w.id === s.worldId);
                 return (
                   <option key={s.id} value={s.id}>
-                    Sesión {s.id} — {world?.icon} {s.words.map((w) => w.text).join(", ")}
+                    {s.id}. {world?.icon} {s.words.map((w) => w.text).join(", ")}
                   </option>
                 );
               })}
             </select>
-            <AnimatedButton
-              size="sm"
-              color={CURRICULUM[selectedSession - 1]?.worldColor}
-              onClick={() => startSession(selectedSession)}
-            >
-              Iniciar
+            <AnimatedButton size="sm" color="#e53e3e" onClick={() => startSession(selectedSession)}>
+              ▶ Ver
             </AnimatedButton>
           </div>
-        </Section>
 
-        {/* Session range */}
-        <Section title="Rango de sesiones">
-          <div style={{ display: "flex", gap: spacing.md, alignItems: "center" }}>
-            <label style={{ fontSize: fontSizes.sm, color: colors.text.muted }}>Desde</label>
+          {/* Range */}
+          <div style={{ display: "flex", gap: spacing.sm, alignItems: "center", flexWrap: "wrap", marginTop: spacing.sm }}>
             <select value={rangeFrom} onChange={(e) => setRangeFrom(parseInt(e.target.value, 10))}
-              style={{ flex: 1, padding: `${spacing.xs}px`, borderRadius: radii.lg, border: `2px solid ${colors.border.light}`, fontSize: fontSizes.md, backgroundColor: "#fff", color: "#2d3748" }}>
+              style={{ flex: 1, minWidth: 80, padding: `${spacing.xs}px ${spacing.sm}px`, borderRadius: radii.lg, border: `2px solid ${colors.border.light}`, fontSize: fontSizes.sm, backgroundColor: "#fff", color: "#2d3748" }}>
               {Array.from({ length: TOTAL_SESSIONS }, (_, i) => (
-                <option key={i + 1} value={i + 1}>Sesión {i + 1}</option>
+                <option key={i + 1} value={i + 1}>Desde {i + 1}</option>
               ))}
             </select>
-            <label style={{ fontSize: fontSizes.sm, color: colors.text.muted }}>Hasta</label>
             <select value={rangeTo} onChange={(e) => setRangeTo(parseInt(e.target.value, 10))}
-              style={{ flex: 1, padding: `${spacing.xs}px`, borderRadius: radii.lg, border: `2px solid ${colors.border.light}`, fontSize: fontSizes.md, backgroundColor: "#fff", color: "#2d3748" }}>
+              style={{ flex: 1, minWidth: 80, padding: `${spacing.xs}px ${spacing.sm}px`, borderRadius: radii.lg, border: `2px solid ${colors.border.light}`, fontSize: fontSizes.sm, backgroundColor: "#fff", color: "#2d3748" }}>
               {Array.from({ length: TOTAL_SESSIONS }, (_, i) => (
-                <option key={i + 1} value={i + 1}>Sesión {i + 1}</option>
+                <option key={i + 1} value={i + 1}>Hasta {i + 1}</option>
               ))}
             </select>
             <AnimatedButton size="sm" onClick={startRange}>
-              Grabar
+              ▶ Rango
             </AnimatedButton>
           </div>
         </Section>
 
-        {/* Individual games */}
-        <Section title="Grabar un juego">
-          <motion.div variants={staggerContainer} initial="initial" animate="animate"
-            style={{ display: "flex", flexDirection: "column", gap: spacing.sm }}>
+        {/* Juegos */}
+        <Section title="🎮 Juegos">
+          <div style={{ display: "flex", flexDirection: "column", gap: spacing.sm }}>
             {GAME_REGISTRY.filter((g) => g.id !== "word-flash").map((game) => (
-              <motion.div key={game.id} variants={staggerItem}
-                style={{ display: "flex", alignItems: "center", gap: spacing.sm,
-                  padding: `${spacing.sm}px ${spacing.md}px`, backgroundColor: colors.bg.card,
-                  border: `2px solid ${colors.border.light}`, borderRadius: radii.lg }}>
-                <span style={{ fontSize: 24 }}>{game.icon}</span>
+              <motion.button
+                key={game.id}
+                whileHover={{ y: -2 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => startGame(game.id, 1)}
+                style={{
+                  display: "flex", alignItems: "center", gap: spacing.md,
+                  padding: `${spacing.sm}px ${spacing.md}px`,
+                  backgroundColor: colors.bg.card,
+                  border: `2px solid ${colors.border.light}`,
+                  borderRadius: radii.lg,
+                  cursor: "pointer", textAlign: "left",
+                }}
+              >
+                <span style={{ fontSize: 28 }}>{game.icon}</span>
                 <span style={{ flex: 1, fontSize: fontSizes.sm, fontWeight: "bold", color: game.color, fontFamily: fonts.display }}>
                   {game.name}
                 </span>
-                <div style={{ display: "flex", gap: 4 }}>
-                  {[1, 2, 3, 4, 5].map((p) => (
-                    <button key={p} onClick={() => startGame(game.id, p)}
-                      style={{
-                        width: 32, height: 32, borderRadius: radii.sm,
-                        backgroundColor: p <= (game.minPhase || 1) ? `${game.color}20` : colors.bg.secondary,
-                        border: `1px solid ${p <= (game.minPhase || 1) ? game.color : colors.border.light}`,
-                        color: game.color, fontWeight: "bold", fontSize: 12,
-                        cursor: "pointer",
-                      }}>
-                      F{p}
-                    </button>
-                  ))}
-                </div>
-              </motion.div>
-            ))}
-          </motion.div>
-          <p style={{ fontSize: fontSizes.xs, color: colors.text.muted, marginTop: spacing.xs, textAlign: "center" }}>
-            Tocá F1-F5 para elegir la fase. El juego se auto-juega correctamente.
-          </p>
-        </Section>
-
-        {/* By world */}
-        <Section title="Por mundo">
-          <motion.div
-            variants={staggerContainer}
-            initial="initial"
-            animate="animate"
-            style={{ display: "flex", flexDirection: "column", gap: spacing.sm }}
-          >
-            {WORLDS.map((world, i) => {
-              const worldSessions = getWorldSessions(world.id);
-              return (
-                <motion.button
-                  key={world.id}
-                  variants={staggerItem}
-                  whileHover={{ y: -2, boxShadow: shadows.glow(world.color) }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => startWorld(i + 1)}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: spacing.md,
-                    padding: `${spacing.sm}px ${spacing.lg}px`,
-                    backgroundColor: colors.bg.card,
-                    border: `2px solid ${colors.border.light}`,
-                    borderRadius: radii.lg,
-                    cursor: "pointer",
-                    transition: "border-color 0.2s",
-                  }}
-                >
-                  <span style={{ fontSize: 28 }}>{world.icon}</span>
-                  <div style={{ flex: 1, textAlign: "left" }}>
-                    <div style={{
-                      fontSize: fontSizes.md,
-                      fontWeight: "bold",
-                      fontFamily: fonts.display,
-                      color: world.color,
-                    }}>
-                      {world.name}
-                    </div>
-                    <div style={{ fontSize: fontSizes.xs, color: colors.text.muted }}>
-                      {worldSessions.length} sesiones — Fase {world.phase}
-                    </div>
-                  </div>
-                  <span style={{ fontSize: fontSizes.sm, color: colors.text.placeholder }}>
-                    ▶
-                  </span>
-                </motion.button>
-              );
-            })}
-          </motion.div>
-        </Section>
-
-        {/* Full curriculum */}
-        <Section title="Todo el currículum">
-          <AnimatedButton
-            size="lg"
-            onClick={startAll}
-            style={{ width: "100%" }}
-          >
-            Grabar las {TOTAL_SESSIONS} sesiones
-          </AnimatedButton>
-          <p style={{ fontSize: fontSizes.xs, color: colors.text.placeholder, textAlign: "center", marginTop: spacing.xs }}>
-            Duración aproximada: {Math.round(TOTAL_SESSIONS * 1.5)} minutos
-          </p>
-        </Section>
-
-        {/* Download videos */}
-        <Section title="📥 Descargar videos">
-          <div style={{ display: "flex", flexDirection: "column", gap: spacing.sm }}>
-            {[
-              { file: "leo-celebration-1.mp4", label: "Leo celebrando 1" },
-              { file: "leo-celebration-2.mp4", label: "Leo celebrando 2" },
-              { file: "leo-celebration-3.mp4", label: "Leo celebrando 3" },
-              { file: "sofia-celebration-1.mp4", label: "Sofía celebrando 1" },
-              { file: "sofia-celebration-2.mp4", label: "Sofía celebrando 2" },
-              { file: "sofia-leo-celebration-1.mp4", label: "Sofía y Leo celebrando" },
-              { file: "leo-motivation.mp4", label: "Leo motivando" },
-            ].map(({ file, label }) => (
-              <a
-                key={file}
-                href={`/videos/${file}`}
-                download={file}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  padding: `${spacing.sm}px ${spacing.md}px`,
-                  backgroundColor: colors.bg.card,
-                  border: `1px solid ${colors.border.light}`,
-                  borderRadius: radii.lg,
-                  textDecoration: "none",
-                  color: colors.text.primary,
-                  fontSize: fontSizes.sm,
-                }}
-              >
-                <span>🎬 {label}</span>
-                <span style={{ fontSize: fontSizes.xs, color: colors.brand.primary, fontWeight: "bold" }}>Descargar</span>
-              </a>
+                <span style={{ fontSize: fontSizes.xs, color: colors.text.placeholder }}>▶</span>
+              </motion.button>
             ))}
           </div>
         </Section>
 
-        {/* Info */}
-        <div style={{
-          padding: spacing.md,
-          backgroundColor: colors.bg.secondary,
-          borderRadius: radii.lg,
-          fontSize: fontSizes.sm,
-          color: colors.text.muted,
-          lineHeight: 1.6,
-        }}>
-          <strong>Tips para grabar:</strong>
-          <ul style={{ margin: `${spacing.xs}px 0 0`, paddingLeft: 20 }}>
-            <li>La pantalla entra en fullscreen automáticamente</li>
-            <li>Inicia tu grabador de pantalla antes de hacer clic</li>
-            <li>Cada sesión tiene 4 bloques: presentación, repetición, frase y despedida</li>
-            <li>Seño Sofía habla entre bloques (activa tu audio)</li>
-          </ul>
-        </div>
-
         {/* Back to dashboard */}
-        <div style={{ textAlign: "center" }}>
+        <div style={{ textAlign: "center", paddingBottom: spacing.xl }}>
           <AnimatedButton variant="secondary" onClick={() => router.push("/dashboard")}>
-            Volver al Dashboard
+            ← Volver
           </AnimatedButton>
         </div>
       </motion.div>
