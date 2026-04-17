@@ -31,27 +31,27 @@ const WORLD_1_STORIES: MiniStory[] = [
   {
     title: "En la casa",
     emoji: "🏠",
-    words: ["mamá", "come", "pan", "con", "leche", "en", "la", "mesa", "papá", "abre", "la", "puerta", "y", "el", "bebé", "duerme", "en", "su", "cama"],
+    words: ["mamá", "come", "pan", "con", "leche", "en", "la", "mesa", ".", "papá", "abre", "la", "puerta", ".", "el", "bebé", "duerme", "en", "la", "cama"],
   },
   {
     title: "La familia",
     emoji: "👨‍👩‍👧‍👦",
-    words: ["abuela", "y", "abuelo", "viene", "a", "la", "casa", "hermano", "juega", "con", "primo", "hermana", "canta", "tío", "y", "tía", "come", "en", "la", "cocina"],
+    words: ["la", "abuela", "y", "el", "abuelo", "van", "a", "la", "casa", ".", "hermano", "juega", "con", "primo", ".", "hermana", "y", "tía", "están", "en", "la", "cocina"],
   },
   {
     title: "Los animales",
     emoji: "🐶",
-    words: ["el", "perro", "corre", "por", "el", "parque", "el", "gato", "sube", "a", "la", "silla", "el", "caballo", "come", "la", "vaca", "bebe", "agua", "y", "el", "pájaro", "canta"],
+    words: ["el", "perro", "corre", "por", "el", "parque", ".", "el", "gato", "sube", "a", "la", "silla", ".", "la", "vaca", "bebe", "agua", ".", "el", "pájaro", "canta"],
   },
   {
     title: "Mi cuerpo",
     emoji: "🧒",
-    words: ["con", "el", "ojo", "yo", "lee", "con", "la", "mano", "toca", "con", "el", "pie", "salta", "la", "nariz", "la", "boca", "la", "oreja", "el", "pelo", "el", "dedo", "el", "brazo", "la", "pierna"],
+    words: ["con", "el", "ojo", "veo", ".", "con", "la", "mano", "toco", ".", "con", "el", "pie", "salto", ".", "la", "nariz", "y", "la", "boca", "están", "en", "la", "cara"],
   },
   {
     title: "Frutas y comida",
     emoji: "🍎",
-    words: ["mamá", "tiene", "manzana", "banana", "uva", "pera", "y", "naranja", "yo", "come", "pan", "arroz", "y", "huevo", "bebe", "agua", "y", "leche", "en", "la", "mesa"],
+    words: ["mamá", "tiene", "manzana", "y", "banana", ".", "yo", "como", "pan", "con", "huevo", ".", "tomo", "agua", "y", "leche", "en", "la", "mesa"],
   },
 ];
 
@@ -213,6 +213,18 @@ export const StoryReader: React.FC<GameProps> = ({ words, phase = 1, worldId, on
   const readWordAt = useCallback(async (idx: number) => {
     if (isSpeaking || readWords.has(idx) || idx !== nextWord || paused) return;
 
+    const word = story.words[idx];
+
+    // Punctuation: mark as read instantly, no audio
+    if (word === ".") {
+      const newRead = new Set(readWords);
+      newRead.add(idx);
+      setReadWords(newRead);
+      setWordIdx(idx);
+      // Auto-advance to next word immediately
+      return;
+    }
+
     setIsSpeaking(true);
     setWordIdx(idx);
     const newRead = new Set(readWords);
@@ -220,7 +232,7 @@ export const StoryReader: React.FC<GameProps> = ({ words, phase = 1, worldId, on
     setReadWords(newRead);
     recordAttempt(true, `word-${idx}`);
 
-    await sofiaNameWord(story.words[idx]);
+    await sofiaNameWord(word);
     setIsSpeaking(false);
 
     if (newRead.size === story.words.length) {
@@ -361,8 +373,15 @@ export const StoryReader: React.FC<GameProps> = ({ words, phase = 1, worldId, on
           lineHeight: 2.4,
         }}>
           {story.words.map((word, i) => {
+            // Punctuation: render inline, not as a button
+            if (word === ".") {
+              return <span key={`${storyIdx}-${i}`} style={{ fontSize: fontSizes.lg, color: "#bbb", marginRight: spacing.sm }}>.</span>;
+            }
+
             const isRead = readWords.has(i);
             const isNext = i === nextWord;
+            // Check if this is a "learned" word from the curriculum
+            const isLearned = words.some((w) => w.text.toLowerCase() === word.toLowerCase());
 
             return (
               <motion.button
@@ -374,11 +393,12 @@ export const StoryReader: React.FC<GameProps> = ({ words, phase = 1, worldId, on
                 style={{
                   padding: `${spacing.xs}px ${spacing.sm + 2}px`,
                   borderRadius: radii.md,
-                  backgroundColor: isRead ? `${GAME_COLOR}15` : isNext ? "#fff" : "transparent",
-                  border: isNext ? `3px solid ${GAME_COLOR}` : isRead ? `2px solid ${GAME_COLOR}40` : "2px solid transparent",
-                  color: isRead ? GAME_COLOR : isNext ? "#2d3748" : "#bbb",
-                  fontSize: isNext ? fontSizes.xl : fontSizes.lg,
-                  fontWeight: isRead || isNext ? "bold" : "normal",
+                  backgroundColor: isRead ? (isLearned ? `${GAME_COLOR}15` : "#f7f7f7") : isNext ? "#fff" : "transparent",
+                  border: isNext ? `3px solid ${GAME_COLOR}` : isRead ? `2px solid ${isLearned ? GAME_COLOR + "40" : "#e0e0e0"}` : "2px solid transparent",
+                  color: isRead ? (isLearned ? GAME_COLOR : "#888") : isNext ? "#2d3748" : "#bbb",
+                  fontSize: isNext ? fontSizes.xl : (isLearned ? fontSizes.lg : fontSizes.md),
+                  fontWeight: isRead || isNext ? (isLearned ? "bold" : "normal") : "normal",
+                  fontStyle: isLearned ? "normal" : "italic",
                   fontFamily: fonts.display,
                   cursor: i === nextWord ? "pointer" : "default",
                   boxShadow: isNext && !autoPlay ? shadows.glow(GAME_COLOR) : "none",
