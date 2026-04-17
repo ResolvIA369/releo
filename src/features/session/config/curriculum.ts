@@ -60,7 +60,7 @@ const FAREWELLS = [
   "¡Fue una gran sesión!",
   "¡Aprendiste mucho hoy!",
   "¡Qué bien lo hiciste!",
-  "¡La Seño Sofía está orgullosa!",
+  "¡Seguí así, campeón!",
   "¡Increíble trabajo!",
   "¡Eres un campeón de la lectura!",
   "¡Maravilloso! Nos vemos pronto",

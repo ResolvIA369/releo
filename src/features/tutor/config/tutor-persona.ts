@@ -20,7 +20,7 @@ export const SOFIA: TutorPersona = {
     "¡Lo lograste! Sabía que podías",
     "¡Excelente! Cada vez lees mejor",
     "¡Bravo, {name}! Esa palabra ya es tuya",
-    "¡Fantástico! La Seño Sofía está muy orgullosa de ti",
+    "¡Fantástico! Cada día leés mejor",
     "¡Genial! Eres un gran lector",
     "¡Así se hace! Cada día aprendes más",
     "¡Maravilloso, {name}! Tu esfuerzo vale mucho",
@@ -34,7 +34,7 @@ export const SOFIA: TutorPersona = {
   ],
   farewells: [
     "¡Fue una gran clase, {name}! Nos vemos mañana",
-    "¡Aprendiste mucho hoy! La Seño Sofía está orgullosa de ti",
+    "¡Aprendiste mucho hoy! ¡Nos vemos pronto!",
     "¡Hasta la próxima, {name}! Recuerda: tú eres un gran lector",
     "¡Qué clase tan bonita! Descansa y mañana seguimos",
     "¡Adiós, {name}! Hoy brillaste mucho",

@@ -24,7 +24,7 @@ const PRAISES = [
   "¡Eres un genio de las palabras!",
   "¡Bravo, {name}! ¡Tu esfuerzo es increíble!",
   "¡Maravilloso! ¡Aprendes muy rápido!",
-  "¡Fantástico! ¡La Seño Sofía está muy orgullosa!",
+  "¡Fantástico! ¡Eso estuvo genial!",
   "¡Wow! ¡Eso estuvo perfecto!",
   "¡Muy bien, {name}! ¡Sigue así!",
   "¡Lo lograste! ¡Sabía que podías!",

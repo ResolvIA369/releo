@@ -23,6 +23,8 @@ export function TimeBar({
   const [remaining, setRemaining] = useState(seconds);
   const intervalRef = useRef<ReturnType<typeof setInterval>>(undefined);
   const firedRef = useRef(false);
+  const tickAudioRef = useRef<HTMLAudioElement | null>(null);
+  const lastTickRef = useRef(0);
 
   useEffect(() => {
     setRemaining(seconds);
@@ -51,6 +53,22 @@ export function TimeBar({
 
     return () => clearInterval(intervalRef.current);
   }, [paused, onTimeUp, resetKey]);
+
+  // Clock tick sound — plays once per second while timer is running
+  useEffect(() => {
+    if (paused || remaining <= 0) return;
+    const sec = Math.ceil(remaining);
+    if (sec === lastTickRef.current) return;
+    lastTickRef.current = sec;
+    try {
+      if (!tickAudioRef.current) {
+        tickAudioRef.current = new Audio("/audio/tick.wav");
+        tickAudioRef.current.volume = 0.3;
+      }
+      tickAudioRef.current.currentTime = 0;
+      tickAudioRef.current.play().catch(() => {});
+    } catch {}
+  }, [remaining, paused]);
 
   const pct = Math.max(0, (remaining / seconds) * 100);
   const isUrgent = pct < 30;
