@@ -92,10 +92,22 @@ export const GameCompleteScreen: React.FC<GameCompleteScreenProps> = ({
     <motion.div variants={fadeInUp} initial="initial" animate="animate"
       style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: spacing.md, position: "relative", paddingBottom: 180 }}
     >
-      {/* Celebration GIF */}
-      <div style={{ position: "relative" }}>
-        <CelebrationGif size={180} />
-      </div>
+      {/* Celebration / motivation video */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        style={{ borderRadius: 16, overflow: "hidden", maxWidth: "min(360px, 90vw)" }}
+      >
+        <video
+          src={stars >= 2 ? `/videos/leo-celebration-${(correct % 3) + 1}.mp4` : "/videos/sofia-esfuerzo.mp4"}
+          autoPlay
+          playsInline
+          muted={false}
+          controls={false}
+          onError={(e) => { (e.target as HTMLVideoElement).style.display = "none"; }}
+          style={{ width: "100%", borderRadius: 16, display: "block" }}
+        />
+      </motion.div>
 
       {/* Stars — 0 stars shows a motivational emoji instead */}
       <div style={{ display: "flex", gap: spacing.md }}>

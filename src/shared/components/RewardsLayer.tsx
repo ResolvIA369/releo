@@ -56,14 +56,29 @@ export function RewardsProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  // Coin sound effect — single shared Audio element
+  const coinSoundRef = useRef<HTMLAudioElement | null>(null);
+
+  const playCoinSound = useCallback(() => {
+    try {
+      if (!coinSoundRef.current) {
+        coinSoundRef.current = new Audio("/audio/coin.wav");
+        coinSoundRef.current.volume = 0.5;
+      }
+      coinSoundRef.current.currentTime = 0;
+      coinSoundRef.current.play().catch(() => {});
+    } catch {}
+  }, []);
+
   const dropCoin = useCallback((x: number, y: number) => {
     const id = ++idRef.current;
     setCoins((cs) => [...cs, { id, startX: x, startY: y }]);
+    playCoinSound();
     // Auto-cleanup after animation
     setTimeout(() => {
       setCoins((cs) => cs.filter((c) => c.id !== id));
     }, 1400);
-  }, []);
+  }, [playCoinSound]);
 
   const rewardCorrect = useCallback(
     (x?: number, y?: number, withConfetti = true) => {
