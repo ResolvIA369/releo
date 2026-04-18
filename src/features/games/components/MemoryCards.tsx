@@ -156,12 +156,12 @@ export const MemoryCards: React.FC<GameProps> = ({ words, phase = 1, onComplete,
   }, [gamePhase, roundIdx, paused]); // eslint-disable-line react-hooks/exhaustive-deps
 
 
-  // Demo: auto-select correct answer
+  // Demo: auto-tap each syllable every 2.5s for a natural look
   useDemoAutoplay(isDemo, gamePhase === "playing" && !feedbackType && placed.length < syllables.length, () => {
     const nextIdx = placed.length;
     const btn = document.querySelector(`[data-piece-idx="${nextIdx}"]`) as HTMLElement;
     if (btn) btn.click();
-  }, 800);
+  }, 2500);
 
   // ─── Game end ───────────────────────────────────────────────
 
