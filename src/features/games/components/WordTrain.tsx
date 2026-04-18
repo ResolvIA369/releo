@@ -25,7 +25,7 @@ function shuffle<T>(arr: T[]): T[] {
 }
 
 const GAME_COLOR = "#38a169";
-const WORDS_PER_GAME = 10;
+const WORDS_PER_GAME = 20;
 
 type Difficulty = 1 | 2 | 3;
 type Phase = "difficulty" | "announcing" | "moving" | "feedback" | "finished";
@@ -197,7 +197,7 @@ function TrainGame({ words, phase = 1, difficulty, onComplete, onBack, isDemo = 
         setBurstPos({ x: cx, y: cy });
         rewardCorrect(cx, cy);
         setFeedbackType("correct");
-        await sofiaCelebrates(`¡${word.text}!`);
+        await sofiaNameWord(word.text);
       } else {
         setFeedbackType("wrong");
         const hint = getHint();

@@ -107,7 +107,7 @@ export const CategoryGame: React.FC<GameProps> = ({ words, phase = 1, onComplete
         rewardCorrect(cx, cy);
         setScore((s) => ({ ...s, [category]: (s[category] ?? 0) + 1 }));
         setFeedbackType("correct");
-        await sofiaPlayAudio("celebra-01", `¡${currentWord.text}!`, "excited");
+        await sofiaNameWord(currentWord.text);
       } else {
         setFeedbackType("wrong");
         await sofiaPlayAudio("animo-04", "¡Busca bien!", "encouraging");

@@ -46,7 +46,7 @@ export const WordImageMatch: React.FC<GameProps> = ({ words, phase = 1, onComple
   const [burstPos, setBurstPos] = useState<{ x: number; y: number } | null>(null);
   const [timerKey, setTimerKey] = useState(0);
 
-  const totalWords = Math.min(words.length, 10);
+  const totalWords = Math.min(words.length, 20);
   const currentWord = currentIndex < totalWords ? words[currentIndex] : null;
   const finished = currentIndex >= totalWords;
 
@@ -55,7 +55,7 @@ export const WordImageMatch: React.FC<GameProps> = ({ words, phase = 1, onComple
   useDemoAutoplay(isDemo, gamePhase === "playing" && !feedbackType && !!currentWord, () => {
     const btn = document.querySelector(`[data-word-id="${currentWord?.id}"]`) as HTMLElement;
     if (btn) btn.click();
-  }, 1500);
+  }, 2500);
 
   // Game end
   useEffect(() => {
@@ -115,7 +115,7 @@ export const WordImageMatch: React.FC<GameProps> = ({ words, phase = 1, onComple
         setBurstPos({ x: cx, y: cy });
         rewardCorrect(cx, cy);
         // Only say the word AFTER correct answer
-        await sofiaCelebrates(`¡${currentWord.text}!`);
+        await sofiaNameWord(currentWord.text);
         await new Promise((r) => setTimeout(r, 400));
         setFeedbackType(null);
         setSelectedId(null);

@@ -36,7 +36,7 @@ interface GameSetupProps {
   gameIcon: string;
   gameName: string;
   gameColor: string;
-  wordsPerBlock: 5 | 10;
+  wordsPerBlock: number;
   initialWorldIdx?: number | null;
   onSelect: (
     words: DomanWord[],
@@ -139,7 +139,7 @@ export const GameSetup: React.FC<GameSetupProps> = ({
           {world!.icon} {world!.name}
         </h2>
         <p style={{ fontSize: fontSizes.sm, color: colors.text.muted, marginTop: spacing.xs }}>
-          Elige {wordsPerBlock} palabras para practicar
+          Elegí las palabras para practicar
         </p>
       </div>
 
@@ -147,7 +147,7 @@ export const GameSetup: React.FC<GameSetupProps> = ({
         variants={staggerContainer} initial="initial" animate="animate"
         style={{
           display: "grid",
-          gridTemplateColumns: wordsPerBlock === 5 ? "repeat(2, 1fr)" : "1fr",
+          gridTemplateColumns: wordsPerBlock <= 10 ? "repeat(2, 1fr)" : "repeat(auto-fill, minmax(200px, 1fr))",
           gap: spacing.sm, width: "100%",
         }}
       >

@@ -44,7 +44,7 @@ const GAME_COMPONENTS: Partial<Record<GameId, FC<GameProps>>> = {
 };
 
 // Games that need more words for variety (categories, fishing, rain)
-const GAMES_WITH_10_WORDS: GameId[] = ["word-train", "category-sort", "word-rain", "word-fishing"];
+// All games now use 20 words per block
 
 function GamePageInner() {
   const params = useParams<{ gameId: string }>();
@@ -80,7 +80,7 @@ function GamePageInner() {
   const activePhase = selectedWords ? selectedPhase : (preloadedSession?.phase ?? 1);
   const sessionId = preloadedSession?.id ?? 0;
 
-  const wordsPerBlock = GAMES_WITH_10_WORDS.includes(gameId) ? 10 : 5;
+  const wordsPerBlock = 20;
 
   // Compute the list of N-word blocks for the current world. IMPORTANT:
   // useMemo must be called unconditionally before any early return, or
@@ -136,7 +136,7 @@ function GamePageInner() {
           gameIcon={meta.icon}
           gameName={meta.name}
           gameColor={meta.color}
-          wordsPerBlock={wordsPerBlock as 5 | 10}
+          wordsPerBlock={wordsPerBlock}
           initialWorldIdx={forceBlockSelection ? selectedWorldIdx : null}
           onSelect={(words, phase, worldId, worldIdx, blockIdx) => {
             setSelectedWords(words);

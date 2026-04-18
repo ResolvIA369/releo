@@ -196,7 +196,7 @@ export const MemoryCards: React.FC<GameProps> = ({ words, phase = 1, onComplete,
           setBurstPos({ x: cx, y: cy });
           rewardCorrect(cx, cy);
 
-          await sofiaCelebrates(`¡${currentWord?.text}!`);
+          await sofiaNameWord(currentWord?.text ?? "");
           await new Promise((r) => setTimeout(r, 600));
 
           // Reset visual state BEFORE advancing so the UI never

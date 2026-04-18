@@ -89,7 +89,7 @@ function DemoContent() {
     return (
       <RewardsProvider>
         <GameComp
-          words={words.slice(0, 10)}
+          words={words.slice(0, 20)}
           phase={(phaseIdx + 1) as 1 | 2 | 3 | 4 | 5}
           worldId={worldId}
           isDemo

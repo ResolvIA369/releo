@@ -79,6 +79,12 @@ export const BitsReading: React.FC<GameProps> = ({ words, phase = 1, onComplete,
     setGamePhase("announcing");
   }, [totalRounds, words, finish, onComplete, state]);
 
+  // Demo: auto-pop correct bubble
+  useDemoAutoplay(isDemo, gamePhase === "popping" && !!target && !feedbackType, () => {
+    const btn = document.querySelector(`[data-word-id="${target?.id}"]`) as HTMLElement;
+    if (btn) btn.click();
+  }, 1500);
+
   // Announce
   useEffect(() => {
     if (gamePhase !== "announcing" || !target || paused) return;
@@ -125,7 +131,7 @@ export const BitsReading: React.FC<GameProps> = ({ words, phase = 1, onComplete,
       } else {
         rewardCorrect();
       }
-      await sofiaPlayAudio("celebra-03", `¡${bubble.word.text}!`, "excited");
+      await sofiaNameWord(bubble.word.text);
       await new Promise((r) => setTimeout(r, 500));
       setFeedbackType(null);
       const next = roundIdx + 1; setRoundIdx(next); setupRound(next);

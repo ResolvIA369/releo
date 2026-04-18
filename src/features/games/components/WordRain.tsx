@@ -94,6 +94,12 @@ export const WordRain: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
     })));
   }, [gamePhase, roundIdx]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Demo: auto-tap correct falling word
+  useDemoAutoplay(isDemo, gamePhase === "dropping" && !!targetWord && !feedbackType, () => {
+    const btn = document.querySelector(`[data-word-id="${targetWord?.id}"]`) as HTMLElement;
+    if (btn) btn.click();
+  }, 1500);
+
   // ─── Game end ───────────────────────────────────────────────
 
   useEffect(() => {
@@ -121,7 +127,7 @@ export const WordRain: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
         const cy = rect.top + rect.height / 2;
         setBurstPos({ x: cx, y: cy });
         rewardCorrect(cx, cy);
-        await sofiaCelebrates(`¡${targetWord.text}!`);
+        await sofiaNameWord(targetWord.text);
       } else {
         await sofiaEncourages(`¡Esa no! Busca "${targetWord.text}"`);
       }

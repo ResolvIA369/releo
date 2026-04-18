@@ -147,7 +147,7 @@ export const WordFishing: React.FC<GameProps> = ({ words, phase = 1, onComplete,
         leo.celebrate();
         rewardCorrect(cx, cy);
 
-        await sofiaPlayAudio("celebra-05", `¡${fish.word.text}!`, "excited");
+        await sofiaNameWord(fish.word.text);
         await new Promise((r) => setTimeout(r, 800));
 
         setFeedbackType(null);
