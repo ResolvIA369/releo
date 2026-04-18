@@ -135,16 +135,19 @@ export const BuildSentence: React.FC<GameProps> = ({ words, phase = 1, onComplet
     finish().then(() => onComplete?.(state));
   }, [finished, gamePhase]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Demo: auto-place correct word
+  // Demo: auto-place correct word every 2s for visible pacing
   useDemoAutoplay(isDemo, gamePhase === "playing" && !feedbackType && !isAdvancing, () => {
     if (!currentSentence) return;
     const expected = currentSentence.words[placed.length];
     if (!expected) return;
     const btns = document.querySelectorAll("[data-build-word]");
     for (const b of btns) {
-      if ((b as HTMLElement).dataset.buildWord === expected) { (b as HTMLElement).click(); break; }
+      if ((b as HTMLElement).dataset.buildWord === expected && (b as HTMLElement).offsetParent !== null) {
+        (b as HTMLElement).click();
+        break;
+      }
     }
-  }, 1000);
+  }, 2000);
 
   const advanceRound = useCallback(() => {
     setShowCelebration(false);

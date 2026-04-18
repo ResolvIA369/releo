@@ -74,7 +74,18 @@ export const GameIntro: React.FC<GameIntroProps> = ({
     }
 
     run();
-    return () => { cancelledRef.current = true; stopVoice(); };
+
+    // In demo mode, force-start after 8s even if audio stalls
+    let safetyTimer: ReturnType<typeof setTimeout> | undefined;
+    if (isDemo) {
+      safetyTimer = setTimeout(() => startNow(), 8000);
+    }
+
+    return () => {
+      cancelledRef.current = true;
+      stopVoice();
+      if (safetyTimer) clearTimeout(safetyTimer);
+    };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
