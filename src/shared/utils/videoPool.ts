@@ -1,6 +1,5 @@
 // ─── Video pool for game completion ──────────────────────────────
-// All celebration/motivation videos available. The picker selects
-// one at random so the child sees variety.
+// Picks a DIFFERENT video each time (never the same twice in a row).
 
 const CELEBRATION_VIDEOS = [
   "/videos/leo-celebration-1.mp4",
@@ -15,8 +14,13 @@ const MOTIVATION_VIDEOS = [
   "/videos/leo-motivation.mp4",
 ];
 
+let _lastCelebration = "";
+
 export function pickCelebrationVideo(): string {
-  return CELEBRATION_VIDEOS[Math.floor(Math.random() * CELEBRATION_VIDEOS.length)];
+  const available = CELEBRATION_VIDEOS.filter((v) => v !== _lastCelebration);
+  const pick = available[Math.floor(Math.random() * available.length)];
+  _lastCelebration = pick;
+  return pick;
 }
 
 export function pickMotivationVideo(): string {

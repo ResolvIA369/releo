@@ -613,18 +613,8 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
           await sofiaPlayAudio("farewell", fillScript(SC.farewell, { name: "", words_list: wordsList }), "excited");
           setIsSpeaking(false);
           if (c()) return;
-          await delay(500);
-
-          for (const w of sessionWords) {
-            if (c()) return;
-            setDisplayWord(w.text);
-            setIsSpeaking(true);
-            await sofiaNameWord(w.text);
-            setIsSpeaking(false);
-            await delay(600);
-          }
+          await delay(800);
           if (c()) return;
-          setDisplayWord("");
           setPh("affirmation");
           break;
         }
@@ -713,7 +703,7 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
           style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: spacing.lg }}>
           <span style={{ fontSize: 64 }}>⏸️</span>
-          <h2 style={{ fontSize: fontSizes["2xl"], fontFamily: fonts.display, margin: 0 }}>Pausado</h2>
+          <h2 style={{ fontSize: fontSizes["2xl"], fontFamily: fonts.display, margin: 0, color: "#2d3748" }}>Pausado</h2>
           <div style={{ display: "flex", gap: spacing.md }}>
             {onBack && <AnimatedButton variant="secondary" onClick={onBack}>Salir</AnimatedButton>}
             <AnimatedButton onClick={handleResume}>Continuar</AnimatedButton>
@@ -959,14 +949,21 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
         </div>
       )}
 
-      {/* Sofia speaking overlay (greeting, story intro, review intro) */}
-      {(ph === "greeting" || ph === "story_intro" || ph === "review_intro" || ph === "repeat_intro") && (
-        <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      {/* Sofia speaking overlay (greeting, story intro, review intro, farewell, affirmation) */}
+      {(ph === "greeting" || ph === "story_intro" || ph === "review_intro" || ph === "repeat_intro" || ph === "farewell" || ph === "affirmation") && (
+        <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
           <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
             style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16, padding: "24px 32px", borderRadius: 24, backgroundColor: `${worldColor}08`, maxWidth: 420 }}>
-            <SofiaAvatar size={300} speaking={isSpeaking} />
+            <SofiaAvatar size={280} speaking={isSpeaking} />
             <AudioWaves active={isSpeaking} color={worldColor} />
           </motion.div>
+          {/* Show affirmation text below Sofia */}
+          {ph === "affirmation" && affirmationText && (
+            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+              style={{ fontSize: fontSizes.xl, fontFamily: fonts.display, color: worldColor, textAlign: "center", fontStyle: "italic", margin: 0, padding: "0 24px", maxWidth: 400 }}>
+              &ldquo;{affirmationText}&rdquo;
+            </motion.p>
+          )}
         </div>
       )}
 
@@ -1039,27 +1036,9 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
         </div>
       )}
 
-      {/* Affirmation overlay */}
-      {ph === "affirmation" && affirmationText && (
-        <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 32px" }}>
-          <motion.p initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-            style={{ fontSize: fontSizes["2xl"], fontFamily: fonts.display, color: worldColor, textAlign: "center", fontStyle: "italic", margin: 0, lineHeight: 1.5 }}>
-            "{affirmationText}"
-          </motion.p>
-        </div>
-      )}
-
-      {/* Farewell word display — word only, no emoji/image */}
-      {ph === "farewell" && displayWord && (
-        <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <motion.div key={displayWord} initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}
-            style={{ padding: "0 24px", maxWidth: "100%" }}>
-            <span style={{ fontSize: fitWordFontSize(displayWord, 72), fontWeight: "bold", fontFamily: "Arial Rounded MT Bold, Arial, sans-serif", color: "#2d3748", whiteSpace: "nowrap", maxWidth: "100%" }}>
-              {displayWord}
-            </span>
-          </motion.div>
-        </div>
-      )}
+      {/* Old affirmation and farewell word overlays removed —
+          both phases now show Sofia avatar with the affirmation
+          text integrated below her (in the Sofia speaking overlay above) */}
 
       {/* Transcript */}
       {mic.transcript && showMic && (
