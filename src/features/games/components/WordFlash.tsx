@@ -160,6 +160,7 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
   const [wordIdx, setWordIdx] = useState(0);
   const [timer, setTimer] = useState(3);
   const [isFlipped, setIsFlipped] = useState(false);
+  const [showRepeatWord, setShowRepeatWord] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
   const [dotsCompleted, setDotsCompleted] = useState(0);
@@ -222,7 +223,7 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
   const handleStart = useCallback(() => {
     session.start();
     cancelledRef.current = false;
-    setPass(0); setWordIdx(0); setScore(0); setTotalAttempts(0); setDotsCompleted(0);
+    setPass(0); setWordIdx(0); setScore(0); setTotalAttempts(0); setDotsCompleted(0); setShowRepeatWord(false);
     setPh("greeting_video");
   }, [session]);
 
@@ -234,16 +235,13 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
 
     if (wordIdx < sessionWords.length - 1) {
       setShowRepeatTimer(false);
-      setIsFlipped(false);
-      await delay(400);
+      setShowRepeatWord(false);
+      await delay(300);
       setWordIdx((i) => i + 1);
       setTick((t) => t + 1);
     } else {
       setShowRepeatTimer(false);
-      // Pre-set video URL and transition immediately — the video overlay
-      // covers the entire screen so no card flip-back is needed.
-      // Do NOT setIsFlipped(false) here — it triggers a 0.6s flip
-      // animation that briefly flashes the white card back.
+      setShowRepeatWord(false);
       const mode = correctInPass > 2 ? "celebration" : "motivation";
       setVideoMode(mode);
       setVideoUrl(mode === "celebration" ? pickCelebrationVideo() : pickMotivationVideo());
@@ -254,7 +252,7 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
   }, [wordIdx, sessionWords.length, delay, correctInPass]);
 
   const handleCardTap = useCallback(async () => {
-    if (ph !== "repeat" || !isFlipped) return;
+    if (ph !== "repeat" || !showRepeatWord) return;
     // Re-entry guard: ignore taps once we're already resolving this word
     if (repeatResolvingRef.current) return;
     repeatResolvingRef.current = true;
@@ -283,10 +281,10 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
     setIsSpeaking(false);
 
     await advanceRepeatWord();
-  }, [ph, isFlipped, currentWord, session, rewardCorrect, advanceRepeatWord]);
+  }, [ph, showRepeatWord, currentWord, session, rewardCorrect, advanceRepeatWord]);
 
   const handleRepeatTimeout = useCallback(async () => {
-    if (ph !== "repeat" || !isFlipped) return;
+    if (ph !== "repeat" || !showRepeatWord) return;
     if (repeatResolvingRef.current) return;
     // Block all interaction (no coin if the child taps now)
     repeatResolvingRef.current = true;
@@ -314,7 +312,7 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
     const onKey = (e: KeyboardEvent) => {
       if (e.repeat) return;
       if (e.key === " " || e.key === "Enter") {
-        if (ph === "repeat" && isFlipped) {
+        if (ph === "repeat" && showRepeatWord) {
           e.preventDefault();
           handleCardTap();
         }
@@ -327,7 +325,7 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [ph, isFlipped, handleCardTap]); // eslint-disable-line
+  }, [ph, showRepeatWord, handleCardTap]); // eslint-disable-line
 
   // ─── Demo mode autoplay ────────────────────────────────────────
   // When the game is launched from /demo we auto-start immediately
@@ -346,7 +344,7 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
 
   useEffect(() => {
     if (!isDemo) return;
-    if (ph === "repeat" && isFlipped && !repeatResolvingRef.current) {
+    if (ph === "repeat" && showRepeatWord && !repeatResolvingRef.current) {
       // 3.5 seconds: gives ~2s of suspense with the timer bar visible
       // before the "child" taps the correct answer
       const t = setTimeout(() => {
@@ -354,7 +352,7 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
       }, 3500);
       return () => clearTimeout(t);
     }
-  }, [isDemo, ph, isFlipped, handleCardTap]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isDemo, ph, showRepeatWord, handleCardTap]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!isDemo) return;
@@ -412,26 +410,27 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
         // captures the word in a fraction of a second. Lingering too
         // long actually reduces retention.
         case "presentation": {
+          // Doman flash: word appears briefly while Sofia names it,
+          // then the card stays on the back (logo) longer before next word.
           setIsFlipped(true);
-          await delay(600);
+          await delay(200); // brief pause before Sofia speaks
           if (c()) return;
           setIsSpeaking(true);
           await sofiaNameWord(currentWord.text);
           setIsSpeaking(false);
           if (c()) return;
-          await delay(900);
+          await delay(300); // short linger after naming
           if (c()) return;
           setDotsCompleted(wordIdx + 1);
+          setIsFlipped(false); // back to logo
 
           if (wordIdx < sessionWords.length - 1) {
-            setIsFlipped(false);
-            await delay(400);
+            await delay(800); // logo visible longer between words
             if (c()) return;
             setWordIdx((i) => i + 1);
             setTick((t) => t + 1);
           } else {
-            setIsFlipped(false);
-            await delay(400);
+            await delay(600);
             if (c()) return;
             setPh("pres_sofia");
           }
@@ -473,8 +472,8 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
         }
 
         case "repeat": {
-          // Show the word — child taps the card to say they read it
-          setIsFlipped(true);
+          // Show the word directly (no flip) — child taps to confirm
+          setShowRepeatWord(true);
           repeatResolvingRef.current = false;
           await delay(500);
           if (c()) return;
@@ -686,7 +685,7 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
   const showTimer = false;
   const showMic = false;
   const isStory = ph === "story";
-  const isCardVisible = ph === "presentation" || ph === "repeat" || ph === "review";
+  // isCardVisible removed — Round 1/Review use FlipCard, Round 2 renders directly
   const cardWord = displayWord || currentWord?.text || "";
 
   // ═══ RENDER ════════════════════════════════════════════════════
@@ -829,25 +828,10 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
         </div>
       </div>
 
-      {/* FlipCard for words */}
-      {isCardVisible && (
-        <div
-          style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 16 }}
-          onClick={ph === "repeat" ? handleCardTap : undefined}
-        >
-          {/* Repeat-phase countdown bar with Leo riding the top */}
-          {ph === "repeat" && showRepeatTimer && (
-            <div style={{ height: "min(70vh, 520px)", display: "flex", alignItems: "stretch" }}
-              onClick={(e) => e.stopPropagation()}>
-              <TimeBar
-                seconds={REPEAT_TIMER_SECONDS}
-                resetKey={repeatTimerKey}
-                onTimeUp={() => { /* handled imperatively via setTimeout */ }}
-                color={worldColor}
-              />
-            </div>
-          )}
-          <div style={{ width: "min(85vw, 70vh, 720px)", maxWidth: 720, aspectRatio: "4/3", position: "relative", cursor: ph === "repeat" ? "pointer" : "default" }}>
+      {/* Round 1 & Review: FlipCard */}
+      {(ph === "presentation" || ph === "review") && (
+        <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "#FFFFFF" }}>
+          <div style={{ width: "min(85vw, 70vh, 720px)", maxWidth: 720, aspectRatio: "4/3", position: "relative" }}>
             <FlipCard
               isFlipped={isFlipped}
               front={
@@ -870,26 +854,49 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
               }
             />
           </div>
-          {/* Animated hand hint for Round 2 */}
-          {ph === "repeat" && isFlipped && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.8 }}
-              style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}
-            >
-              <motion.div
-                animate={{ y: [0, -20, 0], scale: [1, 1.2, 1] }}
-                transition={{ repeat: Infinity, duration: 1.5, repeatDelay: 1.5 }}
-                style={{ fontSize: 48 }}
-              >
-                👆
-              </motion.div>
-              <span style={{ fontSize: fontSizes.md, color: worldColor, fontFamily: fonts.display, fontWeight: "bold" }}>
-                ¡Toca la tarjeta!
-              </span>
-            </motion.div>
+        </div>
+      )}
+
+      {/* Round 2: Word shown directly (no flip), child taps to confirm */}
+      {ph === "repeat" && showRepeatWord && (
+        <div
+          style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 16, backgroundColor: "#FFFFFF", cursor: "pointer" }}
+          onClick={handleCardTap}
+        >
+          {showRepeatTimer && (
+            <div style={{ height: "min(70vh, 520px)", display: "flex", alignItems: "stretch" }}
+              onClick={(e) => e.stopPropagation()}>
+              <TimeBar
+                seconds={REPEAT_TIMER_SECONDS}
+                resetKey={repeatTimerKey}
+                onTimeUp={() => {}}
+                color={worldColor}
+              />
+            </div>
           )}
+          <div style={{ width: "min(85vw, 70vh, 720px)", maxWidth: 720, aspectRatio: "4/3", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 20, backgroundColor: "#fff", boxShadow: shadows.lg, padding: "16px 32px", position: "relative" }}>
+            <span style={{ fontSize: fitWordFontSize(cardWord, baseFontSize), fontWeight: "bold", color: fontColor, fontFamily: "Arial Rounded MT Bold, Arial, sans-serif", textAlign: "center", lineHeight: 1.1, wordBreak: "keep-all", whiteSpace: "nowrap", maxWidth: "100%" }}>
+              {cardWord}
+            </span>
+            <QuickCelebration active={showCelebration} />
+          </div>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.8 }}
+            style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}
+          >
+            <motion.div
+              animate={{ y: [0, -20, 0], scale: [1, 1.2, 1] }}
+              transition={{ repeat: Infinity, duration: 1.5, repeatDelay: 1.5 }}
+              style={{ fontSize: 48 }}
+            >
+              👆
+            </motion.div>
+            <span style={{ fontSize: fontSizes.md, color: worldColor, fontFamily: fonts.display, fontWeight: "bold" }}>
+              ¡Toca la tarjeta!
+            </span>
+          </motion.div>
         </div>
       )}
 
