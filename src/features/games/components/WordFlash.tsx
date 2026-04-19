@@ -861,17 +861,10 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
                 </div>
               }
               back={
-                <div style={{ width: "100%", height: "100%", borderRadius: 20, backgroundColor: "#fff", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", boxShadow: shadows.lg, position: "relative", padding: "16px 32px", gap: 8 }}>
+                <div style={{ width: "100%", height: "100%", borderRadius: 20, backgroundColor: "#fff", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: shadows.lg, position: "relative", padding: "16px 32px" }}>
                   <span style={{ fontSize: fitWordFontSize(cardWord, baseFontSize), fontWeight: "bold", color: fontColor, fontFamily: "Arial Rounded MT Bold, Arial, sans-serif", textAlign: "center", lineHeight: 1.1, wordBreak: "keep-all", whiteSpace: "nowrap", maxWidth: "100%" }}>
                     {cardWord}
                   </span>
-                  {WORD_IMAGE_MAP[cardWord] && (
-                    <img
-                      src={WORD_IMAGE_MAP[cardWord]}
-                      alt={cardWord}
-                      style={{ maxHeight: "40%", maxWidth: "60%", objectFit: "contain", borderRadius: 12 }}
-                    />
-                  )}
                   <QuickCelebration active={showCelebration} />
                 </div>
               }
