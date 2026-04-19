@@ -303,6 +303,7 @@ function TrainGame({ words, phase = 1, difficulty, onComplete, onBack, isDemo = 
                 alignItems: "center", justifyContent: "center",
                 fontSize: 28, boxShadow: shadows.md, flexShrink: 0,
                 border: `3px solid ${locoBorder}`,
+                transform: "scaleX(-1)",
               }}>
                 🚂
               </div>
@@ -316,7 +317,6 @@ function TrainGame({ words, phase = 1, difficulty, onComplete, onBack, isDemo = 
                 alignItems: "center", justifyContent: "center",
                 fontSize: 28, boxShadow: shadows.md, flexShrink: 0,
                 border: `3px solid ${locoBorder}`,
-                transform: "scaleX(-1)",
               }}>
                 🚂
               </div>
@@ -332,11 +332,14 @@ function TrainGame({ words, phase = 1, difficulty, onComplete, onBack, isDemo = 
 
   if (gamePhase === "finished") {
     return (
-      <GameCompleteScreen title="Tren de Palabras" correct={state.correctAttempts} total={state.totalAttempts} color={GAME_COLOR} onReplay={handleReplay} onBack={onBack ?? (() => {})} />
+      <GameShell title="Tren de Palabras" icon="🚂" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})}>
+        <GameCompleteScreen title="Tren de Palabras" correct={state.correctAttempts} total={state.totalAttempts} color={GAME_COLOR} onReplay={handleReplay} onBack={onBack ?? (() => {})} />
+      </GameShell>
     );
   }
 
   return (
+    <GameShell title="Tren de Palabras" icon="🚂" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})}>
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: spacing.md, paddingTop: spacing.sm }}>
       {/* Round + target */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", maxWidth: "min(660px, calc(100vw - 32px))" }}>
@@ -394,6 +397,7 @@ function TrainGame({ words, phase = 1, difficulty, onComplete, onBack, isDemo = 
 
       <FeedbackFlash type={feedbackType} />
     </div>
+    </GameShell>
   );
 }
 
@@ -456,8 +460,6 @@ export const WordTrain: React.FC<GameProps> = (props) => {
   }
 
   return (
-    <GameShell title="Tren de Palabras" icon="🚂" color={GAME_COLOR} session={emptySession} onBack={props.onBack ?? (() => {})}>
-      <TrainGame {...props} difficulty={difficulty} />
-    </GameShell>
+    <TrainGame {...props} difficulty={difficulty} />
   );
 };
