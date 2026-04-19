@@ -393,11 +393,10 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
 
         case "greeting": {
           // The greeting video already said "Hola soy la Seño Sofia y
-          // hoy vamos a ver palabras mágicas juntos". Now play the rest
-          // of the intro (uses the full intro.mp3 — the greeting overlaps
-          // sequentially, not simultaneously).
+          // hoy vamos a ver palabras mágicas juntos". Now play ONLY the
+          // rest of the intro (intro-parte2.mp3).
           setIsSpeaking(true);
-          await sofiaPlayAudio("intro", fillScript(SC.introduction, { name: "" }), "excited");
+          await sofiaPlayAudio("intro-parte2", "Antes de empezar quiero que sepas algo muy importante: sos una persona increíble, sos muy inteligente y sos capaz de aprender todo lo que te propongas. Ahora, prestá mucha atención. Te voy a ir mostrando unas palabras muy especiales para que las vayas conociendo y aprendiendo. Solo tenés que mirarlas y escucharme. ¿Estás listo? ¡Vamos!", "excited");
           setIsSpeaking(false);
           if (c()) return;
           await delay(600);
@@ -1175,19 +1174,7 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
         </div>
       )}
 
-      <ProgressLine
-        progress={progress}
-        color={worldColor}
-        label={isDemo ? (
-          ph.startsWith("pres") ? `Ronda 1 · Pasada ${pass + 1}/3` :
-          ph.startsWith("repeat") ? `Ronda 2 · Pasada ${pass + 1}/3` :
-          ph === "story" ? "Ronda 3 · Historia" :
-          ph === "review" ? "Repaso" :
-          ph === "celebration" ? "Celebración" :
-          ph === "affirmation" || ph === "farewell" || ph === "farewell_video" ? "Despedida" :
-          "Sesión"
-        ) : undefined}
-      />
+      <ProgressLine progress={progress} color={worldColor} />
     </div>
   );
 }

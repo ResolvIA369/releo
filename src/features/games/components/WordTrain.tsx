@@ -44,11 +44,12 @@ function TrainGame({ words, phase = 1, difficulty, onComplete, onBack, isDemo = 
   const [roundIdx, setRoundIdx] = useState(0);
   const [targetWord, setTargetWord] = useState<DomanWord | null>(null);
 
-  // Demo: auto-tap correct wagon after 2.5s
+  // Demo: auto-tap correct wagon after 5s (train starts off-screen
+  // at -100% and takes 10s to cross, so at 5s it's visible)
   useDemoAutoplay(isDemo, gamePhase === "moving" && !!targetWord, () => {
     const btn = document.querySelector(`[data-word-id="${targetWord?.id}"]`) as HTMLElement;
     if (btn) btn.click();
-  }, 2500);
+  }, 5000);
   const [tracks, setTracks] = useState<DomanWord[][]>([]);
   const [tappedId, setTappedId] = useState<string | null>(null);
   const [feedbackType, setFeedbackType] = useState<"correct" | "wrong" | null>(null);
