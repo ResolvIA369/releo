@@ -788,14 +788,14 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
               animate={{ scale: 1 }}
               style={{
                 display: "flex", alignItems: "center", gap: 4,
-                padding: "4px 10px",
+                padding: "2px 8px",
                 borderRadius: radii.lg,
                 backgroundColor: "#FFF8E1",
                 border: "2px solid #FFD54F",
                 boxShadow: "0 2px 8px rgba(218,165,32,0.3)",
               }}
             >
-              <span style={{ fontSize: 22 }}>🧳</span>
+              <img src="/images/cofre.png" alt="cofre" style={{ height: 28, width: "auto", objectFit: "contain" }} />
               <motion.span
                 key={score}
                 initial={{ scale: 1.4 }}

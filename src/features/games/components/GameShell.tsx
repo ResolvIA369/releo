@@ -69,8 +69,20 @@ export const GameShell: React.FC<GameShellProps> = ({ title, icon, color, sessio
             <span>{icon}</span><span>{title}</span>
           </div>
 
-          <div style={{ display: "flex", gap: spacing.md, fontSize: fontSizes.sm, color: colors.text.muted }}>
-            <span>✅ {session.correctAttempts}/{session.totalAttempts}</span>
+          <div style={{ display: "flex", alignItems: "center", gap: spacing.sm }}>
+            <div style={{
+              display: "flex", alignItems: "center", gap: 4,
+              padding: "2px 8px",
+              borderRadius: radii.lg,
+              backgroundColor: "#FFF8E1",
+              border: "2px solid #FFD54F",
+              boxShadow: "0 2px 6px rgba(218,165,32,0.25)",
+            }}>
+              <img src="/images/cofre.png" alt="cofre" style={{ height: 26, width: "auto", objectFit: "contain" }} />
+              <span style={{ fontSize: fontSizes.sm, fontWeight: "bold", fontFamily: fonts.display, color: "#F59E0B" }}>
+                {session.correctAttempts}
+              </span>
+            </div>
           </div>
         </motion.div>
 
