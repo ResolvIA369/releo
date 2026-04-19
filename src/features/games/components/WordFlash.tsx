@@ -745,7 +745,12 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
               <motion.div key={w.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.8 + i * 0.2, type: "spring", damping: 10 }}
                 style={{ display: "flex", alignItems: "center", gap: spacing.xs, padding: `${spacing.sm}px ${spacing.md}px`, backgroundColor: colors.bg.secondary, borderRadius: radii.lg, fontSize: fontSizes.lg, fontFamily: fonts.display }}>
-                <span>{w.text}</span><span>{EMOJI_MAP[w.text] ?? ""}</span>
+                <span>{w.text}</span>
+                {WORD_IMAGE_MAP[w.text] ? (
+                  <img src={WORD_IMAGE_MAP[w.text]} alt={w.text} style={{ height: 24, width: 24, objectFit: "cover", borderRadius: 4 }} />
+                ) : (
+                  <span>{EMOJI_MAP[w.text] ?? ""}</span>
+                )}
               </motion.div>
             ))}
           </div>
@@ -1030,7 +1035,7 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
 
       {/* Sofia speaking overlay (greeting, story intro, review intro, farewell, affirmation) */}
       {(ph === "greeting" || ph === "story_intro" || ph === "review_intro" || ph === "repeat_intro" || ph === "farewell" || ph === "affirmation") && (
-        <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
+        <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, backgroundColor: "#FFFFFF" }}>
           <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
             style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16, padding: "24px 32px", borderRadius: 24, backgroundColor: `${worldColor}08`, maxWidth: 420 }}>
             <SofiaAvatar size={280} speaking={isSpeaking} />
@@ -1086,7 +1091,7 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
 
       {/* GIF celebration between rounds (pres_sofia, repeat_sofia) */}
       {(ph === "pres_sofia" || ph === "repeat_sofia") && (
-        <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "#FFFFFF" }}>
           <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
             style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
             <CelebrationGif size={200} />
@@ -1097,14 +1102,19 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
 
       {/* Celebration overlay */}
       {ph === "celebration" && (
-        <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: spacing.lg }}>
+        <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: spacing.lg, backgroundColor: "#FFFFFF" }}>
           <CelebrationGif size={160} />
           <div style={{ display: "flex", flexWrap: "wrap", gap: spacing.sm, justifyContent: "center" }}>
             {sessionWords.map((w, i) => (
               <motion.div key={w.id} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5 + i * 0.2, type: "spring", damping: 10 }}
-                style={{ padding: `${spacing.sm}px ${spacing.md}px`, backgroundColor: "#fff", border: `2px solid ${worldColor}`, borderRadius: radii.lg, fontSize: fontSizes.lg, fontFamily: fonts.display, fontWeight: "bold", color: "#2d3748" }}>
-                {w.text} {EMOJI_MAP[w.text] ?? ""}
+                style={{ display: "flex", alignItems: "center", gap: 6, padding: `${spacing.sm}px ${spacing.md}px`, backgroundColor: "#fff", border: `2px solid ${worldColor}`, borderRadius: radii.lg, fontSize: fontSizes.lg, fontFamily: fonts.display, fontWeight: "bold", color: "#2d3748" }}>
+                {w.text}
+                {WORD_IMAGE_MAP[w.text] ? (
+                  <img src={WORD_IMAGE_MAP[w.text]} alt={w.text} style={{ height: 28, width: 28, objectFit: "cover", borderRadius: 6 }} />
+                ) : (
+                  <span>{EMOJI_MAP[w.text] ?? ""}</span>
+                )}
               </motion.div>
             ))}
           </div>
