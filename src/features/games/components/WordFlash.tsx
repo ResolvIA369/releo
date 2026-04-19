@@ -119,7 +119,7 @@ function useSpeechRecognition() {
 
 type Phase =
   | "ready" | "paused"
-  | "greeting"
+  | "greeting_video" | "greeting"
   | "presentation" | "pres_sofia"
   | "repeat_intro" | "repeat" | "repeat_video" | "repeat_sofia" | "celebration"
   | "story_intro" | "story"
@@ -213,7 +213,7 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
     session.start();
     cancelledRef.current = false;
     setPass(0); setWordIdx(0); setScore(0); setTotalAttempts(0); setDotsCompleted(0);
-    setPh("greeting");
+    setPh("greeting_video");
   }, [session]);
 
   // ─── Round 2: child taps card to confirm they read it ──────────
@@ -349,8 +349,11 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
   useEffect(() => {
     if (!isDemo) return;
     if (ph === "repeat_video") {
-      // 9 seconds so the 8-second videos play fully before auto-advancing
       const t = setTimeout(() => setPh("repeat_sofia"), 9000);
+      return () => clearTimeout(t);
+    }
+    if (ph === "greeting_video") {
+      const t = setTimeout(() => setPh("greeting"), 8000);
       return () => clearTimeout(t);
     }
   }, [isDemo, ph]);
@@ -374,9 +377,17 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
 
       switch (ph) {
         // ═══ GREETING ═════════════════════════════════════════════
+        case "greeting_video": {
+          // Video plays in the render — onEnded advances to greeting
+          break;
+        }
+
         case "greeting": {
+          // The video already said "Hola soy la Seño Sofia y hoy vamos
+          // a ver palabras mágicas juntos" — now Sofia continues with
+          // the motivational part only
           setIsSpeaking(true);
-          await sofiaPlayAudio("intro", fillScript(SC.introduction, { name: "" }), "excited");
+          await sofiaPlayAudio("intro-parte2", "Antes de empezar quiero que sepas algo muy importante: sos una persona increíble, sos muy inteligente y sos capaz de aprender todo lo que te propongas. Ahora, prestá mucha atención. Te voy a ir mostrando unas palabras muy especiales para que las vayas conociendo y aprendiendo. Solo tenés que mirarlas y escucharme. ¿Estás listo? ¡Vamos!", "excited");
           setIsSpeaking(false);
           if (c()) return;
           await delay(600);
@@ -961,6 +972,43 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
               })}
             </p>
           </div>
+        </div>
+      )}
+
+      {/* Greeting video — Seño Sofia introduces herself */}
+      {ph === "greeting_video" && (
+        <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: spacing.lg, gap: spacing.md, backgroundColor: "#FFFFFF" }}>
+          <video
+            src="/videos/Hola soy la seño sofia.mp4"
+            autoPlay
+            playsInline
+            controls
+            onEnded={() => setPh("greeting")}
+            onError={() => setPh("greeting")}
+            style={{
+              maxWidth: "min(85vw, 720px)",
+              maxHeight: "min(70vh, 540px)",
+              borderRadius: 24,
+              boxShadow: shadows.lg,
+              backgroundColor: "transparent",
+            }}
+          />
+          <button
+            onClick={() => setPh("greeting")}
+            style={{
+              padding: `${spacing.sm}px ${spacing.lg}px`,
+              borderRadius: radii.pill,
+              backgroundColor: worldColor,
+              color: "#fff",
+              border: "none",
+              fontSize: fontSizes.md,
+              fontWeight: "bold",
+              fontFamily: fonts.display,
+              cursor: "pointer",
+            }}
+          >
+            Continuar →
+          </button>
         </div>
       )}
 

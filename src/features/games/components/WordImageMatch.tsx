@@ -17,6 +17,7 @@ import { colors, spacing, radii, shadows, fontSizes, fonts } from "@/shared/styl
 import { fitWordFontSize } from "@/shared/utils/fitText";
 import { tapBounce, staggerContainer, staggerItem } from "@/shared/styles/animations";
 import { EMOJI_MAP } from "@/shared/constants/emoji-map";
+import { WORD_IMAGE_MAP } from "@/shared/constants/word-images";
 import { sofiaCelebrates, sofiaEncourages, sofiaNameWord } from "@/shared/services/sofiaVoice";
 
 function shuffle<T>(arr: T[]): T[] {
@@ -223,15 +224,25 @@ export const WordImageMatch: React.FC<GameProps> = ({ words, phase = 1, onComple
                   data-word-id={word.id} onClick={(e) => handleSelect(word, e)}
                   disabled={!!feedbackType}
                   style={{
-                    padding: spacing.lg, borderRadius: radii.xl,
+                    padding: WORD_IMAGE_MAP[word.text] ? spacing.sm : spacing.lg,
+                    borderRadius: radii.xl,
                     border: `3px solid ${borderColor}`, backgroundColor: bg,
                     fontSize: 56, cursor: feedbackType ? "default" : "pointer",
                     display: "flex", alignItems: "center", justifyContent: "center",
                     boxShadow: isSelected && feedbackType === "correct" ? shadows.glow(colors.success) : shadows.sm,
                     minHeight: 90,
+                    overflow: "hidden",
                   }}
                 >
-                  <span>{EMOJI_MAP[word.text] ?? "❓"}</span>
+                  {WORD_IMAGE_MAP[word.text] ? (
+                    <img
+                      src={WORD_IMAGE_MAP[word.text]}
+                      alt={word.text}
+                      style={{ width: "100%", height: 80, objectFit: "contain", borderRadius: radii.lg }}
+                    />
+                  ) : (
+                    <span>{EMOJI_MAP[word.text] ?? "❓"}</span>
+                  )}
                 </motion.button>
               );
             })}
