@@ -231,11 +231,12 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
     } else {
       setShowRepeatTimer(false);
       // Pre-set video URL and transition immediately — the video overlay
-      // covers the entire screen so no card flip-back is needed
+      // covers the entire screen so no card flip-back is needed.
+      // Do NOT setIsFlipped(false) here — it triggers a 0.6s flip
+      // animation that briefly flashes the white card back.
       const mode = correctInPass > 2 ? "celebration" : "motivation";
       setVideoMode(mode);
       setVideoUrl(mode === "celebration" ? pickCelebrationVideo() : pickMotivationVideo());
-      setIsFlipped(false);
       setPh("repeat_video");
     }
     // Allow a new tap / timeout only after the advance fully completes
@@ -607,15 +608,8 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
           break;
         }
 
-        // ═══ FAREWELL ═══════════════════════════════════════════
+        // ═══ FAREWELL (skipped — affirmation follows directly) ═══
         case "farewell": {
-          setIsSpeaking(true);
-          const wordsList = sessionWords.map((w) => w.text).join(", ");
-          await sofiaPlayAudio("farewell", fillScript(SC.farewell, { name: "", words_list: wordsList }), "excited");
-          setIsSpeaking(false);
-          if (c()) return;
-          await delay(800);
-          if (c()) return;
           setPh("affirmation");
           break;
         }
@@ -671,7 +665,7 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
   const showTimer = false;
   const showMic = false;
   const isStory = ph === "story";
-  const isCardVisible = ph === "presentation" || ph === "repeat" || ph === "review" || ph === "farewell";
+  const isCardVisible = ph === "presentation" || ph === "repeat" || ph === "review";
   const cardWord = displayWord || currentWord?.text || "";
 
   // ═══ RENDER ════════════════════════════════════════════════════
@@ -996,7 +990,7 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
             src={videoUrl}
             autoPlay
             playsInline
-            controls={false}
+            controls
             onEnded={() => setPh("repeat_sofia")}
             onError={() => setPh("repeat_sofia")}
             style={{
@@ -1060,12 +1054,12 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
 
       {/* Farewell video — plays Leo & Sofia saying goodbye */}
       {ph === "farewell_video" && (
-        <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: spacing.lg, gap: spacing.md }}>
+        <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: spacing.lg, gap: spacing.md, backgroundColor: "#FFFFFF" }}>
           <video
             src="/videos/Leo_y_Sofia_en_Proxima_Clase.mp4"
             autoPlay
             playsInline
-            controls={false}
+            controls
             onEnded={async () => {
               await session.endSession();
               onComplete?.({

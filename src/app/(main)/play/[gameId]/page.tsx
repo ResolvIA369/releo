@@ -223,7 +223,7 @@ function GamePageInner() {
           <div style={{ borderRadius: 16, overflow: "hidden", maxWidth: "min(320px, 85vw)" }}>
             <video
               src={pickEndVideo(stars)}
-              autoPlay playsInline controls={false}
+              autoPlay playsInline controls
               onError={(e) => { (e.target as HTMLVideoElement).style.display = "none"; }}
               style={{ width: "100%", borderRadius: 16, display: "block", backgroundColor: "transparent" }}
             />
