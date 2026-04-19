@@ -7,7 +7,6 @@ export type GameId =
   | "word-train"
   | "phrase-builder"
   | "word-rain"
-  | "story-reader"
   | "category-sort"
   | "word-fishing"
   | "daily-bits";

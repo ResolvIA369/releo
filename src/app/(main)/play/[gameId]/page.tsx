@@ -16,7 +16,6 @@ import { MemoryCards } from "@/features/games/components/MemoryCards";
 import { WordRain } from "@/features/games/components/WordRain";
 import { WordTrain } from "@/features/games/components/WordTrain";
 import { BuildSentence } from "@/features/games/components/BuildSentence";
-import { StoryReader } from "@/features/games/components/StoryReader";
 import { CategoryGame } from "@/features/games/components/CategoryGame";
 import { WordFishing } from "@/features/games/components/WordFishing";
 import { BitsReading } from "@/features/games/components/BitsReading";
@@ -37,7 +36,6 @@ const GAME_COMPONENTS: Partial<Record<GameId, FC<GameProps>>> = {
   "word-rain": WordRain,
   "word-train": WordTrain,
   "phrase-builder": BuildSentence,
-  "story-reader": StoryReader,
   "category-sort": CategoryGame,
   "word-fishing": WordFishing,
   "daily-bits": BitsReading,
@@ -80,7 +78,7 @@ function GamePageInner() {
   const activePhase = selectedWords ? selectedPhase : (preloadedSession?.phase ?? 1);
   const sessionId = preloadedSession?.id ?? 0;
 
-  const wordsPerBlock = 20;
+  // wordsPerBlock is no longer used — blocks are built as 16+17+17
 
   // Compute the list of N-word blocks for the current world. IMPORTANT:
   // useMemo must be called unconditionally before any early return, or
@@ -92,14 +90,17 @@ function GamePageInner() {
   const blocksForCurrentWorld: DomanWordType[][] = useMemo(() => {
     if (selectedWorldIdx === null) return [];
     const phaseWords = PHASE_WORD_LISTS[selectedWorldIdx] ?? [];
-    const chunks: DomanWordType[][] = [];
-    for (let i = 0; i < phaseWords.length; i += wordsPerBlock) {
-      const c = phaseWords.slice(i, i + wordsPerBlock);
-      if (c.length < 3) break;
-      chunks.push(c);
-    }
-    return chunks;
-  }, [selectedWorldIdx, wordsPerBlock, PHASE_WORD_LISTS]);
+    const total = phaseWords.length;
+    if (total <= 20) return [phaseWords];
+    // Split 50 → 16 + 17 + 17
+    const first = Math.floor(total / 3);
+    const second = Math.ceil((total - first) / 2);
+    return [
+      phaseWords.slice(0, first),
+      phaseWords.slice(first, first + second),
+      phaseWords.slice(first + second),
+    ];
+  }, [selectedWorldIdx, PHASE_WORD_LISTS]);
 
   const hasNextBlock = selectedWorldIdx !== null && selectedBlockIdx + 1 < blocksForCurrentWorld.length;
 
@@ -136,7 +137,7 @@ function GamePageInner() {
           gameIcon={meta.icon}
           gameName={meta.name}
           gameColor={meta.color}
-          wordsPerBlock={wordsPerBlock}
+          wordsPerBlock={20}
           initialWorldIdx={forceBlockSelection ? selectedWorldIdx : null}
           onSelect={(words, phase, worldId, worldIdx, blockIdx) => {
             setSelectedWords(words);

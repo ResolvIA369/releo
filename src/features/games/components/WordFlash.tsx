@@ -124,7 +124,7 @@ type Phase =
   | "repeat_intro" | "repeat" | "repeat_video" | "repeat_sofia" | "celebration"
   | "story_intro" | "story"
   | "review_intro" | "review"
-  | "farewell" | "affirmation" | "complete";
+  | "farewell" | "affirmation" | "farewell_video" | "complete";
 
 const REPEAT_TIMER_SECONDS = 7;
 
@@ -232,11 +232,15 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
       setShowRepeatTimer(false);
       setIsFlipped(false);
       await delay(400);
+      // Pre-set video URL before transitioning so no blank white frame renders
+      const mode = correctInPass > 2 ? "celebration" : "motivation";
+      setVideoMode(mode);
+      setVideoUrl(mode === "celebration" ? pickCelebrationVideo() : pickMotivationVideo());
       setPh("repeat_video");
     }
     // Allow a new tap / timeout only after the advance fully completes
     repeatResolvingRef.current = false;
-  }, [wordIdx, sessionWords.length, delay]);
+  }, [wordIdx, sessionWords.length, delay, correctInPass]);
 
   const handleCardTap = useCallback(async () => {
     if (ph !== "repeat" || !isFlipped) return;
@@ -478,10 +482,7 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
         }
 
         case "repeat_video": {
-          const mode = correctInPass > 2 ? "celebration" : "motivation";
-          setVideoMode(mode);
-          // Pick the URL ONCE here so re-renders don't change it
-          setVideoUrl(mode === "celebration" ? pickCelebrationVideo() : pickMotivationVideo());
+          // videoUrl is already set in advanceRepeatWord before this phase
           setCorrectInPass(0);
           break;
         }
@@ -637,18 +638,13 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
           if (c()) return;
 
           setAffirmationText("");
-          setIsSpeaking(true);
-          await sofiaPlayAudio("chau-chau", "¡Nos vemos en la próxima clase! ¡Chau chau!", "excited");
-          setIsSpeaking(false);
-          if (c()) return;
-          await delay(1000);
-          await session.endSession();
-          // Notify parent that session is complete (triggers progression update)
-          onComplete?.({
-            gameId: "word-flash", score, totalAttempts, correctAttempts: score,
-            startedAt: Date.now(), wordsCompleted: session.recognized,
-          });
-          setPh("complete");
+          // Show farewell video instead of audio
+          setPh("farewell_video");
+          break;
+        }
+
+        case "farewell_video": {
+          // Video plays in the render — wait for onEnded callback to advance
           break;
         }
       }
@@ -811,7 +807,7 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
               isFlipped={isFlipped}
               front={
                 <div style={{ width: "100%", height: "100%", borderRadius: 20, background: `linear-gradient(135deg, ${worldColor}ee, ${worldColor}88)`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, overflow: "hidden" }}>
-                  <SofiaAvatar size={120} speaking={false} />
+                  <img src="/images/logo/releo.png" alt="REleo" style={{ height: 120, width: "auto", objectFit: "contain" }} />
                   <div style={{ display: "flex", gap: 8 }}>
                     {sessionWords.map((_, i) => (
                       <div key={i} style={{ width: 10, height: 10, borderRadius: "50%", backgroundColor: i < dotsCompleted ? "#fff" : "rgba(255,255,255,0.3)", transition: "background-color 0.3s" }} />
@@ -1036,9 +1032,63 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
         </div>
       )}
 
-      {/* Old affirmation and farewell word overlays removed —
-          both phases now show Sofia avatar with the affirmation
-          text integrated below her (in the Sofia speaking overlay above) */}
+      {/* Farewell video — plays Leo & Sofia saying goodbye */}
+      {ph === "farewell_video" && (
+        <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: spacing.lg, gap: spacing.md }}>
+          <video
+            src="/videos/Leo_y_Sofia_en_Proxima_Clase.mp4"
+            autoPlay
+            playsInline
+            controls={false}
+            onEnded={async () => {
+              await session.endSession();
+              onComplete?.({
+                gameId: "word-flash", score, totalAttempts, correctAttempts: score,
+                startedAt: Date.now(), wordsCompleted: session.recognized,
+              });
+              setPh("complete");
+            }}
+            onError={() => {
+              session.endSession().then(() => {
+                onComplete?.({
+                  gameId: "word-flash", score, totalAttempts, correctAttempts: score,
+                  startedAt: Date.now(), wordsCompleted: session.recognized,
+                });
+                setPh("complete");
+              });
+            }}
+            style={{
+              maxWidth: "min(85vw, 720px)",
+              maxHeight: "min(70vh, 540px)",
+              borderRadius: 24,
+              boxShadow: shadows.lg,
+            }}
+          />
+          <button
+            onClick={async () => {
+              await session.endSession();
+              onComplete?.({
+                gameId: "word-flash", score, totalAttempts, correctAttempts: score,
+                startedAt: Date.now(), wordsCompleted: session.recognized,
+              });
+              setPh("complete");
+            }}
+            style={{
+              padding: `${spacing.sm}px ${spacing.lg}px`,
+              borderRadius: radii.pill,
+              backgroundColor: worldColor,
+              color: "#fff",
+              border: "none",
+              fontSize: fontSizes.md,
+              fontWeight: "bold",
+              fontFamily: fonts.display,
+              cursor: "pointer",
+            }}
+          >
+            Continuar →
+          </button>
+        </div>
+      )}
 
       {/* Transcript */}
       {mic.transcript && showMic && (

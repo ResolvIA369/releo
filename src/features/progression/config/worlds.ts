@@ -49,7 +49,7 @@ export const WORLDS: WorldConfig[] = [
     icon: "🏔️",
     image: "/images/worlds/montana.png",
     categories: ["articulos_y_conectores", "preposiciones", "pronombres", "tiempo", "numeros"],
-    availableGames: ["story-reader", "word-fishing"],
+    availableGames: ["word-fishing"],
     totalWords: 50,
     unlockRequirements: { minWordsMastered: 120, minGamesCompleted: 7, minStreakDays: 15, previousWorldId: "world_3" },
   },

@@ -17,7 +17,6 @@ const RULES_AUDIO: Record<string, string> = {
   "Categorias": "reglas-categorias",
   "Construye la Frase": "reglas-frase",
   "Tren de Palabras": "reglas-tren",
-  "Cuenta Cuentos": "reglas-cuentos",
   "Burbujas Magicas": "reglas-burbujas",
   "Bits de Lectura": "reglas-bits",
 };

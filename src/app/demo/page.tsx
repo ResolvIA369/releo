@@ -19,7 +19,6 @@ import { MemoryCards } from "@/features/games/components/MemoryCards";
 import { WordRain } from "@/features/games/components/WordRain";
 import { WordTrain } from "@/features/games/components/WordTrain";
 import { BuildSentence } from "@/features/games/components/BuildSentence";
-import { StoryReader } from "@/features/games/components/StoryReader";
 import { CategoryGame } from "@/features/games/components/CategoryGame";
 import { WordFishing } from "@/features/games/components/WordFishing";
 import { BitsReading } from "@/features/games/components/BitsReading";
@@ -36,7 +35,6 @@ const GAME_COMPONENTS: Partial<Record<GameId, FC<GameProps>>> = {
   "word-rain": WordRain,
   "word-train": WordTrain,
   "phrase-builder": BuildSentence,
-  "story-reader": StoryReader,
   "category-sort": CategoryGame,
   "word-fishing": WordFishing,
   "daily-bits": BitsReading,
@@ -83,13 +81,29 @@ function DemoContent() {
   if (gameParam && GAME_COMPONENTS[gameParam]) {
     const GameComp = GAME_COMPONENTS[gameParam]!;
     const phaseIdx = phaseParam ? parseInt(phaseParam, 10) - 1 : 0;
-    const words = PHASE_WORDS[Math.min(phaseIdx, 4)] ?? PHASE1_WORDS;
+    const blockParam = params.get("block");
+    const blockIdx = blockParam ? parseInt(blockParam, 10) : 0;
+    const allWords = PHASE_WORDS[Math.min(phaseIdx, 4)] ?? PHASE1_WORDS;
     const worldId = WORLDS[Math.min(phaseIdx, 4)]?.id;
+
+    // Split into 16+17+17 blocks (same as GameSetup)
+    const total = allWords.length;
+    let blockWords = allWords;
+    if (total > 20) {
+      const first = Math.floor(total / 3);
+      const second = Math.ceil((total - first) / 2);
+      const blocks = [
+        allWords.slice(0, first),
+        allWords.slice(first, first + second),
+        allWords.slice(first + second),
+      ];
+      blockWords = blocks[Math.min(blockIdx, blocks.length - 1)];
+    }
 
     return (
       <RewardsProvider>
         <GameComp
-          words={words.slice(0, 20)}
+          words={blockWords}
           phase={(phaseIdx + 1) as 1 | 2 | 3 | 4 | 5}
           worldId={worldId}
           isDemo
@@ -133,8 +147,8 @@ function DemoSelector() {
     router.push(`/demo?world=${worldNum}`);
   };
 
-  const startGame = (gameId: string, phaseNum: number) => {
-    router.push(`/demo?game=${gameId}&phase=${phaseNum}`);
+  const startGame = (gameId: string, phaseNum: number, block: number = 0) => {
+    router.push(`/demo?game=${gameId}&phase=${phaseNum}&block=${block}`);
   };
 
   const startAll = () => {
@@ -233,30 +247,49 @@ function DemoSelector() {
 
         {/* Juegos */}
         <Section title="🎮 Juegos">
-          <div style={{ display: "flex", flexDirection: "column", gap: spacing.sm }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: spacing.md }}>
             {GAME_REGISTRY.filter((g) => g.id !== "word-flash").map((game) => (
-              <motion.button
-                key={game.id}
-                whileHover={{ y: -2 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => startGame(game.id, 1)}
-                style={{
-                  display: "flex", alignItems: "center", gap: spacing.md,
-                  padding: `${spacing.sm}px ${spacing.md}px`,
-                  backgroundColor: colors.bg.card,
-                  border: `2px solid ${colors.border.light}`,
-                  borderRadius: radii.lg,
-                  cursor: "pointer", textAlign: "left",
-                }}
-              >
-                <span style={{ fontSize: 28 }}>{game.icon}</span>
-                <span style={{ flex: 1, fontSize: fontSizes.sm, fontWeight: "bold", color: game.color, fontFamily: fonts.display }}>
-                  {game.name}
-                </span>
-                <span style={{ fontSize: fontSizes.xs, color: colors.text.placeholder }}>▶</span>
-              </motion.button>
+              <div key={game.id} style={{
+                padding: `${spacing.sm}px ${spacing.md}px`,
+                backgroundColor: colors.bg.card,
+                border: `2px solid ${colors.border.light}`,
+                borderRadius: radii.lg,
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: spacing.sm, marginBottom: spacing.sm }}>
+                  <span style={{ fontSize: 24 }}>{game.icon}</span>
+                  <span style={{ flex: 1, fontSize: fontSizes.sm, fontWeight: "bold", color: game.color, fontFamily: fonts.display }}>
+                    {game.name}
+                  </span>
+                </div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {WORLDS.map((world, wIdx) => (
+                    [0, 1, 2].map((block) => (
+                      <button
+                        key={`${world.id}-${block}`}
+                        onClick={() => startGame(game.id, wIdx + 1, block)}
+                        style={{
+                          padding: "4px 8px",
+                          borderRadius: radii.sm,
+                          backgroundColor: `${world.color}15`,
+                          border: `1px solid ${world.color}40`,
+                          color: world.color,
+                          fontSize: 11,
+                          fontWeight: "bold",
+                          cursor: "pointer",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {world.icon}{block + 1}
+                      </button>
+                    ))
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
+          <p style={{ fontSize: fontSizes.xs, color: colors.text.muted, marginTop: spacing.xs, textAlign: "center" }}>
+            Cada mundo tiene 3 bloques (🏝️1 🏝️2 🏝️3 = 16+17+17 palabras)
+          </p>
         </Section>
 
         {/* Back to dashboard */}

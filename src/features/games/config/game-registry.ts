@@ -49,14 +49,8 @@ export const GAME_REGISTRY: GameMeta[] = [
     minPhase: 1,
     color: "#4299e1",
   },
-  {
-    id: "story-reader",
-    name: "Cuenta Cuentos",
-    description: "Lee cuentos cortitos tocando cada palabra",
-    icon: "📖",
-    minPhase: 3,
-    color: "#ed8936",
-  },
+  // Cuenta Cuentos removed — the stories were word lists that
+  // didn't form coherent narratives with the limited vocabulary.
   {
     id: "category-sort",
     name: "Categorías",

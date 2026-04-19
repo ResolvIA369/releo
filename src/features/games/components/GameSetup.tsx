@@ -18,18 +18,33 @@ interface WordBlock {
   category: string;
 }
 
-function buildBlocks(phaseWords: DomanWord[], wordsPerBlock: number): WordBlock[] {
-  const blocks: WordBlock[] = [];
-  for (let i = 0; i < phaseWords.length; i += wordsPerBlock) {
-    const chunk = phaseWords.slice(i, i + wordsPerBlock);
-    if (chunk.length < 3) break;
-    blocks.push({
-      label: `${blocks.length + 1}`,
-      words: chunk,
-      category: chunk[0].categoryDisplay,
-    });
+function buildBlocks(phaseWords: DomanWord[]): WordBlock[] {
+  // Split 50 words into 3 blocks: 16 + 17 + 17
+  // For phase 5 (20 words): single block of 20
+  const total = phaseWords.length;
+  if (total <= 20) {
+    return [{
+      label: "1",
+      words: phaseWords,
+      category: phaseWords[0]?.categoryDisplay ?? "",
+    }];
   }
-  return blocks;
+
+  const firstSize = Math.floor(total / 3);       // 16 for 50
+  const secondSize = Math.ceil((total - firstSize) / 2); // 17
+  const thirdSize = total - firstSize - secondSize;      // 17
+
+  const chunks = [
+    phaseWords.slice(0, firstSize),
+    phaseWords.slice(firstSize, firstSize + secondSize),
+    phaseWords.slice(firstSize + secondSize),
+  ];
+
+  return chunks.map((chunk, i) => ({
+    label: `${i + 1}`,
+    words: chunk,
+    category: chunk[0]?.categoryDisplay ?? "",
+  }));
 }
 
 interface GameSetupProps {
@@ -59,7 +74,7 @@ export const GameSetup: React.FC<GameSetupProps> = ({
 
   const world = selectedWorldIdx !== null ? WORLDS[selectedWorldIdx] : null;
   const phaseWords = selectedWorldIdx !== null ? WORDS_BY_PHASE[selectedWorldIdx] : [];
-  const blocks = useMemo(() => buildBlocks(phaseWords, wordsPerBlock), [phaseWords, wordsPerBlock]);
+  const blocks = useMemo(() => buildBlocks(phaseWords), [phaseWords]);
 
   // ─── World selection ────────────────────────────────────────
 

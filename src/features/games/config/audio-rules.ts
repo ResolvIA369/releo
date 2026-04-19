@@ -77,17 +77,6 @@ export const GAME_AUDIO_RULES: Record<string, GameAudioRules> = {
     countdownSeconds: 0,
     hasMicrophone: false,
   },
-  "story-reader": {
-    speakWordOnAppear: true,
-    speakTargetWord: false,
-    speakOnCorrect: true,
-    speakOnIncorrect: false,
-    speakRulesAtStart: true,
-    speakEncouragement: true,
-    hasCountdown: false,
-    countdownSeconds: 0,
-    hasMicrophone: false,
-  },
   "category-sort": {
     speakWordOnAppear: true,
     speakTargetWord: false,
@@ -140,7 +129,6 @@ export const GAME_RULES_TEXT: Record<string, string> = {
   "word-train": "¡Mira el tren, {name}! Escucha la palabra y toca el vagón correcto antes de que caiga.",
   "phrase-builder": "¡Vamos a armar oraciones, {name}! Toca las palabras en el orden correcto.",
   "word-rain": "¡{name}, están cayendo palabras! Escucha cuál necesitas y tócala antes de que caiga.",
-  "story-reader": "¡Vamos a leer un cuento, {name}! Toca cada palabra para leerla.",
   "category-sort": "¡{name}, pon cada palabra en su categoría correcta!",
   "word-fishing": "¡Vamos a pescar palabras, {name}! Escucha cuál necesitas y pesca el pez correcto.",
 };
