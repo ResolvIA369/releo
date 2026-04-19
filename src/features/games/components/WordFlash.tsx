@@ -230,12 +230,12 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
       setTick((t) => t + 1);
     } else {
       setShowRepeatTimer(false);
-      setIsFlipped(false);
-      await delay(400);
-      // Pre-set video URL before transitioning so no blank white frame renders
+      // Pre-set video URL and transition immediately — the video overlay
+      // covers the entire screen so no card flip-back is needed
       const mode = correctInPass > 2 ? "celebration" : "motivation";
       setVideoMode(mode);
       setVideoUrl(mode === "celebration" ? pickCelebrationVideo() : pickMotivationVideo());
+      setIsFlipped(false);
       setPh("repeat_video");
     }
     // Allow a new tap / timeout only after the advance fully completes
@@ -765,7 +765,7 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
         }}>
           {ph.startsWith("pres") ? `Ronda 1 · Pasada ${pass + 1}/3` : ph.startsWith("repeat") ? `Ronda 2 · Pasada ${pass + 1}/3` : ph === "story" ? "Ronda 3 · Historia" : ph === "review" ? "Repaso" : ""}
         </div>
-        {/* Timer + Mic */}
+        {/* Timer + Mic + Chest */}
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, minWidth: 50 }}>
           {showTimer && (
             <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "2px 8px", borderRadius: radii.lg, backgroundColor: timer <= 1 ? "#fed7d7" : colors.bg.secondary }}>
@@ -779,6 +779,31 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
               <motion.div animate={{ opacity: [1, 0.3, 1] }} transition={{ repeat: Infinity, duration: 1 }}
                 style={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: "#e53e3e" }} />
               <span style={{ fontSize: 11, fontWeight: "bold", color: "#e53e3e" }}>REC</span>
+            </motion.div>
+          )}
+          {/* Treasure chest — coins fly here during Round 2 */}
+          {(ph === "repeat" || ph === "repeat_video" || ph === "repeat_sofia" || ph === "repeat_intro") && (
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              style={{
+                display: "flex", alignItems: "center", gap: 4,
+                padding: "4px 10px",
+                borderRadius: radii.lg,
+                backgroundColor: "#FFF8E1",
+                border: "2px solid #FFD54F",
+                boxShadow: "0 2px 8px rgba(218,165,32,0.3)",
+              }}
+            >
+              <span style={{ fontSize: 22 }}>🧳</span>
+              <motion.span
+                key={score}
+                initial={{ scale: 1.4 }}
+                animate={{ scale: 1 }}
+                style={{ fontSize: fontSizes.md, fontWeight: "bold", fontFamily: fonts.display, color: "#F59E0B" }}
+              >
+                {score}
+              </motion.span>
             </motion.div>
           )}
         </div>
@@ -965,7 +990,7 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
 
       {/* End-of-pass video (Round 2): celebration if >2 correct, else motivation */}
       {ph === "repeat_video" && videoUrl && (
-        <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: spacing.lg, gap: spacing.md }}>
+        <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: spacing.lg, gap: spacing.md, backgroundColor: "#FFFFFF" }}>
           <video
             key={videoUrl}
             src={videoUrl}
@@ -979,6 +1004,7 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
               maxHeight: "min(70vh, 540px)",
               borderRadius: 24,
               boxShadow: shadows.lg,
+              backgroundColor: "transparent",
             }}
           />
           <button
