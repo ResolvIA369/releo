@@ -13,18 +13,11 @@
 // every Round 2 card after ~1.5s, and auto-advances the video
 // phase. See WordFlash.tsx isDemo effects.
 
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { DomanSession } from "../config/curriculum";
 import { WordFlash } from "@/features/games/components/WordFlash";
 import { RewardsProvider } from "@/shared/components/RewardsLayer";
-
-function formatTime(ms: number): string {
-  const totalSec = Math.floor(ms / 1000);
-  const m = Math.floor(totalSec / 60);
-  const s = totalSec % 60;
-  return `${m}:${s.toString().padStart(2, "0")}`;
-}
 
 interface DomanDemoPlayerProps {
   sessions: DomanSession[];
@@ -41,18 +34,9 @@ export const DomanDemoPlayer: React.FC<DomanDemoPlayerProps> = ({
   const [showTransition, setShowTransition] = useState(false);
   const [finished, setFinished] = useState(false);
   const [wordFlashKey, setWordFlashKey] = useState(0);
-  const [elapsed, setElapsed] = useState(0);
-  const startRef = useRef(Date.now());
 
   const session = sessions[sessionIdx];
   const totalSessions = sessions.length;
-
-  // Elapsed timer — updates every second for the timeline bar
-  useEffect(() => {
-    if (finished) return;
-    const iv = setInterval(() => setElapsed(Date.now() - startRef.current), 1000);
-    return () => clearInterval(iv);
-  }, [finished]);
 
   // Fullscreen on mount
   useEffect(() => {
@@ -150,42 +134,6 @@ export const DomanDemoPlayer: React.FC<DomanDemoPlayerProps> = ({
           onBack={onComplete}
         />
       </RewardsProvider>
-
-      {/* Timeline bar — shows elapsed time for the entire demo recording */}
-      <div style={{
-        position: "absolute",
-        bottom: 0,
-        left: 0,
-        right: 0,
-        height: 32,
-        backgroundColor: "rgba(0,0,0,0.08)",
-        zIndex: 60,
-        display: "flex",
-        alignItems: "center",
-      }}>
-        <motion.div
-          animate={{ width: `${Math.min((sessionIdx + (finished ? 1 : 0.5)) / totalSessions * 100, 100)}%` }}
-          transition={{ duration: 0.5 }}
-          style={{
-            height: "100%",
-            backgroundColor: session?.worldColor ?? "#48bb78",
-            borderRadius: "0 6px 6px 0",
-          }}
-        />
-        <span style={{
-          position: "absolute",
-          left: "50%",
-          transform: "translateX(-50%)",
-          fontSize: 12,
-          fontWeight: "bold",
-          fontFamily: "Arial, sans-serif",
-          color: "#555",
-          whiteSpace: "nowrap",
-          pointerEvents: "none",
-        }}>
-          {formatTime(elapsed)} — Sesión {sessionIdx + 1}/{totalSessions}
-        </span>
-      </div>
 
       <AnimatePresence>
         {showTransition && (

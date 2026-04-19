@@ -991,7 +991,6 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
             src="/videos/Hola soy la seño sofia.mp4"
             autoPlay
             playsInline
-            controls
             onEnded={() => setPh("greeting")}
             onError={() => setPh("greeting")}
             style={{
