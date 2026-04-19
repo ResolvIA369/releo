@@ -131,6 +131,7 @@ export const DomanDemoPlayer: React.FC<DomanDemoPlayerProps> = ({
           worldId={session.worldId}
           isDemo
           onComplete={handleSessionComplete}
+          onBack={onComplete}
         />
       </RewardsProvider>
 
