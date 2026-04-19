@@ -56,7 +56,7 @@ export const WordImageMatch: React.FC<GameProps> = ({ words, phase = 1, onComple
   useDemoAutoplay(isDemo, gamePhase === "playing" && !feedbackType && !!currentWord, () => {
     const btn = document.querySelector(`[data-word-id="${currentWord?.id}"]`) as HTMLElement;
     if (btn) btn.click();
-  }, 2500);
+  }, 1500);
 
   // Game end
   useEffect(() => {
