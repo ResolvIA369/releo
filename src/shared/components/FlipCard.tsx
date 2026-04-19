@@ -50,7 +50,7 @@ export const FlipCard: React.FC<FlipCardProps> = ({
     >
       <motion.div
         animate={{ rotateY: isFlipped ? 180 : 0 }}
-        transition={{ duration, ease: [0.4, 0, 0.2, 1] }}
+        transition={{ duration, ease: "easeInOut" }}
         style={{
           width: "100%",
           height: "100%",
