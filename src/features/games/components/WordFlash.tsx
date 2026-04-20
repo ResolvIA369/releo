@@ -860,11 +860,11 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
       {/* Round 2: Word shown directly (no flip), child taps to confirm */}
       {ph === "repeat" && showRepeatWord && (
         <div
-          style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 16, backgroundColor: "#FFFFFF", cursor: "pointer" }}
+          style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "#FFFFFF", cursor: "pointer" }}
           onClick={handleCardTap}
         >
           {showRepeatTimer && (
-            <div style={{ height: "min(70vh, 520px)", display: "flex", alignItems: "stretch" }}
+            <div style={{ position: "absolute", right: 24, top: 60, bottom: 20, display: "flex", alignItems: "stretch", zIndex: 5 }}
               onClick={(e) => e.stopPropagation()}>
               <TimeBar
                 seconds={REPEAT_TIMER_SECONDS}
@@ -884,7 +884,7 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.8 }}
-            style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}
+            style={{ position: "absolute", bottom: 40, left: "50%", transform: "translateX(-50%)", display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}
           >
             <motion.div
               animate={{ y: [0, -20, 0], scale: [1, 1.2, 1] }}
