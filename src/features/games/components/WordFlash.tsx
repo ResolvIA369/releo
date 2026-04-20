@@ -1059,15 +1059,17 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
             src={videoUrl}
             autoPlay
             playsInline
-            controls
             onEnded={() => setPh("repeat_sofia")}
             onError={() => setPh("repeat_sofia")}
+            onCanPlay={(e) => { (e.target as HTMLVideoElement).style.opacity = "1"; }}
             style={{
               maxWidth: "min(85vw, 720px)",
               maxHeight: "min(70vh, 540px)",
               borderRadius: 24,
               boxShadow: shadows.lg,
               backgroundColor: "transparent",
+              opacity: 0,
+              transition: "opacity 0.15s",
             }}
           />
           <button
@@ -1133,7 +1135,6 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
             src="/videos/Leo_y_Sofia_en_Proxima_Clase.mp4"
             autoPlay
             playsInline
-            controls
             onEnded={async () => {
               await session.endSession();
               onComplete?.({
