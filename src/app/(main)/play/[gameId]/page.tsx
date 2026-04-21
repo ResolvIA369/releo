@@ -224,8 +224,9 @@ function GamePageInner() {
             <video
               src={pickEndVideo(stars)}
               autoPlay playsInline
+              onCanPlay={(e) => { (e.target as HTMLVideoElement).style.opacity = "1"; }}
               onError={(e) => { (e.target as HTMLVideoElement).style.display = "none"; }}
-              style={{ width: "100%", borderRadius: 16, display: "block", backgroundColor: "transparent" }}
+              style={{ width: "100%", borderRadius: 16, display: "block", opacity: 0, transition: "opacity 0.15s" }}
             />
           </div>
 

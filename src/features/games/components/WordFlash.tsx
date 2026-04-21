@@ -214,7 +214,9 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
 
   const handlePause = useCallback(() => {
     if (ph === "paused") return;
-    clearTimeout(timerRef.current); stopVoice(); mic.stop();
+    clearTimeout(timerRef.current);
+    clearTimeout(repeatTimerRef.current);
+    stopVoice(); mic.stop();
     setPrevPh(ph); setPh("paused");
   }, [ph, mic]);
 
@@ -1004,6 +1006,7 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
             src="/videos/Hola soy la seño sofia.mp4"
             autoPlay
             playsInline
+            onCanPlay={(e) => { (e.target as HTMLVideoElement).style.opacity = "1"; }}
             onEnded={() => setPh("greeting")}
             onError={() => setPh("greeting")}
             style={{
@@ -1011,7 +1014,8 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
               maxHeight: "min(70vh, 540px)",
               borderRadius: 24,
               boxShadow: shadows.lg,
-              backgroundColor: "transparent",
+              opacity: 0,
+              transition: "opacity 0.15s",
             }}
           />
           <button
@@ -1135,6 +1139,7 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
             src="/videos/Leo_y_Sofia_en_Proxima_Clase.mp4"
             autoPlay
             playsInline
+            onCanPlay={(e) => { (e.target as HTMLVideoElement).style.opacity = "1"; }}
             onEnded={async () => {
               await session.endSession();
               onComplete?.({
@@ -1157,6 +1162,8 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
               maxHeight: "min(70vh, 540px)",
               borderRadius: 24,
               boxShadow: shadows.lg,
+              opacity: 0,
+              transition: "opacity 0.15s",
             }}
           />
           <button

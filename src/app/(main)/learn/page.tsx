@@ -11,6 +11,7 @@ import { AnimatedButton } from "@/shared/components/AnimatedButton";
 import { staggerContainer, staggerItem, fadeInUp } from "@/shared/styles/animations";
 import { colors, spacing, fonts, fontSizes, radii, shadows } from "@/shared/styles/design-tokens";
 import { EMOJI_MAP } from "@/shared/constants/emoji-map";
+import { WORD_IMAGE_MAP } from "@/shared/constants/word-images";
 
 function LearnContent() {
   const router = useRouter();
@@ -154,8 +155,13 @@ function LearnContent() {
                     }}>
                       {session.words.map((w) => w.text).join(", ")}
                     </div>
-                    <div style={{ fontSize: fontSizes.xs, color: colors.text.placeholder, marginTop: 2 }}>
-                      Sesión {session.id} — {session.words.map((w) => EMOJI_MAP[w.text] ?? "").join(" ")}
+                    <div style={{ fontSize: fontSizes.xs, color: colors.text.placeholder, marginTop: 2, display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap" }}>
+                      <span>Sesión {session.id} —</span>
+                      {session.words.map((w) =>
+                        WORD_IMAGE_MAP[w.text]
+                          ? <img key={w.id} src={WORD_IMAGE_MAP[w.text]} alt={w.text} style={{ height: 18, width: 18, objectFit: "cover", borderRadius: 3, verticalAlign: "middle" }} />
+                          : <span key={w.id}>{EMOJI_MAP[w.text] ?? ""}</span>
+                      )}
                     </div>
                   </div>
 
