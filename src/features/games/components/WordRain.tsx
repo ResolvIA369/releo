@@ -94,11 +94,15 @@ export const WordRain: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
     })));
   }, [gamePhase, roundIdx]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Demo: auto-tap correct falling word
-  useDemoAutoplay(isDemo, gamePhase === "dropping" && !!targetWord && !feedbackType, () => {
+  // Demo: auto-tap correct falling word once it's well inside the viewport.
+  // Drops are staggered (delay: i * 0.8s) so the target may not have started
+  // falling at 1500ms. Compute the target's stagger delay + 2s buffer so the
+  // click only fires once the word is clearly visible on screen.
+  const demoDelayMs = (drops.find((d) => d.word.id === targetWord?.id)?.delay ?? 0) * 1000 + 2200;
+  useDemoAutoplay(isDemo, gamePhase === "dropping" && !!targetWord && !feedbackType && drops.length > 0, () => {
     const btn = document.querySelector(`[data-word-id="${targetWord?.id}"]`) as HTMLElement;
     if (btn) btn.click();
-  }, 1500);
+  }, demoDelayMs);
 
   // ─── Game end ───────────────────────────────────────────────
 
@@ -220,7 +224,7 @@ export const WordRain: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
                 border: `2px solid ${GAME_COLOR}`, borderRadius: radii.pill,
                 fontSize: fontSizes.xl, fontWeight: "bold", fontFamily: fonts.display, color: GAME_COLOR,
               }}>
-              {targetWord.text} {EMOJI_MAP[targetWord.text] ?? ""}
+              {targetWord.text}
             </motion.div>
           )}
           <span style={{ fontSize: 14 }}>{fallDuration <= 5.5 ? "🔥" : "💨"}</span>
@@ -261,7 +265,7 @@ export const WordRain: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
                     style={{
                       position: "absolute", left: `${leftPct}%`, transform: "translateX(-50%)",
                       padding: `${spacing.md}px ${spacing.lg}px`,
-                      backgroundColor: "rgba(255,255,255,0.95)",
+                      backgroundColor: "rgba(255,255,255,0.98)",
                       borderRadius: radii.xl, border: `3px solid ${GAME_COLOR}40`,
                       boxShadow: shadows.md, cursor: "pointer",
                       fontSize: fitWordFontSize(drop.word.text, fontSizes.xl),
@@ -269,6 +273,10 @@ export const WordRain: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
                       fontFamily: fonts.display, color: "#2d3748",
                       whiteSpace: "nowrap", zIndex: 10,
                       minWidth: 80, textAlign: "center",
+                      willChange: "transform",
+                      backfaceVisibility: "hidden",
+                      WebkitFontSmoothing: "antialiased",
+                      MozOsxFontSmoothing: "grayscale",
                     }}
                   >
                     {drop.word.text}

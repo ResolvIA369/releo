@@ -13,7 +13,6 @@ import { FeedbackFlash } from "@/shared/components/FeedbackFlash";
 import { VictoryBurst } from "@/shared/components/VictoryBurst";
 import { GameCompleteScreen } from "@/shared/components/GameCompleteScreen";
 import { TimeBar } from "@/shared/components/TimeBar";
-import { EMOJI_MAP } from "@/shared/constants/emoji-map";
 import { colors, spacing, radii, shadows, fontSizes, fonts } from "@/shared/styles/design-tokens";
 import { sofiaNameWord, sofiaCelebrates, sofiaEncourages, sofiaPlayAudio } from "@/shared/services/sofiaVoice";
 
@@ -120,6 +119,7 @@ export const MemoryCards: React.FC<GameProps> = ({ words, phase = 1, onComplete,
   const [burstPos, setBurstPos] = useState<{ x: number; y: number } | null>(null);
   const [timerKey, setTimerKey] = useState(0);
   const [showWord, setShowWord] = useState(false);
+  const [showWordHint, setShowWordHint] = useState(false);
 
   const totalRounds = Math.min(words.length, 10);
   const currentWord = roundIdx < totalRounds ? words[roundIdx] : null;
@@ -142,6 +142,11 @@ export const MemoryCards: React.FC<GameProps> = ({ words, phase = 1, onComplete,
     let cancelled = false;
 
     (async () => {
+      // Flash the full word while Sofia names it (Doman: child SEES the word
+      // they're about to assemble, no emoji shortcut). Hint stays visible for
+      // 2s after Sofia finishes, then disappears so the child works from
+      // visual/auditory memory.
+      setShowWordHint(true);
       await sofiaNameWord(currentWord.text);
       if (cancelled) return;
       // Show shuffled pieces
@@ -149,6 +154,7 @@ export const MemoryCards: React.FC<GameProps> = ({ words, phase = 1, onComplete,
       setPlaced([]);
       setShowWord(false);
       setTimerKey((k) => k + 1);
+      setTimeout(() => { if (!cancelled) setShowWordHint(false); }, 2000);
       setTimeout(() => { if (!cancelled) setGamePhase("playing"); }, 300);
     })();
 
@@ -274,7 +280,6 @@ export const MemoryCards: React.FC<GameProps> = ({ words, phase = 1, onComplete,
 
   if (!currentWord) return null;
 
-  const emoji = EMOJI_MAP[currentWord.text] ?? "❓";
   const assembledText = syllables.slice(0, placed.length).join("");
   const remainingPieces = pieces.filter((p) => !placed.includes(p.index));
 
@@ -290,16 +295,31 @@ export const MemoryCards: React.FC<GameProps> = ({ words, phase = 1, onComplete,
             {roundIdx + 1} / {totalRounds}
           </span>
 
-          {/* Emoji hint */}
-          <motion.div
-            key={roundIdx}
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ type: "spring", damping: 8 }}
-            style={{ fontSize: 64 }}
-          >
-            {emoji}
-          </motion.div>
+          {/* Word hint — flashes the full word for 2s while Sofia names it.
+              Doman: child reads the word, then assembles it from syllables
+              by memory (no emoji shortcut). */}
+          <div style={{ minHeight: 60, display: "flex", alignItems: "center" }}>
+            <AnimatePresence mode="wait">
+              {showWordHint && (
+                <motion.div
+                  key={`hint-${roundIdx}`}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.3 }}
+                  style={{
+                    fontSize: fontSizes["4xl"],
+                    fontWeight: "bold",
+                    fontFamily: fonts.display,
+                    color: GAME_COLOR,
+                    letterSpacing: "0.02em",
+                  }}
+                >
+                  {currentWord.text}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
 
           {/* Assembly area — shows placed pieces */}
           <div style={{

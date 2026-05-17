@@ -5,7 +5,6 @@ import { motion } from "framer-motion";
 import type { DomanWord, PhaseNumber } from "@/shared/types/doman";
 import type { GameId, GameProps, GameSessionState } from "../types";
 import { PHASE1_WORDS, PHASE2_WORDS, PHASE3_WORDS, PHASE4_WORDS, PHASE5_WORDS } from "@/shared/constants";
-import { EMOJI_MAP } from "@/shared/constants/emoji-map";
 import { SofiaAvatar } from "@/shared/components/SofiaAvatar";
 import { CelebrationGif } from "@/shared/components/CelebrationGif";
 import { pickEndVideo } from '@/shared/utils/videoPool';
@@ -199,7 +198,7 @@ export const WordPath: React.FC<Props> = ({ onBack }) => {
                 {group.category}
               </div>
               <div style={{ fontSize: fontSizes.xs, color: colors.text.muted, lineHeight: 1.5 }}>
-                {group.words.map((w) => `${w.text} ${EMOJI_MAP[w.text] ?? ""}`).join("  ")}
+                {group.words.map((w) => w.text).join("  ·  ")}
               </div>
             </motion.button>
           ))}

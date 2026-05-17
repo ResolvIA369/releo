@@ -12,7 +12,6 @@ import { GameIntro } from "./GameIntro";
 import { GameCompleteScreen } from "@/shared/components/GameCompleteScreen";
 import { FeedbackFlash } from "@/shared/components/FeedbackFlash";
 import { VictoryBurst } from "@/shared/components/VictoryBurst";
-import { EMOJI_MAP } from "@/shared/constants/emoji-map";
 import { colors, spacing, radii, shadows, fontSizes, fonts } from "@/shared/styles/design-tokens";
 import { fitWordFontSize } from "@/shared/utils/fitText";
 import { tapBounce } from "@/shared/styles/animations";
@@ -185,8 +184,7 @@ export const CategoryGame: React.FC<GameProps> = ({ words, phase = 1, onComplete
               textAlign: "center",
             }}
           >
-            <div style={{ fontSize: 40, marginBottom: spacing.xs }}>{EMOJI_MAP[currentWord.text] ?? "❓"}</div>
-            <span style={{ fontSize: fitWordFontSize(currentWord.text, fontSizes["3xl"]), fontWeight: "bold", fontFamily: fonts.display, color: GAME_COLOR, whiteSpace: "nowrap" }}>
+            <span style={{ fontSize: fitWordFontSize(currentWord.text, fontSizes["4xl"]), fontWeight: "bold", fontFamily: fonts.display, color: GAME_COLOR, whiteSpace: "nowrap" }}>
               {currentWord.text}
             </span>
           </motion.div>

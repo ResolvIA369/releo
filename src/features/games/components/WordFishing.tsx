@@ -210,7 +210,7 @@ export const WordFishing: React.FC<GameProps> = ({ words, phase = 1, onComplete,
                   border: `2px solid ${GAME_COLOR}`, borderRadius: radii.pill,
                   fontSize: fontSizes.xl, fontWeight: "bold", fontFamily: fonts.display, color: GAME_COLOR,
                 }}>
-                🎣 {target.text} {EMOJI_MAP[target.text] ?? ""}
+                🎣 {target.text}
               </motion.div>
             )}
             <span style={{ width: 30 }} />

@@ -954,7 +954,7 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
                   boxShadow: shadows.sm,
                 }}
               >
-                {w.text} {EMOJI_MAP[w.text] ?? ""}
+                {w.text}
               </motion.div>
             ))}
           </div>
