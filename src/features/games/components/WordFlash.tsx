@@ -208,6 +208,25 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
 
   useEffect(() => { return () => { clearTimeout(timerRef.current); stopVoice(); mic.stop(); }; }, []); // eslint-disable-line
 
+  // Preload all Sofia MP3s for this session at mount so the first
+  // sofiaNameWord() call doesn't pay a network round-trip. Each <link
+  // rel="preload"> triggers a fetch into the browser HTTP cache; the
+  // actual <audio> element later picks it up instantly.
+  useEffect(() => {
+    if (typeof document === "undefined" || !sessionWords?.length) return;
+    const links: HTMLLinkElement[] = [];
+    for (const w of sessionWords) {
+      const href = `/audio/sofia/palabra-${w.text.toLowerCase()}.mp3`;
+      const link = document.createElement("link");
+      link.rel = "preload";
+      link.as = "audio";
+      link.href = href;
+      document.head.appendChild(link);
+      links.push(link);
+    }
+    return () => { for (const l of links) { try { l.remove(); } catch {} } };
+  }, [sessionWords]);
+
   const delay = useCallback((ms: number) => new Promise<void>((r) => { timerRef.current = setTimeout(r, ms); }), []);
 
   // ─── Pause ──────────────────────────────────────────────────────
