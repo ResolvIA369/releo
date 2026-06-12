@@ -6,6 +6,7 @@ import type { Application, Container, Sprite } from "pixi.js";
 import type { GameProps } from "../types";
 import type { DomanWord } from "@/shared/types/doman";
 import { useGameState } from "../hooks/useGameState";
+import { useGameKeys } from "../hooks/useGameKeys";
 import { useDemoAutoplay } from "../hooks/useDemoAutoplay";
 import { GameShell, usePause } from "./GameShell";
 import { useRewards } from "@/shared/components/RewardsLayer";
@@ -408,6 +409,19 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
       if (typeof navigator !== "undefined" && "vibrate" in navigator) navigator.vibrate(15);
     }
   }, [gamePhase]);
+
+  // Keyboard: ↑/↓ (y ←/→ como alias — los carriles son columnas)
+  // mueven a Leo un carril; el toque en los carriles queda igual
+  const moveLane = useCallback((delta: -1 | 1) => {
+    handleLaneTap(Math.min(2, Math.max(0, leoLaneRef.current + delta)));
+  }, [handleLaneTap]);
+
+  useGameKeys(gamePhase === "running" && !paused, {
+    ArrowUp: () => moveLane(-1),
+    ArrowLeft: () => moveLane(-1),
+    ArrowDown: () => moveLane(1),
+    ArrowRight: () => moveLane(1),
+  });
 
   // Demo mode: tap the correct lane while the signs are still far
   useDemoAutoplay(isDemo, gamePhase === "running", () => {

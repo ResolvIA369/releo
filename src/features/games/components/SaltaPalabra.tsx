@@ -6,6 +6,7 @@ import type { Application, Container, Sprite } from "pixi.js";
 import type { GameProps } from "../types";
 import type { DomanWord } from "@/shared/types/doman";
 import { useGameState } from "../hooks/useGameState";
+import { useGameKeys } from "../hooks/useGameKeys";
 import { GameShell, usePause } from "./GameShell";
 import { useRewards } from "@/shared/components/RewardsLayer";
 import { FeedbackFlash } from "@/shared/components/FeedbackFlash";
@@ -458,6 +459,12 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
       if (typeof navigator !== "undefined" && "vibrate" in navigator) navigator.vibrate(15);
     }
   }, [paused]);
+
+  // Keyboard: barra espaciadora o ↑ saltan; el toque queda igual
+  useGameKeys(gamePhase === "running" && !paused, {
+    " ": handleJump,
+    ArrowUp: handleJump,
+  });
 
   const handleReplay = useCallback(() => {
     reset();
