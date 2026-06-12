@@ -68,6 +68,14 @@ export const GAME_REGISTRY: GameMeta[] = [
     color: "#0bc5ea",
   },
   {
+    id: "leo-runner",
+    name: "Leo Corre",
+    description: "Toca el camino con la palabra correcta para que Leo salte",
+    icon: "🦁",
+    minPhase: 1,
+    color: "#ed8936",
+  },
+  {
     id: "daily-bits",
     name: "Burbujas Magicas",
     description: "Revienta la burbuja con la palabra correcta",

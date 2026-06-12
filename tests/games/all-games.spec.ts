@@ -16,6 +16,7 @@ const GAMES = [
   { id: "category-sort", name: "Categorías", route: "/play/category-sort" },
   { id: "word-fishing", name: "Pesca de Palabras", route: "/play/word-fishing" },
   { id: "daily-bits", name: "Burbujas Mágicas", route: "/play/daily-bits" },
+  { id: "leo-runner", name: "Leo Corre", route: "/play/leo-runner" },
 ];
 
 interface GameResult {
@@ -61,6 +62,7 @@ for (const game of GAMES) {
         "category-sort": "CategoryGame.tsx",
         "word-fishing": "WordFishing.tsx",
         "daily-bits": "BitsReading.tsx",
+        "leo-runner": "LeoRunner.tsx",
       };
       const compFile = path.join(ROOT, "src/features/games/components", componentMap[game.id]);
       if (fs.existsSync(compFile)) {
@@ -177,14 +179,22 @@ test("Audio — 44 story MP3s exist", () => {
   expect(missing).toBe(0);
 });
 
-// ═══ 4. Celebration GIFs ══════════════════════════════════════
+// ═══ 4. Celebration videos (replaced the old celebration GIFs) ═══
 
-test("Celebration GIFs — directory exists with named files", () => {
-  const dir = path.join(ROOT, "public/images/celebration");
+test("Celebration videos — end-game video pool exists", () => {
+  const dir = path.join(ROOT, "public/videos");
   expect(fs.existsSync(dir)).toBeTruthy();
 
-  const gifs = fs.readdirSync(dir).filter((f) => f.endsWith(".gif") && !f.includes(" "));
-  expect(gifs.length).toBeGreaterThanOrEqual(5);
+  for (const name of [
+    "leo-celebration-1.mp4",
+    "leo-celebration-2.mp4",
+    "leo-celebration-3.mp4",
+    "sofia-celebration-1.mp4",
+    "sofia-celebration-2.mp4",
+    "leo-motivation.mp4",
+  ]) {
+    expect(fs.existsSync(path.join(dir, name))).toBeTruthy();
+  }
 });
 
 // ═══ 5. World images ══════════════════════════════════════════
@@ -209,7 +219,7 @@ test("PWA manifest is valid", async () => {
   const res = await fetch(`${BASE}/manifest.webmanifest`);
   expect(res.ok).toBeTruthy();
   const manifest = await res.json();
-  expect(manifest.name).toContain("Doman");
+  expect(manifest.name).toContain("REleo");
   expect(manifest.icons.length).toBeGreaterThanOrEqual(1);
 });
 

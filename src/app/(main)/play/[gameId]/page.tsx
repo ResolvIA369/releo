@@ -19,6 +19,7 @@ import { BuildSentence } from "@/features/games/components/BuildSentence";
 import { CategoryGame } from "@/features/games/components/CategoryGame";
 import { WordFishing } from "@/features/games/components/WordFishing";
 import { BitsReading } from "@/features/games/components/BitsReading";
+import { LeoRunner } from "@/features/games/components/LeoRunner";
 import { SofiaAvatar } from "@/shared/components/SofiaAvatar";
 import { CelebrationGif } from "@/shared/components/CelebrationGif";
 import { AnimatedButton } from "@/shared/components/AnimatedButton";
@@ -39,6 +40,7 @@ const GAME_COMPONENTS: Partial<Record<GameId, FC<GameProps>>> = {
   "category-sort": CategoryGame,
   "word-fishing": WordFishing,
   "daily-bits": BitsReading,
+  "leo-runner": LeoRunner,
 };
 
 // Games that need more words for variety (categories, fishing, rain)

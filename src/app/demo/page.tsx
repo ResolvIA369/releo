@@ -22,6 +22,7 @@ import { BuildSentence } from "@/features/games/components/BuildSentence";
 import { CategoryGame } from "@/features/games/components/CategoryGame";
 import { WordFishing } from "@/features/games/components/WordFishing";
 import { BitsReading } from "@/features/games/components/BitsReading";
+import { LeoRunner } from "@/features/games/components/LeoRunner";
 import type { GameId } from "@/features/games/types";
 import type { FC } from "react";
 import type { GameProps } from "@/features/games/types";
@@ -38,6 +39,7 @@ const GAME_COMPONENTS: Partial<Record<GameId, FC<GameProps>>> = {
   "category-sort": CategoryGame,
   "word-fishing": WordFishing,
   "daily-bits": BitsReading,
+  "leo-runner": LeoRunner,
 };
 const PHASE_WORDS = [PHASE1_WORDS, PHASE2_WORDS, PHASE3_WORDS, PHASE4_WORDS, PHASE5_WORDS];
 
