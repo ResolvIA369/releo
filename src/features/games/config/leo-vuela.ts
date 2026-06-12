@@ -23,6 +23,34 @@ export function physicsForPhase(phase: PhaseNumber): LeoVuelaPhysics {
   return LEO_VUELA_PHYSICS[phase] ?? LEO_VUELA_PHYSICS[1];
 }
 
+// ─── Energia: el ritmo del juego ─────────────────────────────────
+// Sube por acierto, baja por error/escape y drena sola de a poco.
+// Si llega a 0 el juego termina. Ajustable por fase sin tocar el juego.
+export interface LeoVuelaTuning {
+  energyStart: number;
+  energyMax: number;
+  energyGainCorrect: number;
+  energyLossWrong: number;
+  energyLossEscape: number;
+  energyDrainPerSec: number; // drenaje pasivo
+}
+
+export const LEO_VUELA_TUNING: Record<PhaseNumber, LeoVuelaTuning> = {
+  1: { energyStart: 60, energyMax: 100, energyGainCorrect: 14, energyLossWrong: 10, energyLossEscape: 8, energyDrainPerSec: 1.0 },
+  2: { energyStart: 60, energyMax: 100, energyGainCorrect: 13, energyLossWrong: 10, energyLossEscape: 8, energyDrainPerSec: 1.2 },
+  3: { energyStart: 60, energyMax: 100, energyGainCorrect: 12, energyLossWrong: 11, energyLossEscape: 9, energyDrainPerSec: 1.4 },
+  4: { energyStart: 60, energyMax: 100, energyGainCorrect: 12, energyLossWrong: 11, energyLossEscape: 9, energyDrainPerSec: 1.6 },
+  5: { energyStart: 60, energyMax: 100, energyGainCorrect: 11, energyLossWrong: 12, energyLossEscape: 10, energyDrainPerSec: 1.8 },
+};
+
+export function tuningForPhase(phase: PhaseNumber): LeoVuelaTuning {
+  return LEO_VUELA_TUNING[phase] ?? LEO_VUELA_TUNING[1];
+}
+
+export function clampEnergy(value: number, max: number): number {
+  return Math.min(max, Math.max(0, value));
+}
+
 // Caida maxima: sin clamp un descuido se vuelve un picado imposible
 // de frenar para un nene chico.
 export const MAX_FALL_SPEED = 4.5;

@@ -1,7 +1,10 @@
 import { describe, it, expect } from "vitest";
 import {
   LEO_VUELA_PHYSICS,
+  LEO_VUELA_TUNING,
   physicsForPhase,
+  tuningForPhase,
+  clampEnergy,
   stepFlight,
   buildCloudRound,
   MAX_FALL_SPEED,
@@ -30,6 +33,31 @@ describe("physicsForPhase", () => {
       expect(cfg.gravity).toBeGreaterThan(0);
       expect(cfg.impulse).toBeGreaterThan(0);
     }
+  });
+});
+
+describe("tuning de energia", () => {
+  it("toda fase tiene drenaje, ganancia y perdidas positivas", () => {
+    for (const phase of [1, 2, 3, 4, 5] as PhaseNumber[]) {
+      const t = LEO_VUELA_TUNING[phase];
+      expect(t.energyDrainPerSec).toBeGreaterThan(0);
+      expect(t.energyGainCorrect).toBeGreaterThan(0);
+      expect(t.energyLossWrong).toBeGreaterThan(0);
+      expect(t.energyLossEscape).toBeGreaterThan(0);
+      expect(t.energyStart).toBeLessThanOrEqual(t.energyMax);
+    }
+  });
+
+  it("tuningForPhase cae a fase 1 ante un valor invalido", () => {
+    expect(tuningForPhase(99 as PhaseNumber)).toBe(LEO_VUELA_TUNING[1]);
+  });
+});
+
+describe("clampEnergy", () => {
+  it("clampa entre 0 y el maximo", () => {
+    expect(clampEnergy(-5, 100)).toBe(0);
+    expect(clampEnergy(120, 100)).toBe(100);
+    expect(clampEnergy(50, 100)).toBe(50);
   });
 });
 

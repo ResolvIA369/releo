@@ -14,7 +14,7 @@ import { GameCompleteScreen } from "@/shared/components/GameCompleteScreen";
 import { colors, spacing, radii, fontSizes, fonts } from "@/shared/styles/design-tokens";
 import { sofiaNameWord, sofiaPlayAudio, stopVoice } from "@/shared/services/sofiaVoice";
 import { domanCanvasText } from "../config/doman-canvas";
-import { physicsForPhase, stepFlight, buildCloudRound } from "../config/leo-vuela";
+import { physicsForPhase, stepFlight, buildCloudRound, tuningForPhase, clampEnergy } from "../config/leo-vuela";
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -98,6 +98,15 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
   const physicsRef = useRef(physics);
   physicsRef.current = physics;
 
+  const tuning = useMemo(() => tuningForPhase(phase), [phase]);
+  const tuningRef = useRef(tuning);
+  tuningRef.current = tuning;
+
+  const energyRef = useRef(tuning.energyStart);
+  const [energyUi, setEnergyUi] = useState(tuning.energyStart);
+  const energySyncRef = useRef(0);
+  const onEnergyOutRef = useRef<() => void>(() => {});
+
   const gameWords = useMemo(() => shuffle(words).slice(0, WORDS_PER_GAME), [words]);
   const totalRounds = gameWords.length;
 
@@ -177,6 +186,25 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
         const dt = ticker.deltaTime;
         elapsedRef.current += dt;
         const round = roundRef.current;
+
+        // Drenaje pasivo de energia mientras se juega; en 0 se termina
+        if (round.active && gamePhaseRef.current === "running") {
+          energyRef.current = clampEnergy(
+            energyRef.current - (tuningRef.current.energyDrainPerSec * dt) / 60,
+            tuningRef.current.energyMax,
+          );
+          if (energyRef.current <= 0) {
+            round.active = false;
+            round.resolved = true;
+            onEnergyOutRef.current();
+          }
+          // Sincronizar la barra ~6 veces por segundo
+          energySyncRef.current += dt;
+          if (energySyncRef.current >= 10) {
+            energySyncRef.current = 0;
+            setEnergyUi(Math.round(energyRef.current));
+          }
+        }
 
         // Clouds: drift left + gentle bob — NUNCA se frenan
         round.clouds.forEach((fc, i) => {
@@ -414,6 +442,20 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
     });
   }, [spawnWave]);
 
+  // Sin energia → fin del juego
+  const finishGame = useCallback(() => {
+    if (cancelledRef.current) return;
+    stopVoice();
+    setGamePhase("finished");
+    finish().then(() => onComplete?.(state));
+  }, [finish, onComplete, state]);
+  onEnergyOutRef.current = finishGame;
+
+  const adjustEnergy = useCallback((delta: number) => {
+    energyRef.current = clampEnergy(energyRef.current + delta, tuningRef.current.energyMax);
+    setEnergyUi(Math.round(energyRef.current));
+  }, []);
+
   // ─── Catch / escape (called from the Pixi ticker) ────────────────
 
   const handleCatch = useCallback((fc: FlyingCloud) => {
@@ -433,12 +475,14 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
         rewardCorrect(rect.left + LEO_X * scale, rect.top + (leoYRef.current - LEO_CENTER_OFFSET) * scale);
       }
       squashTRef.current = 0; // celebration squash-and-stretch
+      adjustEnergy(tuningRef.current.energyGainCorrect);
       stopVoice();
       void sofiaPlayAudio("reaccion-muy-bien", "¡Muy bien!", "excited");
       nextWave();
     } else {
       // Tropezon suave: tint + Sofia repite el objetivo, todo sigue
       recordAttempt(false);
+      adjustEnergy(-tuningRef.current.energyLossWrong);
       crashTRef.current = 0;
       flashFeedback("wrong");
       stopVoice();
@@ -450,17 +494,18 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
         nextWave();
       }
     }
-  }, [recordAttempt, rewardCorrect, nextWave, flashFeedback]);
+  }, [recordAttempt, rewardCorrect, nextWave, flashFeedback, adjustEnergy]);
 
   const handleEscape = useCallback(() => {
     const round = roundRef.current;
     if (!round.target) return;
     recordAttempt(false);
+    adjustEnergy(-tuningRef.current.energyLossEscape);
     flashFeedback("wrong");
     stopVoice();
     void sofiaPlayAudio("reaccion-se-escapo", "¡Se escapó!", "gentle");
     nextWave();
-  }, [recordAttempt, nextWave, flashFeedback]);
+  }, [recordAttempt, nextWave, flashFeedback, adjustEnergy]);
 
   onCatchRef.current = handleCatch;
   onEscapeRef.current = handleEscape;
@@ -482,6 +527,8 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
     reset();
     leoYRef.current = GROUND_Y + 4;
     vyRef.current = 0;
+    energyRef.current = tuningRef.current.energyStart;
+    setEnergyUi(tuningRef.current.energyStart);
     setRoundIdx(0);
     setGamePhase("running");
     spawnWave(0);
@@ -523,6 +570,29 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
             </div>
           )}
           <span style={{ width: 40 }} />
+        </div>
+
+        {/* Barra de energia */}
+        <div style={{ display: "flex", alignItems: "center", gap: spacing.sm, width: "100%", maxWidth: "min(640px, calc(100vw - 32px))" }}>
+          <span style={{ fontSize: fontSizes.md }} aria-hidden>⚡</span>
+          <div
+            role="progressbar"
+            aria-label="Energía"
+            aria-valuenow={energyUi}
+            aria-valuemin={0}
+            aria-valuemax={tuning.energyMax}
+            style={{ flex: 1, height: 14, borderRadius: radii.pill, backgroundColor: "#e9e5f5", overflow: "hidden", border: `1px solid ${colors.border.light}` }}
+          >
+            <div
+              style={{
+                width: `${(energyUi / tuning.energyMax) * 100}%`,
+                height: "100%",
+                borderRadius: radii.pill,
+                backgroundColor: energyUi > 50 ? "#48bb78" : energyUi > 25 ? "#f6ad55" : "#f56565",
+                transition: "width 0.25s ease, background-color 0.3s ease",
+              }}
+            />
+          </div>
         </div>
 
         {/* Pixi canvas + full-surface flap tap zone */}
