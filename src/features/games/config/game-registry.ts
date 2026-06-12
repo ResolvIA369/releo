@@ -2,6 +2,30 @@ import type { GameMeta } from "../types";
 
 export const GAME_REGISTRY: GameMeta[] = [
   {
+    id: "leo-runner",
+    name: "Leo Corre",
+    description: "Toca el camino con la palabra correcta para que Leo salte",
+    icon: "🦁",
+    minPhase: 1,
+    color: "#ed8936",
+  },
+  {
+    id: "salta-palabra",
+    name: "Salta la Palabra",
+    description: "Toca para que Leo salte y atrape la palabra correcta",
+    icon: "🦘",
+    minPhase: 1,
+    color: "#38b2ac",
+  },
+  {
+    id: "leo-vuela",
+    name: "Leo Vuela",
+    description: "Toca para que Leo vuele hasta la nube con la palabra correcta",
+    icon: "🪁",
+    minPhase: 1,
+    color: "#9f7aea",
+  },
+  {
     id: "word-flash",
     name: "Flash de Palabras",
     description: "Aprende 5 palabras nuevas con la Seño Sofía",
@@ -51,6 +75,8 @@ export const GAME_REGISTRY: GameMeta[] = [
   },
   // Cuenta Cuentos removed — the stories were word lists that
   // didn't form coherent narratives with the limited vocabulary.
+  // Cuenta Cuentos removed — the stories were word lists that
+  // didn't form coherent narratives with the limited vocabulary.
   {
     id: "category-sort",
     name: "Categorías",
@@ -66,30 +92,6 @@ export const GAME_REGISTRY: GameMeta[] = [
     icon: "🎣",
     minPhase: 1,
     color: "#0bc5ea",
-  },
-  {
-    id: "leo-runner",
-    name: "Leo Corre",
-    description: "Toca el camino con la palabra correcta para que Leo salte",
-    icon: "🦁",
-    minPhase: 1,
-    color: "#ed8936",
-  },
-  {
-    id: "salta-palabra",
-    name: "Salta la Palabra",
-    description: "Toca para que Leo salte y atrape la palabra correcta",
-    icon: "🦘",
-    minPhase: 1,
-    color: "#38b2ac",
-  },
-  {
-    id: "leo-vuela",
-    name: "Leo Vuela",
-    description: "Toca para que Leo vuele hasta la nube con la palabra correcta",
-    icon: "🪁",
-    minPhase: 1,
-    color: "#9f7aea",
   },
   {
     id: "daily-bits",
