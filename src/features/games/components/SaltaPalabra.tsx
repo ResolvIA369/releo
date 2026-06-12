@@ -27,6 +27,10 @@ function shuffle<T>(arr: T[]): T[] {
 const GAME_COLOR = "#38b2ac";
 const WORDS_PER_GAME = 20;
 
+// Unico punto de cambio del sprite: Leo de perfil mirando a la derecha,
+// hacia las palabras que entran (procesado por scripts/prepare-leo-sprites.py)
+const LEO_SPRITE_URL = "/images/games/leo-salta-sprite.png";
+
 // Logical canvas size — CSS scales it to the container width
 const W = 640;
 const H = 420;
@@ -135,10 +139,10 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
       app.stage.addChild(wordsLayer);
       wordsLayerRef.current = wordsLayer;
 
-      // Leo — clean lion sprite (extracted for leo-runner), emoji fallback
+      // Leo — sprite if the texture loads, emoji fallback otherwise
       const leo = new PIXI.Container();
       try {
-        const tex = await PIXI.Assets.load("/images/games/leo-runner-sprite.png");
+        const tex = await PIXI.Assets.load(LEO_SPRITE_URL);
         // After appRef is set the cleanup owns destruction — just bail
         if (disposed) return;
         const sprite = new PIXI.Sprite(tex);
