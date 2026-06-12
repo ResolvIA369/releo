@@ -110,11 +110,22 @@ describe("obstaculos", () => {
       expect(levels[0].boltsPerMin).toBe(0);
       expect(levels[0].rainPerMin).toBe(0);
       expect(levels[0].birdsPerMin).toBeLessThanOrEqual(1);
+      expect(levels[0].floorCloudsPerMin).toBe(0);
       for (let i = 1; i < levels.length; i++) {
         expect(levels[i].birdsPerMin).toBeGreaterThan(levels[i - 1].birdsPerMin);
         expect(levels[i].boltsPerMin).toBeGreaterThanOrEqual(levels[i - 1].boltsPerMin);
         expect(levels[i].rainPerMin).toBeGreaterThanOrEqual(levels[i - 1].rainPerMin);
+        expect(levels[i].floorCloudsPerMin).toBeGreaterThanOrEqual(levels[i - 1].floorCloudsPerMin);
       }
+    }
+  });
+
+  it("Nivel 3: nubes-objetivo bien mas rapidas y piso denso de nubes grises", () => {
+    for (const phase of [1, 2, 3, 4, 5] as PhaseNumber[]) {
+      const { levels } = LEO_VUELA_TUNING[phase];
+      const last = levels[levels.length - 1];
+      expect(last.speedMul).toBeGreaterThanOrEqual(1.8);
+      expect(last.floorCloudsPerMin).toBeGreaterThanOrEqual(12);
     }
   });
 

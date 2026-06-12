@@ -1,4 +1,4 @@
-import type { Container, Text } from "pixi.js";
+import type { Container, Graphics, Text } from "pixi.js";
 import type { LeoVuelaLevel } from "../config/leo-vuela";
 
 // Obstaculos de Leo Vuela: pajaros que cruzan, relampagos que caen y
@@ -26,8 +26,16 @@ interface Drop {
   vy: number;
 }
 
+interface FloorCloud {
+  node: Graphics;
+  vx: number;
+  hit: boolean;
+}
+
 export interface ObstacleFrame {
-  knock: number; // empuje vertical hacia abajo para Leo (px/frame)
+  // Empuje vertical para Leo (px/frame): positivo = hacia abajo
+  // (pajaros, rayos), negativo = hacia arriba (nubes rasantes)
+  knock: number;
   gravityMul: number; // 1 normal; >1 mientras llueve
 }
 
@@ -40,6 +48,7 @@ export function spawnRoll(ratePerMin: number, dt: number, rng: () => number = Ma
 
 const BIRD_KNOCK = 2.4;
 const BOLT_KNOCK = 3.2;
+const FLOOR_CLOUD_KNOCK = -2.8; // hacia arriba: no se puede volar rasante
 const RAIN_GRAVITY_MUL = 1.6;
 const RAIN_DURATION_FRAMES = 4 * 60;
 const HIT_RADIUS_X = 42;
@@ -49,6 +58,7 @@ export class LeoVuelaObstacles {
   private birds: Bird[] = [];
   private bolts: Bolt[] = [];
   private drops: Drop[] = [];
+  private floorClouds: FloorCloud[] = [];
   private rainFrames = 0;
 
   constructor(
@@ -114,6 +124,32 @@ export class LeoVuelaObstacles {
       return true;
     });
 
+    // ── Nubes grises rasantes: cruzan el "piso" y empujan hacia arriba ──
+    if (spawnRoll(level.floorCloudsPerMin, dt)) {
+      const node = new this.PIXI.Graphics();
+      const s = 0.8 + Math.random() * 0.5;
+      node.ellipse(0, 0, 42 * s, 16 * s).fill({ color: 0x9e9e9e, alpha: 0.9 });
+      node.ellipse(-18 * s, -8 * s, 22 * s, 12 * s).fill({ color: 0xb0b0b0, alpha: 0.9 });
+      node.ellipse(16 * s, -7 * s, 26 * s, 13 * s).fill({ color: 0xa8a8a8, alpha: 0.9 });
+      node.x = W + 60;
+      node.y = groundY - 18 - Math.random() * 26;
+      this.layer.addChild(node);
+      this.floorClouds.push({ node, vx: 2.0 + Math.random() * 1.0, hit: false });
+    }
+    this.floorClouds = this.floorClouds.filter((fc) => {
+      fc.node.x -= fc.vx * dt;
+      if (!fc.hit && Math.abs(fc.node.x - leo.x) < HIT_RADIUS_X + 10 && Math.abs(fc.node.y - leo.y) < HIT_RADIUS_Y) {
+        fc.hit = true;
+        fc.node.alpha = 0.55;
+        knock = knock === 0 ? FLOOR_CLOUD_KNOCK : knock;
+      }
+      if (fc.node.x < -80) {
+        fc.node.destroy();
+        return false;
+      }
+      return true;
+    });
+
     // ── Lluvia: rafaga que empuja a Leo hacia abajo un rato ──
     if (this.rainFrames <= 0 && spawnRoll(level.rainPerMin, dt)) {
       this.rainFrames = RAIN_DURATION_FRAMES;
@@ -147,9 +183,11 @@ export class LeoVuelaObstacles {
     for (const b of this.birds) b.node.destroy();
     for (const b of this.bolts) b.node.destroy();
     for (const d of this.drops) d.node.destroy();
+    for (const fc of this.floorClouds) fc.node.destroy();
     this.birds = [];
     this.bolts = [];
     this.drops = [];
+    this.floorClouds = [];
     this.rainFrames = 0;
   }
 }

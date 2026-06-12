@@ -257,8 +257,12 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
             x: LEO_X,
             y: leoYRef.current - LEO_CENTER_OFFSET,
           });
-          if (frame.knock > 0) {
-            vyRef.current = Math.max(vyRef.current, frame.knock);
+          if (frame.knock !== 0) {
+            // Positivo empuja hacia abajo (pajaros/rayos), negativo
+            // hacia arriba (nubes rasantes del piso)
+            vyRef.current = frame.knock > 0
+              ? Math.max(vyRef.current, frame.knock)
+              : Math.min(vyRef.current, frame.knock);
             crashTRef.current = 0; // sacudida visual, sin costo de energia
           }
           gravityMul = frame.gravityMul;

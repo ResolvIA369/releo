@@ -37,6 +37,7 @@ export interface LeoVuelaLevel {
   birdsPerMin: number; // pajaros que cruzan
   boltsPerMin: number; // relampagos que caen
   rainPerMin: number; // rafagas de lluvia que empujan hacia abajo
+  floorCloudsPerMin: number; // nubes grises rasantes que empujan hacia arriba
 }
 
 export interface LeoVuelaTuning {
@@ -53,9 +54,10 @@ export interface LeoVuelaTuning {
 
 const DEFAULT_LEVELS: LeoVuelaLevel[] = [
   // Nivel 1: foco en leer, casi sin obstaculos
-  { speedMul: 1.0, gapMul: 1.0, birdsPerMin: 1, boltsPerMin: 0, rainPerMin: 0 },
-  { speedMul: 1.3, gapMul: 0.85, birdsPerMin: 5, boltsPerMin: 2, rainPerMin: 0.6 },
-  { speedMul: 1.6, gapMul: 0.7, birdsPerMin: 9, boltsPerMin: 4, rainPerMin: 1.2 },
+  { speedMul: 1.0, gapMul: 1.0, birdsPerMin: 1, boltsPerMin: 0, rainPerMin: 0, floorCloudsPerMin: 0 },
+  { speedMul: 1.3, gapMul: 0.85, birdsPerMin: 5, boltsPerMin: 2, rainPerMin: 0.6, floorCloudsPerMin: 0 },
+  // Nivel 3: nubes-objetivo mas rapidas + piso denso de nubes grises
+  { speedMul: 1.85, gapMul: 0.7, birdsPerMin: 9, boltsPerMin: 4, rainPerMin: 1.2, floorCloudsPerMin: 18 },
 ];
 
 // Mas nivel alcanzado = mejor recompensa al terminar
