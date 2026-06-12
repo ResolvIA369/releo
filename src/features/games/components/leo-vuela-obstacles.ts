@@ -9,7 +9,8 @@ import type { LeoVuelaLevel } from "../config/leo-vuela";
 type PixiModule = typeof import("pixi.js");
 
 interface Bird {
-  node: Text;
+  node: Container;
+  wing: Graphics; // ala animada (aletea con seno sobre la posicion x)
   vx: number;
   baseY: number;
   hit: boolean;
@@ -71,6 +72,25 @@ export class LeoVuelaObstacles {
     return new this.PIXI.Text({ text, style: { fontSize: size } });
   }
 
+  // Silueta clara de pajaro en vuelo (mirando a la izquierda, hacia
+  // donde se mueve): cuerpo, cabeza, pico, cola, ojo y ala que aletea
+  private makeBird(): { node: Container; wing: Graphics } {
+    const C = 0x455a64;
+    const node = new this.PIXI.Container();
+    const body = new this.PIXI.Graphics();
+    body.ellipse(0, 0, 16, 9).fill(C); // cuerpo
+    body.circle(-14, -5, 6.5).fill(C); // cabeza
+    body.poly([-19, -6, -28, -3, -19, -1]).fill(0xff9800); // pico
+    body.poly([13, -3, 26, -10, 24, 3]).fill(C); // cola
+    body.circle(-15.5, -6.5, 1.5).fill(0xffffff); // ojo
+    node.addChild(body);
+    const wing = new this.PIXI.Graphics();
+    wing.poly([0, 0, 13, -16, 9, 1]).fill(0x37474f);
+    wing.position.set(1, -4); // pivote en la base del ala
+    node.addChild(wing);
+    return { node, wing };
+  }
+
   // Un paso de simulacion. Devuelve el efecto sobre Leo este frame.
   update(dt: number, level: LeoVuelaLevel, leo: { x: number; y: number }): ObstacleFrame {
     const { W, groundY } = this.bounds;
@@ -78,24 +98,23 @@ export class LeoVuelaObstacles {
 
     // ── Pajaros: cruzan de derecha a izquierda, mas rapidos que las nubes ──
     if (spawnRoll(level.birdsPerMin, dt)) {
-      const node = this.makeText("🐦", 34);
-      node.anchor.set(0.5);
-      node.scale.x = -1; // mirando hacia donde vuela
+      const { node, wing } = this.makeBird();
       node.x = W + 30;
       node.y = 90 + Math.random() * (groundY - 180);
       this.layer.addChild(node);
-      this.birds.push({ node, vx: 2.6 + Math.random() * 1.2, baseY: node.y, hit: false });
+      this.birds.push({ node, wing, vx: 2.6 + Math.random() * 1.2, baseY: node.y, hit: false });
     }
     this.birds = this.birds.filter((b) => {
       b.node.x -= b.vx * dt;
       b.node.y = b.baseY + Math.sin(b.node.x * 0.04) * 10;
+      b.wing.rotation = Math.sin(b.node.x * 0.18) * 0.8; // aleteo
       if (!b.hit && Math.abs(b.node.x - leo.x) < HIT_RADIUS_X && Math.abs(b.node.y - leo.y) < HIT_RADIUS_Y) {
         b.hit = true;
         b.node.alpha = 0.5;
         knock = Math.max(knock, BIRD_KNOCK);
       }
       if (b.node.x < -40) {
-        b.node.destroy();
+        b.node.destroy({ children: true });
         return false;
       }
       return true;
@@ -180,7 +199,7 @@ export class LeoVuelaObstacles {
   }
 
   reset(): void {
-    for (const b of this.birds) b.node.destroy();
+    for (const b of this.birds) b.node.destroy({ children: true });
     for (const b of this.bolts) b.node.destroy();
     for (const d of this.drops) d.node.destroy();
     for (const fc of this.floorClouds) fc.node.destroy();
