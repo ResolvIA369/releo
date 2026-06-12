@@ -17,6 +17,7 @@ const GAMES = [
   { id: "word-fishing", name: "Pesca de Palabras", route: "/play/word-fishing" },
   { id: "daily-bits", name: "Burbujas Mágicas", route: "/play/daily-bits" },
   { id: "leo-runner", name: "Leo Corre", route: "/play/leo-runner" },
+  { id: "salta-palabra", name: "Salta la Palabra", route: "/play/salta-palabra" },
 ];
 
 interface GameResult {
@@ -63,6 +64,7 @@ for (const game of GAMES) {
         "word-fishing": "WordFishing.tsx",
         "daily-bits": "BitsReading.tsx",
         "leo-runner": "LeoRunner.tsx",
+        "salta-palabra": "SaltaPalabra.tsx",
       };
       const compFile = path.join(ROOT, "src/features/games/components", componentMap[game.id]);
       if (fs.existsSync(compFile)) {

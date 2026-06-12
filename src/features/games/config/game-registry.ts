@@ -76,6 +76,14 @@ export const GAME_REGISTRY: GameMeta[] = [
     color: "#ed8936",
   },
   {
+    id: "salta-palabra",
+    name: "Salta la Palabra",
+    description: "Toca para que Leo salte y atrape la palabra correcta",
+    icon: "🦘",
+    minPhase: 1,
+    color: "#38b2ac",
+  },
+  {
     id: "daily-bits",
     name: "Burbujas Magicas",
     description: "Revienta la burbuja con la palabra correcta",

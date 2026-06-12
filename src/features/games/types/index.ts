@@ -10,7 +10,8 @@ export type GameId =
   | "category-sort"
   | "word-fishing"
   | "daily-bits"
-  | "leo-runner";
+  | "leo-runner"
+  | "salta-palabra";
 
 export interface GameMeta {
   id: GameId;

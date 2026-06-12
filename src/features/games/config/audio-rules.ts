@@ -121,6 +121,17 @@ export const GAME_AUDIO_RULES: Record<string, GameAudioRules> = {
     countdownSeconds: 0,
     hasMicrophone: false,
   },
+  "salta-palabra": {
+    speakWordOnAppear: false,
+    speakTargetWord: true,
+    speakOnCorrect: true,
+    speakOnIncorrect: true,
+    speakRulesAtStart: true,
+    speakEncouragement: true,
+    hasCountdown: false,
+    countdownSeconds: 0,
+    hasMicrophone: false,
+  },
   "word-flash": {
     speakWordOnAppear: true,
     speakTargetWord: false,
@@ -143,4 +154,5 @@ export const GAME_RULES_TEXT: Record<string, string> = {
   "category-sort": "¡{name}, pon cada palabra en su categoría correcta!",
   "word-fishing": "¡Vamos a pescar palabras, {name}! Escucha cuál necesitas y pesca el pez correcto.",
   "leo-runner": "¡{name}, Leo está corriendo! Escucha la palabra y toca el camino correcto para que Leo salte antes del obstáculo.",
+  "salta-palabra": "¡{name}, mira las palabras que vuelan! Escucha cuál necesitas y toca para que Leo salte y la atrape.",
 };
