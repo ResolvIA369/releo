@@ -32,6 +32,11 @@ export function physicsForPhase(phase: PhaseNumber): LeoVuelaPhysics {
 export interface LeoVuelaLevel {
   speedMul: number; // multiplica la velocidad de las nubes
   gapMul: number; // multiplica la separacion entre nubes (menos = mas juntas)
+  // Obstaculos (frecuencia por minuto). Solo molestan el pilotaje:
+  // empujan a Leo, NUNCA dan ni quitan puntos/energia.
+  birdsPerMin: number; // pajaros que cruzan
+  boltsPerMin: number; // relampagos que caen
+  rainPerMin: number; // rafagas de lluvia que empujan hacia abajo
 }
 
 export interface LeoVuelaTuning {
@@ -46,9 +51,10 @@ export interface LeoVuelaTuning {
 }
 
 const DEFAULT_LEVELS: LeoVuelaLevel[] = [
-  { speedMul: 1.0, gapMul: 1.0 },
-  { speedMul: 1.3, gapMul: 0.85 },
-  { speedMul: 1.6, gapMul: 0.7 },
+  // Nivel 1: foco en leer, casi sin obstaculos
+  { speedMul: 1.0, gapMul: 1.0, birdsPerMin: 1, boltsPerMin: 0, rainPerMin: 0 },
+  { speedMul: 1.3, gapMul: 0.85, birdsPerMin: 5, boltsPerMin: 2, rainPerMin: 0.6 },
+  { speedMul: 1.6, gapMul: 0.7, birdsPerMin: 9, boltsPerMin: 4, rainPerMin: 1.2 },
 ];
 
 export const LEO_VUELA_TUNING: Record<PhaseNumber, LeoVuelaTuning> = {

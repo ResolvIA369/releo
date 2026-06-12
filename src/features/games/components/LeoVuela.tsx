@@ -15,6 +15,7 @@ import { colors, spacing, radii, fontSizes, fonts } from "@/shared/styles/design
 import { sofiaNameWord, sofiaPlayAudio, stopVoice } from "@/shared/services/sofiaVoice";
 import { domanCanvasText } from "../config/doman-canvas";
 import { physicsForPhase, stepFlight, buildCloudRound, tuningForPhase, clampEnergy, levelForElapsed } from "../config/leo-vuela";
+import { LeoVuelaObstacles } from "./leo-vuela-obstacles";
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -75,6 +76,7 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
   const leoRef = useRef<Container | null>(null);
   const leoSpriteRef = useRef<Sprite | null>(null);
   const cloudsLayerRef = useRef<Container | null>(null);
+  const obstaclesRef = useRef<LeoVuelaObstacles | null>(null);
 
   const leoYRef = useRef(GROUND_Y + 4); // pies de Leo
   const vyRef = useRef(0);
@@ -156,6 +158,11 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
       const cloudsLayer = new PIXI.Container();
       app.stage.addChild(cloudsLayer);
       cloudsLayerRef.current = cloudsLayer;
+
+      // Obstacles layer (delante de las nubes, detras de Leo)
+      const obstaclesLayer = new PIXI.Container();
+      app.stage.addChild(obstaclesLayer);
+      obstaclesRef.current = new LeoVuelaObstacles(PIXI, obstaclesLayer, { W, H, groundY: GROUND_Y });
 
       // Leo — sprite if the texture loads, emoji fallback otherwise
       const leo = new PIXI.Container();
@@ -243,10 +250,26 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
           });
         }
 
+        // Obstaculos: empujan a Leo, no tocan puntos ni energia
+        let gravityMul = 1;
+        if (round.active && gamePhaseRef.current === "running" && obstaclesRef.current) {
+          const frame = obstaclesRef.current.update(dt, levelCfg, {
+            x: LEO_X,
+            y: leoYRef.current - LEO_CENTER_OFFSET,
+          });
+          if (frame.knock > 0) {
+            vyRef.current = Math.max(vyRef.current, frame.knock);
+            crashTRef.current = 0; // sacudida visual, sin costo de energia
+          }
+          gravityMul = frame.gravityMul;
+        }
+
         // Leo: gravity pulls down, flaps push up (physics via refs)
         const leoC = leoRef.current;
         if (leoC) {
-          const stepped = stepFlight(leoYRef.current, vyRef.current, dt, physicsRef.current, {
+          const stepped = stepFlight(leoYRef.current, vyRef.current, dt, {
+            gravity: physicsRef.current.gravity * gravityMul,
+          }, {
             top: LEO_TOP_Y,
             ground: GROUND_Y + 4,
           });
@@ -347,6 +370,7 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
         leoRef.current = null;
         leoSpriteRef.current = null;
         cloudsLayerRef.current = null;
+        obstaclesRef.current = null;
         fadingRef.current = [];
       }
     };
@@ -552,6 +576,7 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
     playSecRef.current = 0;
     levelRef.current = 0;
     setLevelUi(0);
+    obstaclesRef.current?.reset();
     setRoundIdx(0);
     setGamePhase("running");
     spawnWave(0);

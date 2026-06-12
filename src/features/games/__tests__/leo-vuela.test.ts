@@ -10,6 +10,7 @@ import {
   buildCloudRound,
   MAX_FALL_SPEED,
 } from "../config/leo-vuela";
+import { spawnRoll } from "../components/leo-vuela-obstacles";
 import { PHASE1_WORDS } from "@/shared/constants";
 import type { PhaseNumber } from "@/shared/types/doman";
 
@@ -76,6 +77,38 @@ describe("levelForElapsed", () => {
         expect(levels[i].gapMul).toBeLessThan(levels[i - 1].gapMul);
       }
     }
+  });
+});
+
+describe("obstaculos", () => {
+  it("Nivel 1 casi sin obstaculos (foco en leer); 2 y 3 suman", () => {
+    for (const phase of [1, 2, 3, 4, 5] as PhaseNumber[]) {
+      const { levels } = LEO_VUELA_TUNING[phase];
+      expect(levels[0].boltsPerMin).toBe(0);
+      expect(levels[0].rainPerMin).toBe(0);
+      expect(levels[0].birdsPerMin).toBeLessThanOrEqual(1);
+      for (let i = 1; i < levels.length; i++) {
+        expect(levels[i].birdsPerMin).toBeGreaterThan(levels[i - 1].birdsPerMin);
+        expect(levels[i].boltsPerMin).toBeGreaterThanOrEqual(levels[i - 1].boltsPerMin);
+        expect(levels[i].rainPerMin).toBeGreaterThanOrEqual(levels[i - 1].rainPerMin);
+      }
+    }
+  });
+
+  it("spawnRoll: tasa 0 nunca dispara; con rng minimo dispara", () => {
+    expect(spawnRoll(0, 1, () => 0)).toBe(false);
+    expect(spawnRoll(10, 1, () => 0)).toBe(true);
+    expect(spawnRoll(10, 1, () => 0.999)).toBe(false);
+  });
+
+  it("spawnRoll respeta la tasa esperada por minuto (aprox)", () => {
+    // 6 eventos/min a 60fps → prob 6/3600 por frame
+    let calls = 0;
+    const rng = () => { calls++; return 0.5; };
+    spawnRoll(6, 1, rng);
+    expect(calls).toBe(1);
+    expect(spawnRoll(6, 1, () => 6 / 3600 - 0.0001)).toBe(true);
+    expect(spawnRoll(6, 1, () => 6 / 3600 + 0.0001)).toBe(false);
   });
 });
 
