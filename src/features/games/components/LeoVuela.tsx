@@ -14,7 +14,7 @@ import { GameCompleteScreen } from "@/shared/components/GameCompleteScreen";
 import { colors, spacing, radii, fontSizes, fonts } from "@/shared/styles/design-tokens";
 import { sofiaNameWord, sofiaPlayAudio, stopVoice } from "@/shared/services/sofiaVoice";
 import { domanCanvasText } from "../config/doman-canvas";
-import { physicsForPhase, stepFlight, buildCloudRound, tuningForPhase, clampEnergy, levelForElapsed } from "../config/leo-vuela";
+import { physicsForPhase, stepFlight, buildCloudRound, tuningForPhase, clampEnergy, levelForElapsed, rewardForLevel } from "../config/leo-vuela";
 import { LeoVuelaObstacles } from "./leo-vuela-obstacles";
 
 function shuffle<T>(arr: T[]): T[] {
@@ -585,9 +585,20 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
   // ═══ RENDER ══════════════════════════════════════════════════
 
   if (gamePhase === "finished") {
+    const reward = rewardForLevel(levelUi, tuning);
     return (
       <GameShell title="Leo Vuela" icon="🪁" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})}>
-        <GameCompleteScreen title="Leo Vuela" correct={state.correctAttempts} total={state.totalAttempts} color={GAME_COLOR} onReplay={handleReplay} onBack={onBack ?? (() => {})} />
+        <GameCompleteScreen
+          title="Leo Vuela"
+          correct={state.correctAttempts}
+          total={state.totalAttempts}
+          color={GAME_COLOR}
+          bonusCoins={reward.bonusCoins}
+          starsOverride={reward.stars}
+          subtitle={`Llegaste al Nivel ${levelUi + 1}`}
+          onReplay={handleReplay}
+          onBack={onBack ?? (() => {})}
+        />
       </GameShell>
     );
   }

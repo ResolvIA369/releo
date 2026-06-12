@@ -6,6 +6,7 @@ import {
   tuningForPhase,
   clampEnergy,
   levelForElapsed,
+  rewardForLevel,
   stepFlight,
   buildCloudRound,
   MAX_FALL_SPEED,
@@ -77,6 +78,27 @@ describe("levelForElapsed", () => {
         expect(levels[i].gapMul).toBeLessThan(levels[i - 1].gapMul);
       }
     }
+  });
+});
+
+describe("rewardForLevel", () => {
+  const t = LEO_VUELA_TUNING[1];
+
+  it("mapea nivel a estrellas: 1→⭐, 2→⭐⭐, 3→⭐⭐⭐", () => {
+    expect(rewardForLevel(0, t).stars).toBe(1);
+    expect(rewardForLevel(1, t).stars).toBe(2);
+    expect(rewardForLevel(2, t).stars).toBe(3);
+  });
+
+  it("mas nivel alcanzado, mas monedas extra", () => {
+    const coins = [0, 1, 2].map((lvl) => rewardForLevel(lvl, t).bonusCoins);
+    expect(coins[1]).toBeGreaterThan(coins[0]);
+    expect(coins[2]).toBeGreaterThan(coins[1]);
+  });
+
+  it("clampea niveles fuera de rango", () => {
+    expect(rewardForLevel(-1, t)).toEqual(rewardForLevel(0, t));
+    expect(rewardForLevel(99, t)).toEqual(rewardForLevel(2, t));
   });
 });
 

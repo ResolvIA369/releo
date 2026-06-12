@@ -17,6 +17,12 @@ interface GameCompleteScreenProps {
   color?: string;
   onReplay: () => void;
   onBack: () => void;
+  /** Monedas extra (ej: premio por nivel alcanzado en Leo Vuela) */
+  bonusCoins?: number;
+  /** Estrellas fijadas por el juego (ej: nivel alcanzado) en vez del % */
+  starsOverride?: number;
+  /** Linea extra bajo el marcador (ej: "Llegaste al Nivel 2") */
+  subtitle?: string;
 }
 
 function getStars(correct: number, total: number): number {
@@ -35,8 +41,12 @@ interface ChestCoin {
 
 export const GameCompleteScreen: React.FC<GameCompleteScreenProps> = ({
   title, correct, total, color = colors.brand.primary, onReplay, onBack,
+  bonusCoins = 0, starsOverride, subtitle,
 }) => {
-  const stars = getStars(correct, total);
+  // Con 0 correctas no hay premio, aunque el juego fije estrellas
+  const stars = correct > 0 && starsOverride !== undefined
+    ? Math.min(3, Math.max(0, starsOverride))
+    : getStars(correct, total);
   const message = MESSAGES[stars];
   const { bigBurst } = useRewards();
   const addCoins = useAppStore((s) => s.addCoins);
@@ -47,7 +57,7 @@ export const GameCompleteScreen: React.FC<GameCompleteScreenProps> = ({
 
   // Only award coins if the player got at least 1 correct.
   // 0/5 = no reward (no coins, no chest, no confetti).
-  const totalCoins = correct > 0 ? correct + 5 : 0;
+  const totalCoins = correct > 0 ? correct + 5 + bonusCoins : 0;
 
   useEffect(() => {
     if (firedRef.current) return;
@@ -133,6 +143,12 @@ export const GameCompleteScreen: React.FC<GameCompleteScreenProps> = ({
       <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1 }}
         style={{ fontSize: fontSizes.lg, color: colors.text.muted, margin: 0, fontFamily: fonts.body }}
       >{correct} de {total} correctas</motion.p>
+
+      {subtitle && (
+        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.1 }}
+          style={{ fontSize: fontSizes.md, color, margin: 0, fontFamily: fonts.display, fontWeight: "bold" }}
+        >{subtitle}</motion.p>
+      )}
 
       {/* Chest with falling coins */}
       <div style={{ position: "relative", width: 200, height: 140, marginTop: spacing.md }}>

@@ -48,6 +48,7 @@ export interface LeoVuelaTuning {
   energyDrainPerSec: number; // drenaje pasivo
   levelDurationSec: number; // duracion de cada nivel (min 0-3, 3-6, 6-9)
   levels: LeoVuelaLevel[];
+  levelCoinBonus: number[]; // monedas extra por nivel alcanzado al terminar
 }
 
 const DEFAULT_LEVELS: LeoVuelaLevel[] = [
@@ -57,12 +58,15 @@ const DEFAULT_LEVELS: LeoVuelaLevel[] = [
   { speedMul: 1.6, gapMul: 0.7, birdsPerMin: 9, boltsPerMin: 4, rainPerMin: 1.2 },
 ];
 
+// Mas nivel alcanzado = mejor recompensa al terminar
+const DEFAULT_COIN_BONUS = [0, 10, 25];
+
 export const LEO_VUELA_TUNING: Record<PhaseNumber, LeoVuelaTuning> = {
-  1: { energyStart: 60, energyMax: 100, energyGainCorrect: 14, energyLossWrong: 10, energyLossEscape: 8, energyDrainPerSec: 1.0, levelDurationSec: 180, levels: DEFAULT_LEVELS },
-  2: { energyStart: 60, energyMax: 100, energyGainCorrect: 13, energyLossWrong: 10, energyLossEscape: 8, energyDrainPerSec: 1.2, levelDurationSec: 180, levels: DEFAULT_LEVELS },
-  3: { energyStart: 60, energyMax: 100, energyGainCorrect: 12, energyLossWrong: 11, energyLossEscape: 9, energyDrainPerSec: 1.4, levelDurationSec: 180, levels: DEFAULT_LEVELS },
-  4: { energyStart: 60, energyMax: 100, energyGainCorrect: 12, energyLossWrong: 11, energyLossEscape: 9, energyDrainPerSec: 1.6, levelDurationSec: 180, levels: DEFAULT_LEVELS },
-  5: { energyStart: 60, energyMax: 100, energyGainCorrect: 11, energyLossWrong: 12, energyLossEscape: 10, energyDrainPerSec: 1.8, levelDurationSec: 180, levels: DEFAULT_LEVELS },
+  1: { energyStart: 60, energyMax: 100, energyGainCorrect: 14, energyLossWrong: 10, energyLossEscape: 8, energyDrainPerSec: 1.0, levelDurationSec: 180, levels: DEFAULT_LEVELS, levelCoinBonus: DEFAULT_COIN_BONUS },
+  2: { energyStart: 60, energyMax: 100, energyGainCorrect: 13, energyLossWrong: 10, energyLossEscape: 8, energyDrainPerSec: 1.2, levelDurationSec: 180, levels: DEFAULT_LEVELS, levelCoinBonus: DEFAULT_COIN_BONUS },
+  3: { energyStart: 60, energyMax: 100, energyGainCorrect: 12, energyLossWrong: 11, energyLossEscape: 9, energyDrainPerSec: 1.4, levelDurationSec: 180, levels: DEFAULT_LEVELS, levelCoinBonus: DEFAULT_COIN_BONUS },
+  4: { energyStart: 60, energyMax: 100, energyGainCorrect: 12, energyLossWrong: 11, energyLossEscape: 9, energyDrainPerSec: 1.6, levelDurationSec: 180, levels: DEFAULT_LEVELS, levelCoinBonus: DEFAULT_COIN_BONUS },
+  5: { energyStart: 60, energyMax: 100, energyGainCorrect: 11, energyLossWrong: 12, energyLossEscape: 10, energyDrainPerSec: 1.8, levelDurationSec: 180, levels: DEFAULT_LEVELS, levelCoinBonus: DEFAULT_COIN_BONUS },
 };
 
 // Indice de nivel (0-based) segun tiempo jugado; clampea al ultimo
@@ -77,6 +81,16 @@ export function tuningForPhase(phase: PhaseNumber): LeoVuelaTuning {
 
 export function clampEnergy(value: number, max: number): number {
   return Math.min(max, Math.max(0, value));
+}
+
+// Recompensa al terminar segun el nivel alcanzado: monedas extra y
+// mapeo a las estrellas existentes (nivel 1 → ⭐, 2 → ⭐⭐, 3 → ⭐⭐⭐)
+export function rewardForLevel(levelIdx: number, tuning: LeoVuelaTuning): { bonusCoins: number; stars: number } {
+  const idx = Math.min(Math.max(levelIdx, 0), tuning.levels.length - 1);
+  return {
+    bonusCoins: tuning.levelCoinBonus[idx] ?? 0,
+    stars: Math.min(3, idx + 1),
+  };
 }
 
 // Caida maxima: sin clamp un descuido se vuelve un picado imposible
