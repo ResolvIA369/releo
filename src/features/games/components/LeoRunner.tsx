@@ -385,9 +385,10 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
       squashTRef.current = 0; // celebration squash-and-stretch
       await sofiaPlayAudio("reaccion-muy-bien", "¡Muy bien!", "excited");
     } else {
+      // Error: solo el tint de tropezon + repetir la palabra objetivo
+      // como refuerzo (sin audio de "esa no" / "intenta otra vez")
       crashTRef.current = 0; // stumble
-      await sofiaPlayAudio("reaccion-intenta-otra-vez", "¡Intenta otra vez!", "encouraging");
-      if (!cancelledRef.current) await sofiaNameWord(target.text);
+      await sofiaNameWord(target.text);
     }
 
     if (cancelledRef.current) return;

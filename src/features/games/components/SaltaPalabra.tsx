@@ -417,14 +417,13 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
       if (cancelledRef.current) return;
       nextRound(500);
     } else {
-      // Soft stumble: the round keeps going, the target can still come
+      // Soft stumble: the round keeps going, the target can still come.
+      // Solo tint + repetir la palabra objetivo (sin audio de "esa no")
       recordAttempt(false);
       round.active = false; // park the words while Sofia talks
       crashTRef.current = 0;
       setGamePhase("feedback");
       setFeedbackType("wrong");
-      await sofiaPlayAudio("reaccion-esa-no", "¡Esa no!", "encouraging");
-      if (cancelledRef.current) return;
       await sofiaNameWord(target.text);
       if (cancelledRef.current) return;
       setFeedbackType(null);
