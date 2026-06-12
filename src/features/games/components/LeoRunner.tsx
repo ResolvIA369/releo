@@ -29,6 +29,10 @@ function shuffle<T>(arr: T[]): T[] {
 const GAME_COLOR = "#ed8936";
 const WORDS_PER_GAME = 20;
 
+// Unico punto de cambio del sprite: Leo de espaldas, corriendo hacia
+// adentro de la pantalla (procesado por scripts/prepare-leo-sprites.py)
+const LEO_SPRITE_URL = "/images/games/leo-corre-sprite.png";
+
 // Logical canvas size — CSS scales it to the container width
 const W = 640;
 const H = 420;
@@ -141,9 +145,7 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
       // Leo — sprite if the texture loads, emoji fallback otherwise
       const leo = new PIXI.Container();
       try {
-        // Lion-only asset, extracted from Leo/motivando.png (the
-        // originals have headlines baked into the PNG)
-        const tex = await PIXI.Assets.load("/images/games/leo-runner-sprite.png");
+        const tex = await PIXI.Assets.load(LEO_SPRITE_URL);
         // After appRef is set the cleanup owns destruction — just bail
         if (disposed) return;
         const sprite = new PIXI.Sprite(tex);
