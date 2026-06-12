@@ -254,6 +254,53 @@ test("Reader levels config exists", () => {
   expect(content).toContain("Leyenda");
 });
 
+// ═══ 9b. Arcade games in higher worlds ════════════════════════
+//
+// Coverage for leo-runner / salta-palabra beyond Mundo 1. Each entry
+// asserts: registration in worlds.ts, demo route per phase, Sofia MP3s
+// for every word of the phase, and Doman styling derived from the word
+// (fontColor/fontSizeCm), not hardcoded.
+
+const ARCADE_WORLD_COVERAGE: { worldId: string; phase: number; games: { id: string; file: string }[] }[] = [
+  { worldId: "world_2", phase: 2, games: [{ id: "leo-runner", file: "LeoRunner.tsx" }] },
+];
+
+function phaseWordTexts(phase: number): string[] {
+  const src = fs.readFileSync(path.join(ROOT, "src/shared/constants/words.ts"), "utf8");
+  const m = src.match(new RegExp(`PHASE${phase}_WORDS: DomanWord\\[\\] = buildWords\\(\\s*\\[([\\s\\S]*?)\\n  \\],`));
+  if (!m) return [];
+  return [...m[1].matchAll(/text: "([^"]+)"/g)].map((x) => x[1]);
+}
+
+for (const cov of ARCADE_WORLD_COVERAGE) {
+  for (const game of cov.games) {
+    test(`${cov.worldId} — ${game.id} registrado en availableGames`, () => {
+      const src = fs.readFileSync(path.join(ROOT, "src/features/progression/config/worlds.ts"), "utf8");
+      const block = src.split(`id: "${cov.worldId}"`)[1]?.split("unlockRequirements")[0] ?? "";
+      expect(block).toContain(`"${game.id}"`);
+    });
+
+    test(`${cov.worldId} — ${game.id} demo responde (fase ${cov.phase})`, async () => {
+      const res = await fetch(`${BASE}/demo?game=${game.id}&phase=${cov.phase}`, { redirect: "follow" });
+      expect(res.ok).toBeTruthy();
+    });
+
+    test(`${cov.worldId} — ${game.id} usa estilo Doman por palabra`, () => {
+      const code = fs.readFileSync(path.join(ROOT, "src/features/games/components", game.file), "utf8");
+      expect(code).toContain("domanCanvasText");
+      expect(code).not.toContain('fill: "#e53e3e"');
+    });
+  }
+
+  test(`${cov.worldId} — MP3s de Sofía para todas las palabras de fase ${cov.phase}`, () => {
+    const texts = phaseWordTexts(cov.phase);
+    expect(texts.length).toBeGreaterThanOrEqual(20);
+    const audioDir = path.join(ROOT, "public/audio/sofia");
+    const missing = texts.filter((t) => !fs.existsSync(path.join(audioDir, `palabra-${t.toLowerCase()}.mp3`)));
+    expect(missing).toEqual([]);
+  });
+}
+
 // ═══ 10. Parents panel ════════════════════════════════════════
 
 test("Parents panel route exists", async () => {

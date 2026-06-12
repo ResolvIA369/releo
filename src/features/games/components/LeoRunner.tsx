@@ -13,6 +13,7 @@ import { FeedbackFlash } from "@/shared/components/FeedbackFlash";
 import { GameCompleteScreen } from "@/shared/components/GameCompleteScreen";
 import { colors, spacing, radii, fontSizes, fonts } from "@/shared/styles/design-tokens";
 import { sofiaNameWord, sofiaPlayAudio, stopVoice } from "@/shared/services/sofiaVoice";
+import { domanCanvasText } from "../config/doman-canvas";
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -289,13 +290,14 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
         .stroke({ width: 4, color: 0x8d6e63 });
       box.addChild(plate);
 
+      const doman = domanCanvasText(word);
       const label = new PIXI.Text({
         text: word.text,
         style: {
           fontFamily: "Arial, sans-serif",
-          fontSize: 26,
+          fontSize: doman.fontSize,
           fontWeight: "bold",
-          fill: "#e53e3e",
+          fill: doman.fill,
         },
       });
       label.anchor.set(0.5);
