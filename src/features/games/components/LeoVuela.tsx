@@ -42,8 +42,9 @@ const LEO_CENTER_OFFSET = 48; // el centro de Leo respecto de sus pies (anchor 0
 const CLOUD_BANDS = [105, 200, 295]; // alturas posibles de las nubes
 const CATCH_X = 60; // rango horizontal de atrape
 const CATCH_Y = 48; // rango vertical de atrape (centro de Leo vs nube)
+const FADE_RATE = 0.04; // alpha/frame con que se desvanece la tanda anterior
 
-type Phase = "loading" | "announcing" | "running" | "feedback" | "finished";
+type Phase = "loading" | "running" | "finished";
 
 interface FlyingCloud {
   box: Container;
@@ -84,8 +85,10 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
   const gamePhaseRef = useRef<Phase>("loading");
   const isDemoRef = useRef(isDemo);
   const roundRef = useRef<RoundData>({ clouds: [], target: null, speed: 0, active: false, resolved: false });
+  const fadingRef = useRef<Container[]>([]); // nubes de tandas viejas, desvaneciendose
   const onCatchRef = useRef<(fc: FlyingCloud) => void>(() => {});
   const onEscapeRef = useRef<() => void>(() => {});
+  const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cancelledRef = useRef(false);
 
   gamePhaseRef.current = gamePhase;
@@ -175,12 +178,25 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
         elapsedRef.current += dt;
         const round = roundRef.current;
 
-        // Clouds: drift left + gentle bob (parked while Sofia talks)
+        // Clouds: drift left + gentle bob — NUNCA se frenan
         round.clouds.forEach((fc, i) => {
           if (fc.caught) return;
           if (round.active) fc.box.x -= round.speed * dt;
           fc.box.pivot.y = Math.sin(elapsedRef.current * 0.06 + i * 2) * 4;
         });
+
+        // Tandas viejas: siguen volando mientras se desvanecen
+        if (fadingRef.current.length > 0) {
+          fadingRef.current = fadingRef.current.filter((box) => {
+            box.x -= round.speed * dt;
+            box.alpha -= FADE_RATE * dt;
+            if (box.alpha <= 0 || box.x < -150) {
+              box.destroy({ children: true });
+              return false;
+            }
+            return true;
+          });
+        }
 
         // Leo: gravity pulls down, flaps push up (physics via refs)
         const leoC = leoRef.current;
@@ -269,13 +285,14 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
         }
       });
 
-      setGamePhase("announcing");
+      setGamePhase("running");
     })();
 
     return () => {
       disposed = true;
       cancelledRef.current = true;
       stopVoice();
+      if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
       // Only destroy once appRef was set (init finished); before that
       // the async init path destroys the app itself when it sees
       // `disposed`, and destroying mid-init throws.
@@ -285,6 +302,7 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
         leoRef.current = null;
         leoSpriteRef.current = null;
         cloudsLayerRef.current = null;
+        fadingRef.current = [];
       }
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -301,9 +319,19 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
     }
   }, [paused]);
 
-  // ─── Round setup ───────────────────────────────────────────────
+  // Feedback flash con limpieza propia (el flujo ya no se detiene)
+  const flashFeedback = useCallback((type: "correct" | "wrong") => {
+    setFeedbackType(type);
+    if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
+    feedbackTimerRef.current = setTimeout(() => {
+      if (!cancelledRef.current) setFeedbackType(null);
+    }, 700);
+  }, []);
 
-  const setupRound = useCallback(async (idx: number) => {
+  // ─── Wave setup — sin pausas: la tanda anterior se desvanece y la
+  // nueva entra ya; Sofia dice el objetivo en paralelo ──────────────
+
+  const spawnWave = useCallback(async (idx: number) => {
     const app = appRef.current;
     const cloudsLayer = cloudsLayerRef.current;
     if (!app || !cloudsLayer || cancelledRef.current) return;
@@ -317,7 +345,10 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
     const PIXI = await import("pixi.js");
     if (cancelledRef.current) return;
 
-    cloudsLayer.removeChildren().forEach((c) => c.destroy({ children: true }));
+    // Las nubes restantes de la tanda anterior se van desvaneciendo
+    for (const fc of roundRef.current.clouds) {
+      if (!fc.caught && !fc.box.destroyed) fadingRef.current.push(fc.box);
+    }
 
     const target = gameWords[idx];
     const specs = buildCloudRound(target, words, CLOUD_BANDS, shuffle);
@@ -356,41 +387,36 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
       clouds: flying,
       target,
       speed: physicsRef.current.cloudSpeed * (1 + idx * 0.04),
-      active: false,
+      active: true,
       resolved: false,
     };
 
     setTargetWord(target);
-    setFeedbackType(null);
-    setGamePhase("announcing");
 
-    await sofiaNameWord(target.text);
-    if (cancelledRef.current) return;
-    roundRef.current.active = true;
-    setGamePhase("running");
+    // Sofia anuncia en paralelo — el juego no se frena
+    stopVoice();
+    void sofiaNameWord(target.text);
   }, [totalRounds, gameWords, words, finish, onComplete, state]);
 
-  // First round once Pixi is up
+  // First wave once Pixi is up
   useEffect(() => {
-    if (gamePhase === "announcing" && roundIdx === 0 && roundRef.current.clouds.length === 0) {
-      setupRound(0);
+    if (gamePhase === "running" && roundIdx === 0 && roundRef.current.clouds.length === 0) {
+      spawnWave(0);
     }
   }, [gamePhase]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const nextRound = useCallback(async (delayMs: number) => {
-    await new Promise((r) => setTimeout(r, delayMs));
+  const nextWave = useCallback(() => {
     if (cancelledRef.current) return;
-    setFeedbackType(null);
     setRoundIdx((prev) => {
       const next = prev + 1;
-      setupRound(next);
+      spawnWave(next);
       return next;
     });
-  }, [setupRound]);
+  }, [spawnWave]);
 
   // ─── Catch / escape (called from the Pixi ticker) ────────────────
 
-  const handleCatch = useCallback(async (fc: FlyingCloud) => {
+  const handleCatch = useCallback((fc: FlyingCloud) => {
     const round = roundRef.current;
     const target = round.target;
     if (!target) return;
@@ -398,10 +424,8 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
 
     if (correct) {
       round.resolved = true;
-      round.active = false;
       recordAttempt(true, target.id);
-      setGamePhase("feedback");
-      setFeedbackType("correct");
+      flashFeedback("correct");
       const canvas = appRef.current?.canvas;
       if (canvas) {
         const rect = canvas.getBoundingClientRect();
@@ -409,42 +433,34 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
         rewardCorrect(rect.left + LEO_X * scale, rect.top + (leoYRef.current - LEO_CENTER_OFFSET) * scale);
       }
       squashTRef.current = 0; // celebration squash-and-stretch
-      await sofiaPlayAudio("reaccion-muy-bien", "¡Muy bien!", "excited");
-      if (cancelledRef.current) return;
-      nextRound(500);
+      stopVoice();
+      void sofiaPlayAudio("reaccion-muy-bien", "¡Muy bien!", "excited");
+      nextWave();
     } else {
-      // Soft stumble: the round keeps going, the target can still come.
-      // Solo tint + repetir la palabra objetivo (sin audio de "esa no")
+      // Tropezon suave: tint + Sofia repite el objetivo, todo sigue
       recordAttempt(false);
-      round.active = false; // park the clouds while Sofia talks
       crashTRef.current = 0;
-      setGamePhase("feedback");
-      setFeedbackType("wrong");
-      await sofiaNameWord(target.text);
-      if (cancelledRef.current) return;
-      setFeedbackType(null);
-      // The target may already be gone (it was behind the caught one)
+      flashFeedback("wrong");
+      stopVoice();
+      void sofiaNameWord(target.text);
+      // Si el objetivo ya no esta (venia detras de la atrapada), pasar
       const targetFc = round.clouds.find((f) => f.word.id === target.id);
-      if (targetFc && !targetFc.caught && targetFc.box.x > -100) {
-        round.active = true;
-        setGamePhase("running");
-      } else if (!round.resolved) {
+      if (!targetFc || targetFc.caught || targetFc.box.x <= -100) {
         round.resolved = true;
-        nextRound(300);
+        nextWave();
       }
     }
-  }, [recordAttempt, rewardCorrect, nextRound]);
+  }, [recordAttempt, rewardCorrect, nextWave, flashFeedback]);
 
-  const handleEscape = useCallback(async () => {
+  const handleEscape = useCallback(() => {
     const round = roundRef.current;
     if (!round.target) return;
     recordAttempt(false);
-    setGamePhase("feedback");
-    setFeedbackType("wrong");
-    await sofiaPlayAudio("reaccion-se-escapo", "¡Se escapó!", "gentle");
-    if (cancelledRef.current) return;
-    nextRound(400);
-  }, [recordAttempt, nextRound]);
+    flashFeedback("wrong");
+    stopVoice();
+    void sofiaPlayAudio("reaccion-se-escapo", "¡Se escapó!", "gentle");
+    nextWave();
+  }, [recordAttempt, nextWave, flashFeedback]);
 
   onCatchRef.current = handleCatch;
   onEscapeRef.current = handleEscape;
@@ -467,8 +483,9 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
     leoYRef.current = GROUND_Y + 4;
     vyRef.current = 0;
     setRoundIdx(0);
-    setupRound(0);
-  }, [reset, setupRound]);
+    setGamePhase("running");
+    spawnWave(0);
+  }, [reset, spawnWave]);
 
   // ═══ RENDER ══════════════════════════════════════════════════
 
@@ -483,16 +500,13 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
   return (
     <GameShell title="Leo Vuela" icon="🪁" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})}>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: spacing.md, paddingTop: spacing.sm }}>
-        {/* Round counter + target word */}
+        {/* Round counter + fixed target pill */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", maxWidth: "min(640px, calc(100vw - 32px))" }}>
           <span style={{ fontSize: fontSizes.sm, color: colors.text.placeholder }}>
             {Math.min(roundIdx + 1, totalRounds)} / {totalRounds}
           </span>
           {targetWord && (
-            <motion.div
-              key={roundIdx}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
+            <div
               style={{
                 padding: `${spacing.xs}px ${spacing.lg}px`,
                 backgroundColor: `${GAME_COLOR}15`, border: `2px solid ${GAME_COLOR}`,
@@ -500,8 +514,13 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
                 fontWeight: "bold", fontFamily: fonts.display, color: GAME_COLOR,
               }}
             >
-              ¡Volá hasta <span style={{ color: domanCanvasText(targetWord).fill }}>{targetWord.text}</span>!
-            </motion.div>
+              Volá a: <motion.span
+                key={targetWord.id + roundIdx}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                style={{ color: domanCanvasText(targetWord).fill }}
+              >{targetWord.text}</motion.span>
+            </div>
           )}
           <span style={{ width: 40 }} />
         </div>
@@ -530,7 +549,7 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
         </div>
 
         <p style={{ fontSize: fontSizes.sm, color: colors.text.muted, margin: 0, textAlign: "center" }}>
-          {gamePhase === "announcing" ? "Escucha a Sofía..." : "Toca para que Leo vuele hasta la nube correcta"}
+          Toca para que Leo vuele hasta la nube correcta
         </p>
 
         <FeedbackFlash type={feedbackType} />
