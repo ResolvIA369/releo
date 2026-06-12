@@ -14,7 +14,7 @@ import { GameCompleteScreen } from "@/shared/components/GameCompleteScreen";
 import { colors, spacing, radii, fontSizes, fonts } from "@/shared/styles/design-tokens";
 import { sofiaNameWord, sofiaPlayAudio, stopVoice } from "@/shared/services/sofiaVoice";
 import { domanCanvasText } from "../config/doman-canvas";
-import { physicsForPhase, stepFlight, buildCloudRound, tuningForPhase, clampEnergy, levelForElapsed, rewardForLevel } from "../config/leo-vuela";
+import { physicsForPhase, stepFlight, buildCloudRound, tuningForPhase, clampEnergy, levelForElapsed, rewardForLevel, pickNextTarget } from "../config/leo-vuela";
 import { LeoVuelaObstacles } from "./leo-vuela-obstacles";
 
 function shuffle<T>(arr: T[]): T[] {
@@ -27,7 +27,6 @@ function shuffle<T>(arr: T[]): T[] {
 }
 
 const GAME_COLOR = "#9f7aea";
-const WORDS_PER_GAME = 20;
 
 // Unico punto de cambio del sprite: Leo volando hacia la derecha,
 // hacia las nubes que entran (procesado por scripts/prepare-leo-sprites.py)
@@ -100,6 +99,10 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
   const physicsRef = useRef(physics);
   physicsRef.current = physics;
 
+  const wordsRef = useRef(words);
+  wordsRef.current = words;
+  const lastTargetIdRef = useRef<string | null>(null);
+
   const tuning = useMemo(() => tuningForPhase(phase), [phase]);
   const tuningRef = useRef(tuning);
   tuningRef.current = tuning;
@@ -112,9 +115,6 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
   const playSecRef = useRef(0); // tiempo jugado, para el nivel
   const levelRef = useRef(0);
   const [levelUi, setLevelUi] = useState(0);
-
-  const gameWords = useMemo(() => shuffle(words).slice(0, WORDS_PER_GAME), [words]);
-  const totalRounds = gameWords.length;
 
   // ─── Pixi init (same lifecycle pattern as SaltaPalabra) ──────────
 
@@ -400,16 +400,10 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
   // ─── Wave setup — sin pausas: la tanda anterior se desvanece y la
   // nueva entra ya; Sofia dice el objetivo en paralelo ──────────────
 
-  const spawnWave = useCallback(async (idx: number) => {
+  const spawnWave = useCallback(async () => {
     const app = appRef.current;
     const cloudsLayer = cloudsLayerRef.current;
     if (!app || !cloudsLayer || cancelledRef.current) return;
-
-    if (idx >= totalRounds) {
-      setGamePhase("finished");
-      finish().then(() => onComplete?.(state));
-      return;
-    }
 
     const PIXI = await import("pixi.js");
     if (cancelledRef.current) return;
@@ -419,8 +413,11 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
       if (!fc.caught && !fc.box.destroyed) fadingRef.current.push(fc.box);
     }
 
-    const target = gameWords[idx];
-    const specs = buildCloudRound(target, words, CLOUD_BANDS, shuffle);
+    // Las palabras pueden repetirse durante la partida — solo se evita
+    // la misma dos veces seguidas
+    const target = pickNextTarget(wordsRef.current, lastTargetIdRef.current);
+    lastTargetIdRef.current = target.id;
+    const specs = buildCloudRound(target, wordsRef.current, CLOUD_BANDS, shuffle);
 
     const flying: FlyingCloud[] = specs.map(({ word, band }, i) => {
       const box = new PIXI.Container();
@@ -468,22 +465,19 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
     // Sofia anuncia en paralelo — el juego no se frena
     stopVoice();
     void sofiaNameWord(target.text);
-  }, [totalRounds, gameWords, words, finish, onComplete, state]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // First wave once Pixi is up
   useEffect(() => {
     if (gamePhase === "running" && roundIdx === 0 && roundRef.current.clouds.length === 0) {
-      spawnWave(0);
+      spawnWave();
     }
   }, [gamePhase]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const nextWave = useCallback(() => {
     if (cancelledRef.current) return;
-    setRoundIdx((prev) => {
-      const next = prev + 1;
-      spawnWave(next);
-      return next;
-    });
+    setRoundIdx((prev) => prev + 1); // contador de tandas (anima la pill)
+    spawnWave();
   }, [spawnWave]);
 
   // Sin energia → fin del juego
@@ -577,9 +571,10 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
     levelRef.current = 0;
     setLevelUi(0);
     obstaclesRef.current?.reset();
+    lastTargetIdRef.current = null;
     setRoundIdx(0);
     setGamePhase("running");
-    spawnWave(0);
+    spawnWave();
   }, [reset, spawnWave]);
 
   // ═══ RENDER ══════════════════════════════════════════════════
@@ -621,7 +616,7 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
             >
               Nivel {levelUi + 1}
             </motion.span>
-            {Math.min(roundIdx + 1, totalRounds)} / {totalRounds}
+            ✓ {state.correctAttempts}
           </span>
           {targetWord && (
             <div

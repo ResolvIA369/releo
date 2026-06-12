@@ -133,6 +133,18 @@ function defaultShuffle<T>(arr: T[]): T[] {
   return a;
 }
 
+// Proximo objetivo al azar: las palabras pueden repetirse durante la
+// partida (el flujo es continuo); solo se evita repetir la misma dos
+// veces seguidas para que no sea monotono.
+export function pickNextTarget(
+  pool: DomanWord[],
+  lastId: string | null,
+  rng: () => number = Math.random,
+): DomanWord {
+  const candidates = pool.length > 1 && lastId ? pool.filter((w) => w.id !== lastId) : pool;
+  return candidates[Math.min(candidates.length - 1, Math.floor(rng() * candidates.length))];
+}
+
 // Arma la ronda: target + 2 distractores, cada nube en una banda de
 // altura distinta para que volar hasta una implique una decision.
 export function buildCloudRound(

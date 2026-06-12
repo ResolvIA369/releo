@@ -7,6 +7,7 @@ import {
   clampEnergy,
   levelForElapsed,
   rewardForLevel,
+  pickNextTarget,
   stepFlight,
   buildCloudRound,
   MAX_FALL_SPEED,
@@ -176,6 +177,30 @@ describe("stepFlight", () => {
       ({ y, vy } = stepFlight(y, vy, 1, cfg, bounds));
       expect(vy).toBeLessThanOrEqual(MAX_FALL_SPEED);
     }
+  });
+});
+
+describe("pickNextTarget", () => {
+  it("elige del pool y permite repetir palabras a lo largo de la partida", () => {
+    const w = pickNextTarget(pool, null, () => 0);
+    expect(pool).toContain(w);
+  });
+
+  it("no repite la misma palabra dos veces seguidas", () => {
+    for (let i = 0; i < 20; i++) {
+      const next = pickNextTarget(pool, target.id);
+      expect(next.id).not.toBe(target.id);
+    }
+  });
+
+  it("con una sola palabra en el pool la devuelve aunque sea la ultima", () => {
+    const only = pickNextTarget([target], target.id, () => 0.5);
+    expect(only.id).toBe(target.id);
+  });
+
+  it("rng en el extremo superior no se cae del array", () => {
+    const w = pickNextTarget(pool, null, () => 0.999999);
+    expect(pool).toContain(w);
   });
 });
 
