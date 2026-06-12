@@ -55,13 +55,13 @@
 ## Salta la Palabra (salta-palabra)
 
 ### Mundo 2 (fase 2 — roja más chica)
-- [ ] Registrar en availableGames del Mundo 2.
-- [ ] Palabras con color/tamaño de fase 2.
-- [ ] Bloques de palabras del mundo + MP3 de Sofía correcto.
-- [ ] Demo autoplay en /demo con fase 2.
-- [ ] Smoke test Chromium del flujo completo, cero errores de consola.
-- [ ] Tests de Playwright cubriendo el juego en este mundo, suite en verde.
-- [ ] Commit.
+- [x] Registrar en availableGames del Mundo 2.
+- [x] Palabras con color/tamaño de fase 2 (también el pill "¡Saltá a ___!").
+- [x] Bloques de palabras del mundo + MP3 de Sofía correcto.
+- [x] Demo autoplay en /demo con fase 2.
+- [x] Smoke test Chromium del flujo completo, cero errores de consola.
+- [x] Tests de Playwright cubriendo el juego en este mundo, suite en verde.
+- [x] Commit.
 
 ### Mundo 3 (fase 3 — negra)
 - [ ] Registrar en availableGames del Mundo 3.

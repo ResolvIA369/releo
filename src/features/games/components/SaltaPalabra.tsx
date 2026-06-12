@@ -12,6 +12,7 @@ import { FeedbackFlash } from "@/shared/components/FeedbackFlash";
 import { GameCompleteScreen } from "@/shared/components/GameCompleteScreen";
 import { colors, spacing, radii, fontSizes, fonts } from "@/shared/styles/design-tokens";
 import { sofiaNameWord, sofiaPlayAudio, stopVoice } from "@/shared/services/sofiaVoice";
+import { domanCanvasText } from "../config/doman-canvas";
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -279,13 +280,14 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
     const floating: FloatingWord[] = roundWords.map((word, i) => {
       const box = new PIXI.Container();
 
+      const doman = domanCanvasText(word);
       const label = new PIXI.Text({
         text: word.text,
         style: {
           fontFamily: "Arial, sans-serif",
-          fontSize: 26,
+          fontSize: doman.fontSize,
           fontWeight: "bold",
-          fill: "#e53e3e",
+          fill: doman.fill,
         },
       });
       label.anchor.set(0.5);
@@ -448,7 +450,7 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
                 fontWeight: "bold", fontFamily: fonts.display, color: GAME_COLOR,
               }}
             >
-              ¡Saltá a <span style={{ color: "#e53e3e" }}>{targetWord.text}</span>!
+              ¡Saltá a <span style={{ color: domanCanvasText(targetWord).fill }}>{targetWord.text}</span>!
             </motion.div>
           )}
           <span style={{ width: 40 }} />

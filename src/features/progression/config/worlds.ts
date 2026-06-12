@@ -23,7 +23,7 @@ export const WORLDS: WorldConfig[] = [
     icon: "🌊",
     image: "/images/worlds/bahia.png",
     categories: ["colores", "tamaños_y_formas", "opuestos", "emociones", "naturaleza"],
-    availableGames: ["word-train", "category-sort", "leo-runner"],
+    availableGames: ["word-train", "category-sort", "leo-runner", "salta-palabra"],
     totalWords: 50,
     unlockRequirements: { minWordsMastered: 35, minGamesCompleted: 3, minStreakDays: 5, previousWorldId: "world_1" },
   },
