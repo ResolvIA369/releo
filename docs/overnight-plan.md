@@ -64,13 +64,13 @@
 - [x] Commit.
 
 ### Mundo 3 (fase 3 — negra)
-- [ ] Registrar en availableGames del Mundo 3.
-- [ ] Palabras con color/tamaño de fase 3.
-- [ ] Bloques de palabras del mundo + MP3 de Sofía correcto.
-- [ ] Demo autoplay en /demo con fase 3.
-- [ ] Smoke test Chromium del flujo completo, cero errores de consola.
-- [ ] Tests de Playwright cubriendo el juego en este mundo, suite en verde.
-- [ ] Commit.
+- [x] Registrar en availableGames del Mundo 3.
+- [x] Palabras con color/tamaño de fase 3.
+- [x] Bloques de palabras del mundo + MP3 de Sofía correcto.
+- [x] Demo autoplay en /demo con fase 3.
+- [x] Smoke test Chromium del flujo completo, cero errores de consola.
+- [x] Tests de Playwright cubriendo el juego en este mundo, suite en verde.
+- [x] Commit.
 
 ### Mundo 4 (fase 4 — negra más chica)
 - [ ] Registrar en availableGames del Mundo 4.

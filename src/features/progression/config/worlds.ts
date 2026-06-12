@@ -36,7 +36,7 @@ export const WORLDS: WorldConfig[] = [
     icon: "🌄",
     image: "/images/worlds/valle.png",
     categories: ["verbos_cotidianos", "verbos_de_accion", "ropa", "escuela", "lugares"],
-    availableGames: ["phrase-builder", "word-rain", "leo-runner"],
+    availableGames: ["phrase-builder", "word-rain", "leo-runner", "salta-palabra"],
     totalWords: 50,
     unlockRequirements: { minWordsMastered: 70, minGamesCompleted: 5, minStreakDays: 10, previousWorldId: "world_2" },
   },
