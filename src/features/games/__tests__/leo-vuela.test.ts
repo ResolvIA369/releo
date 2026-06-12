@@ -93,6 +93,23 @@ describe("musica", () => {
     }
   });
 
+  it("paleta tribal: membrana grave + toms medios, ordenados de grave a agudo", () => {
+    const noteIndex = (n: string) => {
+      const m = n.match(/^([A-G]#?)(\d)$/);
+      expect(m).not.toBeNull();
+      const semis: Record<string, number> = { C: 0, "C#": 1, D: 2, "D#": 3, E: 4, F: 5, "F#": 6, G: 7, "G#": 8, A: 9, "A#": 10, B: 11 };
+      return parseInt(m![2], 10) * 12 + semis[m![1]];
+    };
+    for (const phase of [1, 2, 3, 4, 5] as PhaseNumber[]) {
+      const { musicPalette } = LEO_VUELA_TUNING[phase];
+      expect(musicPalette.drumNotes.length).toBeGreaterThanOrEqual(2);
+      const idx = musicPalette.drumNotes.map(noteIndex);
+      // La primera es la mas grave; el resto son los toms medios
+      for (let i = 1; i < idx.length; i++) expect(idx[i]).toBeGreaterThan(idx[0]);
+      expect(typeof musicPalette.shaker).toBe("boolean");
+    }
+  });
+
   it("volumen base bajo y ducking aun mas bajo cuando habla Sofia", () => {
     for (const phase of [1, 2, 3, 4, 5] as PhaseNumber[]) {
       const t = LEO_VUELA_TUNING[phase];

@@ -125,7 +125,7 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
   // tras el primer gesto (ensureStarted)
   const musicRef = useRef<LeoVuelaMusic | null>(null);
   if (!musicRef.current) {
-    musicRef.current = new LeoVuelaMusic(tuning.musicVolumeDb, tuning.musicDuckDb);
+    musicRef.current = new LeoVuelaMusic(tuning.musicVolumeDb, tuning.musicDuckDb, tuning.musicPalette);
   }
   useEffect(() => () => {
     musicRef.current?.dispose();
