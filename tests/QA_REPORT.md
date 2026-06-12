@@ -8,18 +8,18 @@
 
 | Juego | Carga | Componente | Tiempo | Problemas |
 |-------|-------|------------|--------|----------|
-| Flash de Palabras | ✅ | ✅ | 75ms | Error boundary triggered in HTML |
-| Empareja Palabra-Imagen | ✅ | ✅ | 37ms | Error boundary triggered in HTML |
-| Rompecabezas | ✅ | ✅ | 32ms | Error boundary triggered in HTML |
-| Tren de Palabras | ✅ | ✅ | 33ms | Error boundary triggered in HTML |
+| Flash de Palabras | ✅ | ✅ | 64ms | Error boundary triggered in HTML |
+| Empareja Palabra-Imagen | ✅ | ✅ | 39ms | Error boundary triggered in HTML |
+| Rompecabezas | ✅ | ✅ | 31ms | Error boundary triggered in HTML |
+| Tren de Palabras | ✅ | ✅ | 28ms | Error boundary triggered in HTML |
 | Construye la Frase | ✅ | ✅ | 28ms | Error boundary triggered in HTML; Uses TTS-only functions (may cause male voice) |
-| Lluvia de Palabras | ✅ | ✅ | 53ms | Error boundary triggered in HTML |
-| Cuenta Cuentos | ✅ | ❌ | 32ms | Error boundary triggered in HTML; Component file missing: StoryReader.tsx |
-| Categorías | ✅ | ✅ | 33ms | Error boundary triggered in HTML |
-| Pesca de Palabras | ✅ | ✅ | 49ms | Error boundary triggered in HTML |
-| Burbujas Mágicas | ✅ | ✅ | 26ms | Error boundary triggered in HTML |
-| Leo Corre | ✅ | ✅ | 31ms | Error boundary triggered in HTML |
-| Salta la Palabra | ✅ | ✅ | 47ms | Error boundary triggered in HTML |
+| Lluvia de Palabras | ✅ | ✅ | 49ms | Error boundary triggered in HTML |
+| Cuenta Cuentos | ✅ | ❌ | 29ms | Error boundary triggered in HTML; Component file missing: StoryReader.tsx |
+| Categorías | ✅ | ✅ | 31ms | Error boundary triggered in HTML |
+| Pesca de Palabras | ✅ | ✅ | 28ms | Error boundary triggered in HTML |
+| Burbujas Mágicas | ✅ | ✅ | 31ms | Error boundary triggered in HTML |
+| Leo Corre | ✅ | ✅ | 56ms | Error boundary triggered in HTML |
+| Salta la Palabra | ✅ | ✅ | 49ms | Error boundary triggered in HTML |
 
 ## Assets
 

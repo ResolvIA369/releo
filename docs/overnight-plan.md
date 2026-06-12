@@ -44,13 +44,13 @@
 - [x] Commit.
 
 ### Mundo 4 (fase 4 — negra más chica)
-- [ ] Registrar en availableGames del Mundo 4.
-- [ ] Palabras con color/tamaño de fase 4.
-- [ ] Bloques de palabras del mundo + MP3 de Sofía correcto.
-- [ ] Demo autoplay en /demo con fase 4.
-- [ ] Smoke test Chromium del flujo completo, cero errores de consola.
-- [ ] Tests de Playwright cubriendo el juego en este mundo, suite en verde.
-- [ ] Commit.
+- [x] Registrar en availableGames del Mundo 4.
+- [x] Palabras con color/tamaño de fase 4.
+- [x] Bloques de palabras del mundo + MP3 de Sofía correcto.
+- [x] Demo autoplay en /demo con fase 4.
+- [x] Smoke test Chromium del flujo completo, cero errores de consola.
+- [x] Tests de Playwright cubriendo el juego en este mundo, suite en verde.
+- [x] Commit.
 
 ## Salta la Palabra (salta-palabra)
 

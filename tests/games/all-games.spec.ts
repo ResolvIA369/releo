@@ -264,6 +264,7 @@ test("Reader levels config exists", () => {
 const ARCADE_WORLD_COVERAGE: { worldId: string; phase: number; games: { id: string; file: string }[] }[] = [
   { worldId: "world_2", phase: 2, games: [{ id: "leo-runner", file: "LeoRunner.tsx" }] },
   { worldId: "world_3", phase: 3, games: [{ id: "leo-runner", file: "LeoRunner.tsx" }] },
+  { worldId: "world_4", phase: 4, games: [{ id: "leo-runner", file: "LeoRunner.tsx" }] },
 ];
 
 function phaseWordTexts(phase: number): string[] {
