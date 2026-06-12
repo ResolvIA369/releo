@@ -82,6 +82,26 @@ describe("levelForElapsed", () => {
   });
 });
 
+describe("musica", () => {
+  it("hay un BPM por nivel y el tempo sube con la dificultad", () => {
+    for (const phase of [1, 2, 3, 4, 5] as PhaseNumber[]) {
+      const t = LEO_VUELA_TUNING[phase];
+      expect(t.musicBpm.length).toBe(t.levels.length);
+      for (let i = 1; i < t.musicBpm.length; i++) {
+        expect(t.musicBpm[i]).toBeGreaterThan(t.musicBpm[i - 1]);
+      }
+    }
+  });
+
+  it("volumen base bajo y ducking aun mas bajo cuando habla Sofia", () => {
+    for (const phase of [1, 2, 3, 4, 5] as PhaseNumber[]) {
+      const t = LEO_VUELA_TUNING[phase];
+      expect(t.musicVolumeDb).toBeLessThan(0);
+      expect(t.musicDuckDb).toBeLessThan(t.musicVolumeDb);
+    }
+  });
+});
+
 describe("rewardForLevel", () => {
   const t = LEO_VUELA_TUNING[1];
 

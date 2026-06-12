@@ -16,6 +16,7 @@ import { domanCanvasText } from "../config/doman-canvas";
 import { physicsForPhase, stepFlight, buildCloudRound, tuningForPhase, clampEnergy, levelForElapsed, rewardForLevel, pickNextTarget } from "../config/leo-vuela";
 import { LeoVuelaObstacles } from "./leo-vuela-obstacles";
 import { LeoVuelaHud, MoveButtons } from "./LeoVuelaHud";
+import { LeoVuelaMusic } from "./leo-vuela-music";
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -120,6 +121,24 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
   const levelRef = useRef(0);
   const [levelUi, setLevelUi] = useState(0);
 
+  // Musica de percusion: instancia liviana, el audio recien se crea
+  // tras el primer gesto (ensureStarted)
+  const musicRef = useRef<LeoVuelaMusic | null>(null);
+  if (!musicRef.current) {
+    musicRef.current = new LeoVuelaMusic(tuning.musicVolumeDb, tuning.musicDuckDb);
+  }
+  useEffect(() => () => {
+    musicRef.current?.dispose();
+    musicRef.current = null;
+  }, []);
+
+  // Sofia habla → la musica se agacha hasta que termina
+  const speakDucked = useCallback((speak: () => Promise<unknown>) => {
+    stopVoice();
+    musicRef.current?.duck(true);
+    void speak().finally(() => musicRef.current?.duck(false));
+  }, []);
+
   // ─── Pixi init (same lifecycle pattern as SaltaPalabra) ──────────
 
   useEffect(() => {
@@ -210,6 +229,7 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
           if (lvl !== levelRef.current) {
             levelRef.current = lvl;
             setLevelUi(lvl);
+            musicRef.current?.setBpm(tun.musicBpm[lvl] ?? tun.musicBpm[0]);
           }
         }
         const levelCfg = tun.levels[levelRef.current] ?? tun.levels[0];
@@ -399,8 +419,10 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
     if (paused) {
       app.ticker.stop();
       stopVoice();
+      musicRef.current?.pause();
     } else {
       app.ticker.start();
+      if (gamePhaseRef.current === "running") musicRef.current?.resume();
     }
   }, [paused]);
 
@@ -478,9 +500,9 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
 
     setTargetWord(target);
 
-    // Sofia anuncia en paralelo — el juego no se frena
-    stopVoice();
-    void sofiaNameWord(target.text);
+    // Sofia anuncia en paralelo — el juego no se frena; la musica
+    // se agacha mientras habla
+    speakDucked(() => sofiaNameWord(target.text));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // First wave once Pixi is up
@@ -500,6 +522,7 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
   const finishGame = useCallback(() => {
     if (cancelledRef.current) return;
     stopVoice();
+    musicRef.current?.pause();
     setGamePhase("finished");
     finish().then(() => onComplete?.(state));
   }, [finish, onComplete, state]);
@@ -530,8 +553,7 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
       }
       squashTRef.current = 0; // celebration squash-and-stretch
       adjustEnergy(tuningRef.current.energyGainCorrect);
-      stopVoice();
-      void sofiaPlayAudio("reaccion-muy-bien", "¡Muy bien!", "excited");
+      speakDucked(() => sofiaPlayAudio("reaccion-muy-bien", "¡Muy bien!", "excited"));
       nextWave();
     } else {
       // Tropezon en silencio: solo el tint visual, sin audio — el
@@ -555,8 +577,7 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
     recordAttempt(false);
     adjustEnergy(-tuningRef.current.energyLossEscape);
     flashFeedback("wrong");
-    stopVoice();
-    void sofiaPlayAudio("reaccion-se-escapo", "¡Se escapó!", "gentle");
+    speakDucked(() => sofiaPlayAudio("reaccion-se-escapo", "¡Se escapó!", "gentle"));
     nextWave();
   }, [recordAttempt, nextWave, flashFeedback, adjustEnergy]);
 
@@ -567,6 +588,8 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
 
   const handleFlap = useCallback(() => {
     if (gamePhaseRef.current !== "running" || paused) return;
+    // Primer gesto del usuario: momento valido para destrabar el audio
+    void musicRef.current?.ensureStarted(tuningRef.current.musicBpm[levelRef.current] ?? 90);
     vyRef.current = -physicsRef.current.impulse;
     if (typeof navigator !== "undefined" && "vibrate" in navigator) navigator.vibrate(10);
   }, [paused]);
@@ -602,6 +625,9 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
   }, [gamePhase, paused]);
 
   const handleMoveDir = useCallback((dir: -1 | 0 | 1) => {
+    if (dir !== 0) {
+      void musicRef.current?.ensureStarted(tuningRef.current.musicBpm[levelRef.current] ?? 90);
+    }
     moveDirRef.current = gamePhaseRef.current === "running" ? dir : 0;
   }, []);
 
@@ -620,6 +646,8 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
     lastTargetIdRef.current = null;
     setRoundIdx(0);
     setGamePhase("running");
+    musicRef.current?.setBpm(tuningRef.current.musicBpm[0] ?? 90);
+    musicRef.current?.resume();
     spawnWave();
   }, [reset, spawnWave]);
 
