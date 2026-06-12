@@ -14,7 +14,7 @@ import { GameCompleteScreen } from "@/shared/components/GameCompleteScreen";
 import { colors, spacing, radii, fontSizes, fonts } from "@/shared/styles/design-tokens";
 import { sofiaNameWord, sofiaPlayAudio, stopVoice } from "@/shared/services/sofiaVoice";
 import { domanCanvasText } from "../config/doman-canvas";
-import { physicsForPhase, stepFlight, buildCloudRound, tuningForPhase, clampEnergy } from "../config/leo-vuela";
+import { physicsForPhase, stepFlight, buildCloudRound, tuningForPhase, clampEnergy, levelForElapsed } from "../config/leo-vuela";
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -107,6 +107,10 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
   const energySyncRef = useRef(0);
   const onEnergyOutRef = useRef<() => void>(() => {});
 
+  const playSecRef = useRef(0); // tiempo jugado, para el nivel
+  const levelRef = useRef(0);
+  const [levelUi, setLevelUi] = useState(0);
+
   const gameWords = useMemo(() => shuffle(words).slice(0, WORDS_PER_GAME), [words]);
   const totalRounds = gameWords.length;
 
@@ -187,6 +191,19 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
         elapsedRef.current += dt;
         const round = roundRef.current;
 
+        // Nivel por tiempo jugado: mas velocidad y nubes mas juntas
+        const tun = tuningRef.current;
+        if (round.active && gamePhaseRef.current === "running") {
+          playSecRef.current += dt / 60;
+          const lvl = levelForElapsed(playSecRef.current, tun.levelDurationSec, tun.levels.length);
+          if (lvl !== levelRef.current) {
+            levelRef.current = lvl;
+            setLevelUi(lvl);
+          }
+        }
+        const levelCfg = tun.levels[levelRef.current] ?? tun.levels[0];
+        const effSpeed = round.speed * levelCfg.speedMul;
+
         // Drenaje pasivo de energia mientras se juega; en 0 se termina
         if (round.active && gamePhaseRef.current === "running") {
           energyRef.current = clampEnergy(
@@ -209,14 +226,14 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
         // Clouds: drift left + gentle bob — NUNCA se frenan
         round.clouds.forEach((fc, i) => {
           if (fc.caught) return;
-          if (round.active) fc.box.x -= round.speed * dt;
+          if (round.active) fc.box.x -= effSpeed * dt;
           fc.box.pivot.y = Math.sin(elapsedRef.current * 0.06 + i * 2) * 4;
         });
 
         // Tandas viejas: siguen volando mientras se desvanecen
         if (fadingRef.current.length > 0) {
           fadingRef.current = fadingRef.current.filter((box) => {
-            box.x -= round.speed * dt;
+            box.x -= effSpeed * dt;
             box.alpha -= FADE_RATE * dt;
             if (box.alpha <= 0 || box.x < -150) {
               box.destroy({ children: true });
@@ -405,7 +422,10 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
 
       box.addChild(cloud);
       box.addChild(label);
-      box.x = W + 80 + i * physicsRef.current.cloudGap;
+      // El nivel actual junta mas las nubes (gapMul) — la velocidad
+      // del nivel se aplica en vivo en el ticker (speedMul)
+      const levelGapMul = tuningRef.current.levels[levelRef.current]?.gapMul ?? 1;
+      box.x = W + 80 + i * physicsRef.current.cloudGap * levelGapMul;
       box.y = band;
       cloudsLayer.addChild(box);
       return { box, word, caught: false };
@@ -414,7 +434,7 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
     roundRef.current = {
       clouds: flying,
       target,
-      speed: physicsRef.current.cloudSpeed * (1 + idx * 0.04),
+      speed: physicsRef.current.cloudSpeed,
       active: true,
       resolved: false,
     };
@@ -529,6 +549,9 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
     vyRef.current = 0;
     energyRef.current = tuningRef.current.energyStart;
     setEnergyUi(tuningRef.current.energyStart);
+    playSecRef.current = 0;
+    levelRef.current = 0;
+    setLevelUi(0);
     setRoundIdx(0);
     setGamePhase("running");
     spawnWave(0);
@@ -549,7 +572,19 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: spacing.md, paddingTop: spacing.sm }}>
         {/* Round counter + fixed target pill */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", maxWidth: "min(640px, calc(100vw - 32px))" }}>
-          <span style={{ fontSize: fontSizes.sm, color: colors.text.placeholder }}>
+          <span style={{ display: "flex", alignItems: "center", gap: spacing.sm, fontSize: fontSizes.sm, color: colors.text.placeholder }}>
+            <motion.span
+              key={levelUi}
+              initial={{ scale: 1.4 }}
+              animate={{ scale: 1 }}
+              style={{
+                padding: `2px ${spacing.sm}px`, borderRadius: radii.pill,
+                backgroundColor: `${GAME_COLOR}20`, color: GAME_COLOR,
+                fontWeight: "bold", fontFamily: fonts.display,
+              }}
+            >
+              Nivel {levelUi + 1}
+            </motion.span>
             {Math.min(roundIdx + 1, totalRounds)} / {totalRounds}
           </span>
           {targetWord && (

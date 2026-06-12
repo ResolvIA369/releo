@@ -5,6 +5,7 @@ import {
   physicsForPhase,
   tuningForPhase,
   clampEnergy,
+  levelForElapsed,
   stepFlight,
   buildCloudRound,
   MAX_FALL_SPEED,
@@ -50,6 +51,31 @@ describe("tuning de energia", () => {
 
   it("tuningForPhase cae a fase 1 ante un valor invalido", () => {
     expect(tuningForPhase(99 as PhaseNumber)).toBe(LEO_VUELA_TUNING[1]);
+  });
+});
+
+describe("levelForElapsed", () => {
+  it("mapea minutos 0-3 / 3-6 / 6-9 a niveles 1 / 2 / 3", () => {
+    expect(levelForElapsed(0, 180, 3)).toBe(0);
+    expect(levelForElapsed(179, 180, 3)).toBe(0);
+    expect(levelForElapsed(180, 180, 3)).toBe(1);
+    expect(levelForElapsed(359, 180, 3)).toBe(1);
+    expect(levelForElapsed(360, 180, 3)).toBe(2);
+  });
+
+  it("pasado el ultimo umbral se queda en el nivel final", () => {
+    expect(levelForElapsed(9999, 180, 3)).toBe(2);
+  });
+
+  it("cada nivel es mas dificil: mas velocidad y nubes mas juntas", () => {
+    for (const phase of [1, 2, 3, 4, 5] as PhaseNumber[]) {
+      const { levels } = LEO_VUELA_TUNING[phase];
+      expect(levels.length).toBe(3);
+      for (let i = 1; i < levels.length; i++) {
+        expect(levels[i].speedMul).toBeGreaterThan(levels[i - 1].speedMul);
+        expect(levels[i].gapMul).toBeLessThan(levels[i - 1].gapMul);
+      }
+    }
   });
 });
 

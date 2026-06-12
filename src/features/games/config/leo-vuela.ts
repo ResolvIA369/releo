@@ -26,6 +26,14 @@ export function physicsForPhase(phase: PhaseNumber): LeoVuelaPhysics {
 // ─── Energia: el ritmo del juego ─────────────────────────────────
 // Sube por acierto, baja por error/escape y drena sola de a poco.
 // Si llega a 0 el juego termina. Ajustable por fase sin tocar el juego.
+// Cada nivel multiplica la dificultad base de la fase: mas velocidad
+// y nubes mas juntas. Se alcanza por tiempo jugado (levelDurationSec
+// por nivel); pasado el ultimo umbral se queda en el nivel final.
+export interface LeoVuelaLevel {
+  speedMul: number; // multiplica la velocidad de las nubes
+  gapMul: number; // multiplica la separacion entre nubes (menos = mas juntas)
+}
+
 export interface LeoVuelaTuning {
   energyStart: number;
   energyMax: number;
@@ -33,15 +41,29 @@ export interface LeoVuelaTuning {
   energyLossWrong: number;
   energyLossEscape: number;
   energyDrainPerSec: number; // drenaje pasivo
+  levelDurationSec: number; // duracion de cada nivel (min 0-3, 3-6, 6-9)
+  levels: LeoVuelaLevel[];
 }
 
+const DEFAULT_LEVELS: LeoVuelaLevel[] = [
+  { speedMul: 1.0, gapMul: 1.0 },
+  { speedMul: 1.3, gapMul: 0.85 },
+  { speedMul: 1.6, gapMul: 0.7 },
+];
+
 export const LEO_VUELA_TUNING: Record<PhaseNumber, LeoVuelaTuning> = {
-  1: { energyStart: 60, energyMax: 100, energyGainCorrect: 14, energyLossWrong: 10, energyLossEscape: 8, energyDrainPerSec: 1.0 },
-  2: { energyStart: 60, energyMax: 100, energyGainCorrect: 13, energyLossWrong: 10, energyLossEscape: 8, energyDrainPerSec: 1.2 },
-  3: { energyStart: 60, energyMax: 100, energyGainCorrect: 12, energyLossWrong: 11, energyLossEscape: 9, energyDrainPerSec: 1.4 },
-  4: { energyStart: 60, energyMax: 100, energyGainCorrect: 12, energyLossWrong: 11, energyLossEscape: 9, energyDrainPerSec: 1.6 },
-  5: { energyStart: 60, energyMax: 100, energyGainCorrect: 11, energyLossWrong: 12, energyLossEscape: 10, energyDrainPerSec: 1.8 },
+  1: { energyStart: 60, energyMax: 100, energyGainCorrect: 14, energyLossWrong: 10, energyLossEscape: 8, energyDrainPerSec: 1.0, levelDurationSec: 180, levels: DEFAULT_LEVELS },
+  2: { energyStart: 60, energyMax: 100, energyGainCorrect: 13, energyLossWrong: 10, energyLossEscape: 8, energyDrainPerSec: 1.2, levelDurationSec: 180, levels: DEFAULT_LEVELS },
+  3: { energyStart: 60, energyMax: 100, energyGainCorrect: 12, energyLossWrong: 11, energyLossEscape: 9, energyDrainPerSec: 1.4, levelDurationSec: 180, levels: DEFAULT_LEVELS },
+  4: { energyStart: 60, energyMax: 100, energyGainCorrect: 12, energyLossWrong: 11, energyLossEscape: 9, energyDrainPerSec: 1.6, levelDurationSec: 180, levels: DEFAULT_LEVELS },
+  5: { energyStart: 60, energyMax: 100, energyGainCorrect: 11, energyLossWrong: 12, energyLossEscape: 10, energyDrainPerSec: 1.8, levelDurationSec: 180, levels: DEFAULT_LEVELS },
 };
+
+// Indice de nivel (0-based) segun tiempo jugado; clampea al ultimo
+export function levelForElapsed(elapsedSec: number, durationSec: number, levelCount: number): number {
+  if (durationSec <= 0 || levelCount <= 0) return 0;
+  return Math.min(levelCount - 1, Math.max(0, Math.floor(elapsedSec / durationSec)));
+}
 
 export function tuningForPhase(phase: PhaseNumber): LeoVuelaTuning {
   return LEO_VUELA_TUNING[phase] ?? LEO_VUELA_TUNING[1];
