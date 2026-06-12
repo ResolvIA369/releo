@@ -83,10 +83,11 @@
 
 ## Si queda tiempo — "juice" solo con código (sin assets nuevos)
 
-- [ ] Squash-and-stretch en aciertos (ambos juegos).
-- [ ] Easing con anticipación en el salto (SaltaPalabra).
-- [ ] navigator.vibrate() en el toque para mobile (ambos juegos).
-- [ ] Tests en verde + commit.
+- [x] Squash-and-stretch en aciertos (ambos juegos).
+- [x] Easing con anticipación en el salto (SaltaPalabra; crouch del 14%
+      del salto, con APEX_FRAMES ajustado para el demo).
+- [x] navigator.vibrate(15) en el toque para mobile (ambos juegos).
+- [x] Tests en verde + commit.
 
 ## Cierre
 

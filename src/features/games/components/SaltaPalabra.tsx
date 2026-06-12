@@ -34,6 +34,9 @@ const LEO_X = W * 0.5;
 const FLY_Y = 150; // words float at jump height
 const JUMP_H = 175; // jump apex offset
 const JUMP_FRAMES = 40; // ~650ms at 60fps
+const ANTICIPATION = 0.14; // first slice of the jump is a crouch
+// Frames until the apex, counting the crouch (demo uses it to time jumps)
+const APEX_FRAMES = JUMP_FRAMES * (ANTICIPATION + (1 - ANTICIPATION) * 0.5);
 const CATCH_X = 72; // horizontal catch range at the apex
 const WORD_GAP = 270; // spacing between floating words
 const BASE_SPEED = 2.1; // px per frame at 60fps
@@ -72,6 +75,8 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
 
   const jumpTRef = useRef(1); // 0→1 jump progress; 1 = on the ground
   const crashTRef = useRef(1); // 0→1 stumble progress
+  const squashTRef = useRef(1); // 0→1 squash-and-stretch on a correct catch
+  const baseScaleRef = useRef(0); // Leo sprite's natural scale
   const elapsedRef = useRef(0);
   const gamePhaseRef = useRef<Phase>("loading");
   const isDemoRef = useRef(isDemo);
@@ -137,7 +142,8 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
         if (disposed) return;
         const sprite = new PIXI.Sprite(tex);
         sprite.anchor.set(0.5, 1);
-        sprite.scale.set(96 / sprite.height);
+        baseScaleRef.current = 96 / sprite.height;
+        sprite.scale.set(baseScaleRef.current);
         leo.addChild(sprite);
         leoSpriteRef.current = sprite;
       } catch {
@@ -172,7 +178,14 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
           let offsetY = Math.sin(elapsedRef.current * 0.18) * 2;
           if (jumpTRef.current < 1) {
             jumpTRef.current = Math.min(1, jumpTRef.current + dt / JUMP_FRAMES);
-            offsetY -= Math.sin(jumpTRef.current * Math.PI) * JUMP_H;
+            const t = jumpTRef.current;
+            if (t < ANTICIPATION) {
+              // Anticipation: brief crouch before springing up
+              offsetY += Math.sin((t / ANTICIPATION) * Math.PI) * 8;
+            } else {
+              const p = (t - ANTICIPATION) / (1 - ANTICIPATION);
+              offsetY -= Math.sin(p * Math.PI) * JUMP_H;
+            }
           }
           if (crashTRef.current < 1) {
             crashTRef.current = Math.min(1, crashTRef.current + dt / 30);
@@ -188,8 +201,36 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
           }
           leoC.y = GROUND_Y + 4 + offsetY;
 
-          // Near the apex: catch any word overhead
-          const nearApex = jumpTRef.current < 1 && Math.sin(jumpTRef.current * Math.PI) > 0.6;
+          // Squash-and-stretch: crouch squash + correct-catch celebration
+          if (leoSpriteRef.current && baseScaleRef.current > 0) {
+            let sx = 1, sy = 1;
+            const jt = jumpTRef.current;
+            if (jt < ANTICIPATION) {
+              const k = Math.sin((jt / ANTICIPATION) * Math.PI);
+              sx = 1 + 0.15 * k;
+              sy = 1 - 0.15 * k;
+            }
+            if (squashTRef.current < 1) {
+              squashTRef.current = Math.min(1, squashTRef.current + dt / 26);
+              const q = squashTRef.current;
+              if (q < 0.35) {
+                const k = Math.sin((q / 0.35) * Math.PI);
+                sx *= 1 + 0.22 * k;
+                sy *= 1 - 0.22 * k;
+              } else {
+                const k = Math.sin(((q - 0.35) / 0.65) * Math.PI);
+                sx *= 1 - 0.12 * k;
+                sy *= 1 + 0.16 * k;
+              }
+            }
+            leoSpriteRef.current.scale.set(baseScaleRef.current * sx, baseScaleRef.current * sy);
+          }
+
+          // Near the apex: catch any word overhead (apex measured on the
+          // post-anticipation slice of the jump)
+          const jt = jumpTRef.current;
+          const p = jt < 1 && jt >= ANTICIPATION ? (jt - ANTICIPATION) / (1 - ANTICIPATION) : 0;
+          const nearApex = jt < 1 && Math.sin(p * Math.PI) > 0.6;
           if (nearApex && round.active && !round.resolved) {
             for (const fw of round.words) {
               if (!fw.caught && Math.abs(fw.box.x - LEO_X) < CATCH_X) {
@@ -216,7 +257,7 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
         if (isDemoRef.current && round.active && !round.resolved && jumpTRef.current >= 1) {
           const targetFw = round.words.find((fw) => fw.word.id === round.target?.id && !fw.caught);
           if (targetFw) {
-            const lead = round.speed * (JUMP_FRAMES / 2); // px traveled until apex
+            const lead = round.speed * APEX_FRAMES; // px traveled until apex
             const dist = targetFw.box.x - LEO_X;
             if (dist > 0 && dist <= lead + 10) jumpTRef.current = 0;
           }
@@ -366,6 +407,7 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
         const scale = rect.width / W;
         rewardCorrect(rect.left + LEO_X * scale, rect.top + FLY_Y * scale);
       }
+      squashTRef.current = 0; // celebration squash-and-stretch
       await sofiaPlayAudio("reaccion-muy-bien", "¡Muy bien!", "excited");
       if (cancelledRef.current) return;
       nextRound(500);
@@ -411,7 +453,10 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
 
   const handleJump = useCallback(() => {
     if (gamePhaseRef.current !== "running" || paused) return;
-    if (jumpTRef.current >= 1) jumpTRef.current = 0;
+    if (jumpTRef.current >= 1) {
+      jumpTRef.current = 0;
+      if (typeof navigator !== "undefined" && "vibrate" in navigator) navigator.vibrate(15);
+    }
   }, [paused]);
 
   const handleReplay = useCallback(() => {

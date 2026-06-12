@@ -70,6 +70,8 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
   const leoLaneRef = useRef(1);
   const jumpTRef = useRef(1); // 0→1 jump progress; 1 = on the ground
   const crashTRef = useRef(1); // 0→1 stumble progress
+  const squashTRef = useRef(1); // 0→1 squash-and-stretch on a correct pass
+  const baseScaleRef = useRef(0); // Leo sprite's natural scale
   const elapsedRef = useRef(0);
   const roundRef = useRef<RoundData>({ signs: [], targetLane: 1, target: null, speed: BASE_SPEED, active: false, resolved: false });
   const resolveRef = useRef<() => void>(() => {});
@@ -144,8 +146,8 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
         if (disposed) return;
         const sprite = new PIXI.Sprite(tex);
         sprite.anchor.set(0.5, 1);
-        const scale = 96 / sprite.height;
-        sprite.scale.set(scale);
+        baseScaleRef.current = 96 / sprite.height;
+        sprite.scale.set(baseScaleRef.current);
         leo.addChild(sprite);
         leoSpriteRef.current = sprite;
       } catch {
@@ -194,6 +196,23 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
             leoSpriteRef.current.tint = 0xffffff;
           }
           leoC.y = LEO_Y + offsetY;
+
+          // Squash-and-stretch celebration on a correct pass
+          if (leoSpriteRef.current && baseScaleRef.current > 0 && squashTRef.current < 1) {
+            squashTRef.current = Math.min(1, squashTRef.current + dt / 26);
+            const q = squashTRef.current;
+            let sx = 1, sy = 1;
+            if (q < 0.35) {
+              const k = Math.sin((q / 0.35) * Math.PI);
+              sx = 1 + 0.22 * k;
+              sy = 1 - 0.22 * k;
+            } else {
+              const k = Math.sin(((q - 0.35) / 0.65) * Math.PI);
+              sx = 1 - 0.12 * k;
+              sy = 1 + 0.16 * k;
+            }
+            leoSpriteRef.current.scale.set(baseScaleRef.current * sx, baseScaleRef.current * sy);
+          }
         }
 
         // Move the signs down (parked while Sofia announces the word);
@@ -359,6 +378,7 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
         rewardCorrect(rect.left + LANES_X[round.targetLane] * scale, rect.top + LEO_Y * scale);
       }
       jumpTRef.current = 0; // victory hop
+      squashTRef.current = 0; // celebration squash-and-stretch
       await sofiaPlayAudio("reaccion-muy-bien", "¡Muy bien!", "excited");
     } else {
       crashTRef.current = 0; // stumble
@@ -384,6 +404,7 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
     if (lane !== leoLaneRef.current) {
       leoLaneRef.current = lane;
       jumpTRef.current = 0;
+      if (typeof navigator !== "undefined" && "vibrate" in navigator) navigator.vibrate(15);
     }
   }, [gamePhase]);
 
