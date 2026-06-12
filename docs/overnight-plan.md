@@ -91,9 +91,21 @@
 
 ## Cierre
 
-- [ ] tsc, unit y Playwright en verde al final.
-- [ ] Notas de lo que quedó trabado (si hay).
+- [x] tsc, unit y Playwright en verde al final
+      (48 Playwright + 105 unit + tsc limpio).
+- [x] Notas de lo que quedó trabado (si hay).
 
 ## Notas / Trabas
 
-(ninguna por ahora)
+- Nada quedó trabado. Los 6 ítems mundo×juego + el juice se completaron.
+- **Discrepancia con el enunciado**: el pedido decía "Mundo 2: roja más
+  chica", pero `words.ts` (fuente de verdad de la app, mismo dato que usa
+  WordFlash) define fase 2 = NEGRA 10cm. Se siguió `words.ts` porque el
+  pedido también decía "igual que el resto de la app". Si se quiere fase 2
+  roja, hay que cambiarlo en `words.ts` (afectaría a toda la app), no en
+  los juegos.
+- Smoke reutilizable: `scripts/arcade-world-smoke.mjs`
+  (`node scripts/arcade-world-smoke.mjs <gameId> "<worldName>" <phase>`,
+  requiere dev server en :3000).
+- Los smokes corrieron con demo autoplay verificando monedas > 0 y cero
+  errores de consola en cada mundo (screenshots en /tmp durante la corrida).
