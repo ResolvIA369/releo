@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { colors, fonts, fontSizes, spacing, radii, shadows } from "@/shared/styles/design-tokens";
+import { isStandaloneDisplay } from "@/shared/utils/pwa";
 
 export function PWARegister() {
   const [installPrompt, setInstallPrompt] = useState<Event | null>(null);
@@ -65,12 +66,21 @@ export function PWARegister() {
   useEffect(() => {
     const handler = (e: Event) => {
       e.preventDefault();
+      // Already running as an installed app (standalone / iOS) —
+      // never offer to install again
+      if (isStandaloneDisplay()) return;
       setInstallPrompt(e);
       const dismissed = localStorage.getItem("pwa-banner-dismissed");
       if (!dismissed) setShowInstall(true);
     };
+    // If the user installs from the browser menu, drop the banner
+    const onInstalled = () => setShowInstall(false);
     window.addEventListener("beforeinstallprompt", handler);
-    return () => window.removeEventListener("beforeinstallprompt", handler);
+    window.addEventListener("appinstalled", onInstalled);
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handler);
+      window.removeEventListener("appinstalled", onInstalled);
+    };
   }, []);
 
   // ─── Handlers ──────────────────────────────────────────────────
