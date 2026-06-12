@@ -14,6 +14,7 @@ import { GameCompleteScreen } from "@/shared/components/GameCompleteScreen";
 import { colors, spacing, radii, fontSizes, fonts } from "@/shared/styles/design-tokens";
 import { sofiaNameWord, sofiaPlayAudio, stopVoice } from "@/shared/services/sofiaVoice";
 import { domanCanvasText } from "../config/doman-canvas";
+import { buildLanes, rocksForPhase } from "../config/leo-runner";
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -285,44 +286,44 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
     signsLayer.removeChildren().forEach((c) => c.destroy({ children: true }));
 
     const target = gameWords[idx];
-    const distractors = shuffle(words.filter((w) => w.id !== target.id)).slice(0, 2);
-    const roundWords = shuffle([target, ...distractors]);
-    const targetLane = roundWords.findIndex((w) => w.id === target.id);
+    // Lane difficulty per world: Mundo 1 keeps one rock (2 readable
+    // lanes), higher worlds drop the rocks so all 3 lanes carry words.
+    const lanes = buildLanes(target, words, rocksForPhase(phase), shuffle);
+    const targetLane = lanes.findIndex((l) => l.word?.id === target.id);
 
     const signs: RoundData["signs"] = [];
-    roundWords.forEach((word, lane) => {
+    lanes.forEach(({ word }, lane) => {
       const box = new PIXI.Container();
-      const isTarget = lane === targetLane;
 
-      // Obstacle (rock) on the wrong lanes, behind the sign
-      if (!isTarget) {
+      if (!word) {
+        // Blocked lane: just a rock, no sign to read
         const rock = new PIXI.Graphics();
-        rock.ellipse(0, SIGN_H / 2 + 22, 30, 18).fill("#9e9e9e");
-        rock.ellipse(-12, SIGN_H / 2 + 14, 16, 12).fill("#bdbdbd");
+        rock.ellipse(0, 8, 30, 18).fill("#9e9e9e");
+        rock.ellipse(-12, 0, 16, 12).fill("#bdbdbd");
         box.addChild(rock);
+      } else {
+        const plate = new PIXI.Graphics();
+        plate
+          .roundRect(-SIGN_W / 2, -SIGN_H / 2, SIGN_W, SIGN_H, 14)
+          .fill("#ffffff")
+          .stroke({ width: 4, color: 0x8d6e63 });
+        box.addChild(plate);
+
+        const doman = domanCanvasText(word);
+        const label = new PIXI.Text({
+          text: word.text,
+          style: {
+            fontFamily: "Arial, sans-serif",
+            fontSize: doman.fontSize,
+            fontWeight: "bold",
+            fill: doman.fill,
+          },
+        });
+        label.anchor.set(0.5);
+        // Shrink long words so they fit on the sign
+        if (label.width > SIGN_W - 24) label.scale.set((SIGN_W - 24) / label.width);
+        box.addChild(label);
       }
-
-      const plate = new PIXI.Graphics();
-      plate
-        .roundRect(-SIGN_W / 2, -SIGN_H / 2, SIGN_W, SIGN_H, 14)
-        .fill("#ffffff")
-        .stroke({ width: 4, color: 0x8d6e63 });
-      box.addChild(plate);
-
-      const doman = domanCanvasText(word);
-      const label = new PIXI.Text({
-        text: word.text,
-        style: {
-          fontFamily: "Arial, sans-serif",
-          fontSize: doman.fontSize,
-          fontWeight: "bold",
-          fill: doman.fill,
-        },
-      });
-      label.anchor.set(0.5);
-      // Shrink long words so they fit on the sign
-      if (label.width > SIGN_W - 24) label.scale.set((SIGN_W - 24) / label.width);
-      box.addChild(label);
 
       box.x = LANES_X[lane];
       box.y = SIGN_SPAWN_Y;
@@ -340,7 +341,7 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
     };
 
     setTargetWord(target);
-    setLaneWords(roundWords);
+    setLaneWords(lanes.map((l) => l.word));
     setFeedbackType(null);
     setGamePhase("announcing");
 
@@ -348,7 +349,7 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
     if (cancelledRef.current) return;
     roundRef.current.active = true;
     setGamePhase("running");
-  }, [totalRounds, gameWords, words, finish, onComplete, state]);
+  }, [totalRounds, gameWords, words, phase, finish, onComplete, state]);
 
   // First round once Pixi is up
   useEffect(() => {
