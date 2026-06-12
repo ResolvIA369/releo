@@ -534,13 +534,12 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
       void sofiaPlayAudio("reaccion-muy-bien", "¡Muy bien!", "excited");
       nextWave();
     } else {
-      // Tropezon suave: tint + Sofia repite el objetivo, todo sigue
+      // Tropezon en silencio: solo el tint visual, sin audio — el
+      // objetivo sigue visible en la pill de arriba
       recordAttempt(false);
       adjustEnergy(-tuningRef.current.energyLossWrong);
       crashTRef.current = 0;
       flashFeedback("wrong");
-      stopVoice();
-      void sofiaNameWord(target.text);
       // Si el objetivo ya no esta (venia detras de la atrapada), pasar
       const targetFc = round.clouds.find((f) => f.word.id === target.id);
       if (!targetFc || targetFc.caught || targetFc.box.x <= -100) {
