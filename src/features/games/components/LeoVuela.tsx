@@ -28,9 +28,9 @@ function shuffle<T>(arr: T[]): T[] {
 const GAME_COLOR = "#9f7aea";
 const WORDS_PER_GAME = 20;
 
-// Unico punto de cambio para el sprite: swapear por un Leo volando
-// cuando este el asset (hoy reusa el leon de leo-runner).
-const LEO_SPRITE_URL = "/images/games/leo-runner-sprite.png";
+// Unico punto de cambio del sprite: Leo volando hacia la derecha,
+// hacia las nubes que entran (procesado por scripts/prepare-leo-sprites.py)
+const LEO_SPRITE_URL = "/images/games/leo-vuela-sprite.png";
 
 // Logical canvas size — CSS scales it to the container width
 const W = 640;
@@ -148,7 +148,10 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
         // After appRef is set the cleanup owns destruction — just bail
         if (disposed) return;
         const sprite = new PIXI.Sprite(tex);
-        sprite.anchor.set(0.5, 1);
+        // Anclado al centro del cuerpo: la inclinacion al subir/caer
+        // rota alrededor de Leo, no de sus pies
+        sprite.anchor.set(0.5, 0.5);
+        sprite.y = -LEO_CENTER_OFFSET;
         baseScaleRef.current = 96 / sprite.height;
         sprite.scale.set(baseScaleRef.current);
         leo.addChild(sprite);
