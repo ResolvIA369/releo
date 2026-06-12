@@ -50,6 +50,7 @@ export interface LeoVuelaTuning {
   levelDurationSec: number; // duracion de cada nivel (min 0-3, 3-6, 6-9)
   levels: LeoVuelaLevel[];
   levelCoinBonus: number[]; // monedas extra por nivel alcanzado al terminar
+  horizontalSpeed: number; // velocidad de Leo adelante/atras (px/frame)
 }
 
 const DEFAULT_LEVELS: LeoVuelaLevel[] = [
@@ -64,11 +65,11 @@ const DEFAULT_LEVELS: LeoVuelaLevel[] = [
 const DEFAULT_COIN_BONUS = [0, 10, 25];
 
 export const LEO_VUELA_TUNING: Record<PhaseNumber, LeoVuelaTuning> = {
-  1: { energyStart: 60, energyMax: 100, energyGainCorrect: 14, energyLossWrong: 10, energyLossEscape: 8, energyDrainPerSec: 1.0, levelDurationSec: 180, levels: DEFAULT_LEVELS, levelCoinBonus: DEFAULT_COIN_BONUS },
-  2: { energyStart: 60, energyMax: 100, energyGainCorrect: 13, energyLossWrong: 10, energyLossEscape: 8, energyDrainPerSec: 1.2, levelDurationSec: 180, levels: DEFAULT_LEVELS, levelCoinBonus: DEFAULT_COIN_BONUS },
-  3: { energyStart: 60, energyMax: 100, energyGainCorrect: 12, energyLossWrong: 11, energyLossEscape: 9, energyDrainPerSec: 1.4, levelDurationSec: 180, levels: DEFAULT_LEVELS, levelCoinBonus: DEFAULT_COIN_BONUS },
-  4: { energyStart: 60, energyMax: 100, energyGainCorrect: 12, energyLossWrong: 11, energyLossEscape: 9, energyDrainPerSec: 1.6, levelDurationSec: 180, levels: DEFAULT_LEVELS, levelCoinBonus: DEFAULT_COIN_BONUS },
-  5: { energyStart: 60, energyMax: 100, energyGainCorrect: 11, energyLossWrong: 12, energyLossEscape: 10, energyDrainPerSec: 1.8, levelDurationSec: 180, levels: DEFAULT_LEVELS, levelCoinBonus: DEFAULT_COIN_BONUS },
+  1: { energyStart: 60, energyMax: 100, energyGainCorrect: 14, energyLossWrong: 10, energyLossEscape: 8, energyDrainPerSec: 1.0, levelDurationSec: 180, levels: DEFAULT_LEVELS, levelCoinBonus: DEFAULT_COIN_BONUS, horizontalSpeed: 3 },
+  2: { energyStart: 60, energyMax: 100, energyGainCorrect: 13, energyLossWrong: 10, energyLossEscape: 8, energyDrainPerSec: 1.2, levelDurationSec: 180, levels: DEFAULT_LEVELS, levelCoinBonus: DEFAULT_COIN_BONUS, horizontalSpeed: 3 },
+  3: { energyStart: 60, energyMax: 100, energyGainCorrect: 12, energyLossWrong: 11, energyLossEscape: 9, energyDrainPerSec: 1.4, levelDurationSec: 180, levels: DEFAULT_LEVELS, levelCoinBonus: DEFAULT_COIN_BONUS, horizontalSpeed: 3 },
+  4: { energyStart: 60, energyMax: 100, energyGainCorrect: 12, energyLossWrong: 11, energyLossEscape: 9, energyDrainPerSec: 1.6, levelDurationSec: 180, levels: DEFAULT_LEVELS, levelCoinBonus: DEFAULT_COIN_BONUS, horizontalSpeed: 3 },
+  5: { energyStart: 60, energyMax: 100, energyGainCorrect: 11, energyLossWrong: 12, energyLossEscape: 10, energyDrainPerSec: 1.8, levelDurationSec: 180, levels: DEFAULT_LEVELS, levelCoinBonus: DEFAULT_COIN_BONUS, horizontalSpeed: 3 },
 };
 
 // Indice de nivel (0-based) segun tiempo jugado; clampea al ultimo

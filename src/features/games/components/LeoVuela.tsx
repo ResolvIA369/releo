@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { motion } from "framer-motion";
 import type { Application, Container, Sprite } from "pixi.js";
 import type { GameProps } from "../types";
 import type { DomanWord } from "@/shared/types/doman";
@@ -16,6 +15,7 @@ import { sofiaNameWord, sofiaPlayAudio, stopVoice } from "@/shared/services/sofi
 import { domanCanvasText } from "../config/doman-canvas";
 import { physicsForPhase, stepFlight, buildCloudRound, tuningForPhase, clampEnergy, levelForElapsed, rewardForLevel, pickNextTarget } from "../config/leo-vuela";
 import { LeoVuelaObstacles } from "./leo-vuela-obstacles";
+import { LeoVuelaHud, MoveButtons } from "./LeoVuelaHud";
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -36,7 +36,9 @@ const LEO_SPRITE_URL = "/images/games/leo-vuela-sprite.png";
 const W = 640;
 const H = 420;
 const GROUND_Y = H - 58;
-const LEO_X = W * 0.26;
+const LEO_BASE_X = W * 0.26;
+const LEO_MIN_X = 70; // limites del movimiento adelante/atras
+const LEO_MAX_X = W * 0.55;
 const LEO_TOP_Y = 130; // techo para leo.y (los pies; la cabeza queda ~34px del borde)
 const LEO_CENTER_OFFSET = 48; // el centro de Leo respecto de sus pies (anchor 0.5,1)
 const CLOUD_BANDS = [105, 200, 295]; // alturas posibles de las nubes
@@ -78,6 +80,8 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
   const obstaclesRef = useRef<LeoVuelaObstacles | null>(null);
 
   const leoYRef = useRef(GROUND_Y + 4); // pies de Leo
+  const leoXRef = useRef(LEO_BASE_X);
+  const moveDirRef = useRef<-1 | 0 | 1>(0); // esquive adelante/atras
   const vyRef = useRef(0);
   const crashTRef = useRef(1); // 0→1 stumble progress
   const squashTRef = useRef(1); // 0→1 squash-and-stretch on a correct catch
@@ -187,7 +191,7 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
       const shadow = new PIXI.Graphics();
       shadow.ellipse(0, 0, 34, 9).fill({ color: 0x000000, alpha: 0.15 });
       leo.addChildAt(shadow, 0);
-      leo.x = LEO_X;
+      leo.x = LEO_BASE_X;
       leo.y = GROUND_Y + 4;
       app.stage.addChild(leo);
       leoRef.current = leo;
@@ -254,7 +258,7 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
         let gravityMul = 1;
         if (round.active && gamePhaseRef.current === "running" && obstaclesRef.current) {
           const frame = obstaclesRef.current.update(dt, levelCfg, {
-            x: LEO_X,
+            x: leoXRef.current,
             y: leoYRef.current - LEO_CENTER_OFFSET,
           });
           if (frame.knock !== 0) {
@@ -266,6 +270,14 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
             crashTRef.current = 0; // sacudida visual, sin costo de energia
           }
           gravityMul = frame.gravityMul;
+        }
+
+        // Movimiento horizontal (esquive): teclas o botones ◀ ▶
+        if (round.active && gamePhaseRef.current === "running" && moveDirRef.current !== 0) {
+          leoXRef.current = Math.min(LEO_MAX_X, Math.max(
+            LEO_MIN_X,
+            leoXRef.current + moveDirRef.current * tuningRef.current.horizontalSpeed * dt,
+          ));
         }
 
         // Leo: gravity pulls down, flaps push up (physics via refs)
@@ -286,12 +298,12 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
 
           if (crashTRef.current < 1) {
             crashTRef.current = Math.min(1, crashTRef.current + dt / 30);
-            leoC.x = LEO_X + Math.sin(crashTRef.current * Math.PI * 6) * 5;
+            leoC.x = leoXRef.current + Math.sin(crashTRef.current * Math.PI * 6) * 5;
             if (leoSpriteRef.current) {
               leoSpriteRef.current.tint = crashTRef.current < 1 ? 0xffb0b0 : 0xffffff;
             }
           } else {
-            leoC.x = LEO_X;
+            leoC.x = leoXRef.current;
             if (leoSpriteRef.current && leoSpriteRef.current.tint !== 0xffffff) {
               leoSpriteRef.current.tint = 0xffffff;
             }
@@ -323,7 +335,7 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
           if (round.active && !round.resolved) {
             const leoCenterY = leoYRef.current - LEO_CENTER_OFFSET;
             for (const fc of round.clouds) {
-              if (!fc.caught && Math.abs(fc.box.x - LEO_X) < CATCH_X && Math.abs(fc.box.y - leoCenterY) < CATCH_Y) {
+              if (!fc.caught && Math.abs(fc.box.x - leoXRef.current) < CATCH_X && Math.abs(fc.box.y - leoCenterY) < CATCH_Y) {
                 fc.caught = true;
                 fc.box.visible = false;
                 onCatchRef.current(fc);
@@ -348,7 +360,7 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
         if (isDemoRef.current && round.active && !round.resolved) {
           const targetFc = round.clouds.find((fc) => fc.word.id === round.target?.id && !fc.caught);
           if (targetFc) {
-            const dist = targetFc.box.x - LEO_X;
+            const dist = targetFc.box.x - leoXRef.current;
             const aimY = dist < 280 ? targetFc.box.y + LEO_CENTER_OFFSET : H * 0.55;
             if (leoYRef.current > aimY + 10 && vyRef.current >= 0) {
               vyRef.current = -physicsRef.current.impulse;
@@ -514,7 +526,7 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
       if (canvas) {
         const rect = canvas.getBoundingClientRect();
         const scale = rect.width / W;
-        rewardCorrect(rect.left + LEO_X * scale, rect.top + (leoYRef.current - LEO_CENTER_OFFSET) * scale);
+        rewardCorrect(rect.left + leoXRef.current * scale, rect.top + (leoYRef.current - LEO_CENTER_OFFSET) * scale);
       }
       squashTRef.current = 0; // celebration squash-and-stretch
       adjustEnergy(tuningRef.current.energyGainCorrect);
@@ -565,9 +577,40 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
     ArrowUp: handleFlap,
   });
 
+  // ←/→ esquivan: keydown/keyup propios para soportar mantener la tecla
+  useEffect(() => {
+    if (!(gamePhase === "running" && !paused)) {
+      moveDirRef.current = 0;
+      return;
+    }
+    const onDown = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft") { e.preventDefault(); moveDirRef.current = -1; }
+      else if (e.key === "ArrowRight") { e.preventDefault(); moveDirRef.current = 1; }
+    };
+    const onUp = (e: KeyboardEvent) => {
+      if ((e.key === "ArrowLeft" && moveDirRef.current === -1) ||
+          (e.key === "ArrowRight" && moveDirRef.current === 1)) {
+        moveDirRef.current = 0;
+      }
+    };
+    window.addEventListener("keydown", onDown);
+    window.addEventListener("keyup", onUp);
+    return () => {
+      window.removeEventListener("keydown", onDown);
+      window.removeEventListener("keyup", onUp);
+      moveDirRef.current = 0;
+    };
+  }, [gamePhase, paused]);
+
+  const handleMoveDir = useCallback((dir: -1 | 0 | 1) => {
+    moveDirRef.current = gamePhaseRef.current === "running" ? dir : 0;
+  }, []);
+
   const handleReplay = useCallback(() => {
     reset();
     leoYRef.current = GROUND_Y + 4;
+    leoXRef.current = LEO_BASE_X;
+    moveDirRef.current = 0;
     vyRef.current = 0;
     energyRef.current = tuningRef.current.energyStart;
     setEnergyUi(tuningRef.current.energyStart);
@@ -605,65 +648,14 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
   return (
     <GameShell title="Leo Vuela" icon="🪁" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})}>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: spacing.md, paddingTop: spacing.sm }}>
-        {/* Round counter + fixed target pill */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", maxWidth: "min(640px, calc(100vw - 32px))" }}>
-          <span style={{ display: "flex", alignItems: "center", gap: spacing.sm, fontSize: fontSizes.sm, color: colors.text.placeholder }}>
-            <motion.span
-              key={levelUi}
-              initial={{ scale: 1.4 }}
-              animate={{ scale: 1 }}
-              style={{
-                padding: `2px ${spacing.sm}px`, borderRadius: radii.pill,
-                backgroundColor: `${GAME_COLOR}20`, color: GAME_COLOR,
-                fontWeight: "bold", fontFamily: fonts.display,
-              }}
-            >
-              Nivel {levelUi + 1}
-            </motion.span>
-            ✓ {state.correctAttempts}
-          </span>
-          {targetWord && (
-            <div
-              style={{
-                padding: `${spacing.xs}px ${spacing.lg}px`,
-                backgroundColor: `${GAME_COLOR}15`, border: `2px solid ${GAME_COLOR}`,
-                borderRadius: radii.pill, fontSize: fontSizes.xl,
-                fontWeight: "bold", fontFamily: fonts.display, color: GAME_COLOR,
-              }}
-            >
-              Volá a: <motion.span
-                key={targetWord.id + roundIdx}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                style={{ color: domanCanvasText(targetWord).fill }}
-              >{targetWord.text}</motion.span>
-            </div>
-          )}
-          <span style={{ width: 40 }} />
-        </div>
-
-        {/* Barra de energia */}
-        <div style={{ display: "flex", alignItems: "center", gap: spacing.sm, width: "100%", maxWidth: "min(640px, calc(100vw - 32px))" }}>
-          <span style={{ fontSize: fontSizes.md }} aria-hidden>⚡</span>
-          <div
-            role="progressbar"
-            aria-label="Energía"
-            aria-valuenow={energyUi}
-            aria-valuemin={0}
-            aria-valuemax={tuning.energyMax}
-            style={{ flex: 1, height: 14, borderRadius: radii.pill, backgroundColor: "#e9e5f5", overflow: "hidden", border: `1px solid ${colors.border.light}` }}
-          >
-            <div
-              style={{
-                width: `${(energyUi / tuning.energyMax) * 100}%`,
-                height: "100%",
-                borderRadius: radii.pill,
-                backgroundColor: energyUi > 50 ? "#48bb78" : energyUi > 25 ? "#f6ad55" : "#f56565",
-                transition: "width 0.25s ease, background-color 0.3s ease",
-              }}
-            />
-          </div>
-        </div>
+        <LeoVuelaHud
+          level={levelUi}
+          correct={state.correctAttempts}
+          targetWord={targetWord}
+          waveKey={roundIdx}
+          energy={energyUi}
+          energyMax={tuning.energyMax}
+        />
 
         {/* Pixi canvas + full-surface flap tap zone */}
         <div style={{ position: "relative", width: "100%", maxWidth: "min(640px, calc(100vw - 32px))", borderRadius: radii.xl, overflow: "hidden", border: `2px solid ${colors.border.light}` }}>
@@ -686,10 +678,11 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
               cursor: gamePhase === "running" ? "pointer" : "default",
             }}
           />
+          <MoveButtons active={gamePhase === "running"} onDir={handleMoveDir} />
         </div>
 
         <p style={{ fontSize: fontSizes.sm, color: colors.text.muted, margin: 0, textAlign: "center" }}>
-          Toca para que Leo vuele hasta la nube correcta
+          Toca para que Leo vuele hasta la nube correcta — ◀ ▶ esquivan
         </p>
 
         <FeedbackFlash type={feedbackType} />
