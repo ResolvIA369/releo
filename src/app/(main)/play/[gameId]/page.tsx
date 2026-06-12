@@ -21,6 +21,7 @@ import { WordFishing } from "@/features/games/components/WordFishing";
 import { BitsReading } from "@/features/games/components/BitsReading";
 import { LeoRunner } from "@/features/games/components/LeoRunner";
 import { SaltaPalabra } from "@/features/games/components/SaltaPalabra";
+import { LeoVuela } from "@/features/games/components/LeoVuela";
 import { SofiaAvatar } from "@/shared/components/SofiaAvatar";
 import { CelebrationGif } from "@/shared/components/CelebrationGif";
 import { AnimatedButton } from "@/shared/components/AnimatedButton";
@@ -43,6 +44,7 @@ const GAME_COMPONENTS: Partial<Record<GameId, FC<GameProps>>> = {
   "daily-bits": BitsReading,
   "leo-runner": LeoRunner,
   "salta-palabra": SaltaPalabra,
+  "leo-vuela": LeoVuela,
 };
 
 // Games that need more words for variety (categories, fishing, rain)

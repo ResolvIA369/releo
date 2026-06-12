@@ -10,7 +10,7 @@ export const WORLDS: WorldConfig[] = [
     icon: "🏝️",
     image: "/images/worlds/isla.png",
     categories: ["familia", "colores", "animales", "comida", "casa", "cuerpo"],
-    availableGames: ["word-flash", "word-image-match", "memory-cards", "leo-runner", "salta-palabra"],
+    availableGames: ["word-flash", "word-image-match", "memory-cards", "leo-runner", "salta-palabra", "leo-vuela"],
     totalWords: 50,
     unlockRequirements: { minWordsMastered: 0, minGamesCompleted: 0, minStreakDays: 0, previousWorldId: null },
   },

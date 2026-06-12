@@ -18,6 +18,7 @@ const GAMES = [
   { id: "daily-bits", name: "Burbujas Mágicas", route: "/play/daily-bits" },
   { id: "leo-runner", name: "Leo Corre", route: "/play/leo-runner" },
   { id: "salta-palabra", name: "Salta la Palabra", route: "/play/salta-palabra" },
+  { id: "leo-vuela", name: "Leo Vuela", route: "/play/leo-vuela" },
 ];
 
 interface GameResult {
@@ -65,6 +66,7 @@ for (const game of GAMES) {
         "daily-bits": "BitsReading.tsx",
         "leo-runner": "LeoRunner.tsx",
         "salta-palabra": "SaltaPalabra.tsx",
+        "leo-vuela": "LeoVuela.tsx",
       };
       const compFile = path.join(ROOT, "src/features/games/components", componentMap[game.id]);
       if (fs.existsSync(compFile)) {
@@ -262,6 +264,7 @@ test("Reader levels config exists", () => {
 // (fontColor/fontSizeCm), not hardcoded.
 
 const ARCADE_WORLD_COVERAGE: { worldId: string; phase: number; games: { id: string; file: string }[] }[] = [
+  { worldId: "world_1", phase: 1, games: [{ id: "leo-vuela", file: "LeoVuela.tsx" }] },
   { worldId: "world_2", phase: 2, games: [{ id: "leo-runner", file: "LeoRunner.tsx" }, { id: "salta-palabra", file: "SaltaPalabra.tsx" }] },
   { worldId: "world_3", phase: 3, games: [{ id: "leo-runner", file: "LeoRunner.tsx" }, { id: "salta-palabra", file: "SaltaPalabra.tsx" }] },
   { worldId: "world_4", phase: 4, games: [{ id: "leo-runner", file: "LeoRunner.tsx" }, { id: "salta-palabra", file: "SaltaPalabra.tsx" }] },

@@ -84,6 +84,14 @@ export const GAME_REGISTRY: GameMeta[] = [
     color: "#38b2ac",
   },
   {
+    id: "leo-vuela",
+    name: "Leo Vuela",
+    description: "Toca para que Leo vuele hasta la nube con la palabra correcta",
+    icon: "🪁",
+    minPhase: 1,
+    color: "#9f7aea",
+  },
+  {
     id: "daily-bits",
     name: "Burbujas Magicas",
     description: "Revienta la burbuja con la palabra correcta",

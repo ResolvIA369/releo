@@ -11,7 +11,8 @@ export type GameId =
   | "word-fishing"
   | "daily-bits"
   | "leo-runner"
-  | "salta-palabra";
+  | "salta-palabra"
+  | "leo-vuela";
 
 export interface GameMeta {
   id: GameId;

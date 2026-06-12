@@ -24,6 +24,7 @@ import { WordFishing } from "@/features/games/components/WordFishing";
 import { BitsReading } from "@/features/games/components/BitsReading";
 import { LeoRunner } from "@/features/games/components/LeoRunner";
 import { SaltaPalabra } from "@/features/games/components/SaltaPalabra";
+import { LeoVuela } from "@/features/games/components/LeoVuela";
 import type { GameId } from "@/features/games/types";
 import type { FC } from "react";
 import type { GameProps } from "@/features/games/types";
@@ -42,6 +43,7 @@ const GAME_COMPONENTS: Partial<Record<GameId, FC<GameProps>>> = {
   "daily-bits": BitsReading,
   "leo-runner": LeoRunner,
   "salta-palabra": SaltaPalabra,
+  "leo-vuela": LeoVuela,
 };
 const PHASE_WORDS = [PHASE1_WORDS, PHASE2_WORDS, PHASE3_WORDS, PHASE4_WORDS, PHASE5_WORDS];
 
