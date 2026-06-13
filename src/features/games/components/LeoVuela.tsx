@@ -16,7 +16,8 @@ import { GameCompleteScreen } from "@/shared/components/GameCompleteScreen";
 import { colors, spacing, radii, fontSizes, fonts } from "@/shared/styles/design-tokens";
 import { sofiaNameWord, sofiaPlayAudio, stopVoice } from "@/shared/services/sofiaVoice";
 import { domanCanvasText } from "../config/doman-canvas";
-import { physicsForPhase, stepFlight, buildCloudRound, tuningForPhase, rewardForLevel, pickNextTarget } from "../config/leo-vuela";
+import { physicsForPhase, stepFlight, buildCloudRound, tuningForPhase, rewardForLevel } from "../config/leo-vuela";
+import { createWordBag } from "../config/arcade-tuning";
 import { LeoVuelaObstacles } from "./leo-vuela-obstacles";
 import { ArcadeHud, MoveButtons } from "./ArcadeHud";
 import { LeoVuelaMusic } from "./leo-vuela-music";
@@ -116,7 +117,8 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
 
   const wordsRef = useRef(words);
   wordsRef.current = words;
-  const lastTargetIdRef = useRef<string | null>(null);
+  const bagRef = useRef<ReturnType<typeof createWordBag> | null>(null);
+  if (!bagRef.current) bagRef.current = createWordBag(words);
 
   const tuning = useMemo(() => tuningForPhase(phase), [phase]);
   const tuningRef = useRef(tuning);
@@ -449,8 +451,7 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
 
     // Las palabras pueden repetirse durante la partida — solo se evita
     // la misma dos veces seguidas
-    const target = pickNextTarget(wordsRef.current, lastTargetIdRef.current);
-    lastTargetIdRef.current = target.id;
+    const target = bagRef.current!.next();
     const specs = buildCloudRound(target, wordsRef.current, CLOUD_BANDS, shuffle);
 
     const flying: FlyingCloud[] = specs.map(({ word, band }, i) => {
@@ -641,7 +642,7 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
     level.reset();
     birdInvulnUntilRef.current = 0;
     obstaclesRef.current?.reset();
-    lastTargetIdRef.current = null;
+    bagRef.current = createWordBag(words);
     setRoundIdx(0);
     setGamePhase("running");
     musicRef.current?.setLevel(0);

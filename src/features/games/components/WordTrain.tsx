@@ -19,7 +19,7 @@ import { GameCompleteScreen } from "@/shared/components/GameCompleteScreen";
 import { colors, spacing, radii, shadows, fontSizes, fonts } from "@/shared/styles/design-tokens";
 import { sofiaNameWord, sofiaPlayAudio, stopVoice } from "@/shared/services/sofiaVoice";
 import { wordTrainTuningForPhase } from "../config/word-train";
-import { rewardForLevel, pickNextTarget } from "../config/arcade-tuning";
+import { rewardForLevel, createWordBag } from "../config/arcade-tuning";
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -59,7 +59,8 @@ export const WordTrain: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
   gamePhaseRef.current = gamePhase;
   const wordsRef = useRef(words);
   wordsRef.current = words;
-  const lastTargetIdRef = useRef<string | null>(null);
+  const bagRef = useRef<ReturnType<typeof createWordBag> | null>(null);
+  if (!bagRef.current) bagRef.current = createWordBag(words);
   const targetRef = useRef<DomanWord | null>(null);
   const trainXRef = useRef(-110);
   const resolvedRef = useRef(false);
@@ -106,8 +107,7 @@ export const WordTrain: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
   const spawnWave = useCallback(() => {
     if (cancelledRef.current) return;
     const lvl = tuning.levels[levelRef.current] ?? tuning.levels[0];
-    const target = pickNextTarget(wordsRef.current, lastTargetIdRef.current);
-    lastTargetIdRef.current = target.id;
+    const target = bagRef.current!.next();
     targetRef.current = target;
     const distractors = shuffle(wordsRef.current.filter((w) => w.id !== target.id)).slice(0, lvl.wagons - 1);
     setWagons(shuffle([target, ...distractors]));
@@ -222,7 +222,7 @@ export const WordTrain: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
     reset();
     energy.reset();
     level.reset();
-    lastTargetIdRef.current = null;
+    bagRef.current = createWordBag(words);
     targetRef.current = null;
     setGamePhase("running");
     musicRef.current?.setLevel(0);

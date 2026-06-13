@@ -19,7 +19,7 @@ import { VictoryBurst } from "@/shared/components/VictoryBurst";
 import { colors, spacing, radii, fontSizes, fonts } from "@/shared/styles/design-tokens";
 import { sofiaNameWord, sofiaPlayAudio, stopVoice } from "@/shared/services/sofiaVoice";
 import { wordFishingTuningForPhase } from "../config/word-fishing";
-import { rewardForLevel, pickNextTarget } from "../config/arcade-tuning";
+import { rewardForLevel, createWordBag } from "../config/arcade-tuning";
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -66,7 +66,8 @@ export const WordFishing: React.FC<GameProps> = ({ words, phase = 1, onComplete,
   gamePhaseRef.current = gamePhase;
   const wordsRef = useRef(words);
   wordsRef.current = words;
-  const lastTargetIdRef = useRef<string | null>(null);
+  const bagRef = useRef<ReturnType<typeof createWordBag> | null>(null);
+  if (!bagRef.current) bagRef.current = createWordBag(words);
   const targetRef = useRef<DomanWord | null>(null);
   const resolvedRef = useRef(false);
   const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -109,8 +110,7 @@ export const WordFishing: React.FC<GameProps> = ({ words, phase = 1, onComplete,
   // ─── Wave: nuevos peces ─────────────────────────────────────────
   const spawnWave = useCallback(() => {
     if (cancelledRef.current) return;
-    const t = pickNextTarget(wordsRef.current, lastTargetIdRef.current);
-    lastTargetIdRef.current = t.id;
+    const t = bagRef.current!.next();
     targetRef.current = t;
     const others = shuffle(wordsRef.current.filter((w) => w.id !== t.id)).slice(0, 3);
     const all = shuffle([t, ...others]);
@@ -200,7 +200,7 @@ export const WordFishing: React.FC<GameProps> = ({ words, phase = 1, onComplete,
     reset();
     energy.reset();
     level.reset();
-    lastTargetIdRef.current = null;
+    bagRef.current = createWordBag(words);
     targetRef.current = null;
     setGamePhase("running");
     musicRef.current?.setLevel(0);

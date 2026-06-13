@@ -20,7 +20,7 @@ import { colors, spacing, radii, fontSizes, fonts } from "@/shared/styles/design
 import { sofiaNameWord, sofiaPlayAudio, stopVoice } from "@/shared/services/sofiaVoice";
 import { domanCanvasText } from "../config/doman-canvas";
 import { saltaTuningForPhase } from "../config/salta-palabra";
-import { rewardForLevel, pickNextTarget } from "../config/arcade-tuning";
+import { rewardForLevel, createWordBag } from "../config/arcade-tuning";
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -113,7 +113,8 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
 
   const wordsRef = useRef(words);
   wordsRef.current = words;
-  const lastTargetIdRef = useRef<string | null>(null);
+  const bagRef = useRef<ReturnType<typeof createWordBag> | null>(null);
+  if (!bagRef.current) bagRef.current = createWordBag(words);
 
   const tuning = useMemo(() => saltaTuningForPhase(phase), [phase]);
   const tuningRef = useRef(tuning);
@@ -423,8 +424,7 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
     }
 
     // Palabras repetibles: objetivo al azar, sin repetir la ultima
-    const target = pickNextTarget(wordsRef.current, lastTargetIdRef.current);
-    lastTargetIdRef.current = target.id;
+    const target = bagRef.current!.next();
     const distractors = shuffle(wordsRef.current.filter((w) => w.id !== target.id)).slice(0, 2);
     const roundWords = shuffle([target, ...distractors]);
 
@@ -574,7 +574,7 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
     reset();
     energy.reset();
     level.reset();
-    lastTargetIdRef.current = null;
+    bagRef.current = createWordBag(words);
     invulnUntilRef.current = 0;
     obstaclesRef.current?.reset();
     setGamePhase("running");

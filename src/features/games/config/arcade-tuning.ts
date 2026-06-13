@@ -70,3 +70,34 @@ export function pickNextTarget(
   const candidates = pool.length > 1 && lastId ? pool.filter((w) => w.id !== lastId) : pool;
   return candidates[Math.min(candidates.length - 1, Math.floor(rng() * candidates.length))];
 }
+
+export interface WordBag {
+  next: () => DomanWord;
+}
+
+// Bolsa barajada: reparte distribucion pareja — recorre TODAS las
+// palabras del bloque una vez antes de repetir ninguna, y recien ahi
+// rebaraja. Evita repetir la ultima al cruzar el limite de barajadas.
+export function createWordBag(words: DomanWord[], rng: () => number = Math.random): WordBag {
+  let bag: DomanWord[] = [];
+  let lastId: string | null = null;
+  const refill = () => {
+    const a = [...words];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(rng() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    if (a.length > 1 && a[0].id === lastId) {
+      [a[0], a[1]] = [a[1], a[0]];
+    }
+    bag = a;
+  };
+  return {
+    next(): DomanWord {
+      if (bag.length === 0) refill();
+      const w = bag.shift()!;
+      lastId = w.id;
+      return w;
+    },
+  };
+}

@@ -21,7 +21,7 @@ import { colors, spacing, radii, fontSizes, fonts } from "@/shared/styles/design
 import { sofiaNameWord, sofiaPlayAudio, stopVoice } from "@/shared/services/sofiaVoice";
 import { domanCanvasText } from "../config/doman-canvas";
 import { buildLanes, rocksForPhase, runnerTuningForPhase } from "../config/leo-runner";
-import { rewardForLevel, pickNextTarget } from "../config/arcade-tuning";
+import { rewardForLevel, createWordBag } from "../config/arcade-tuning";
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -105,7 +105,8 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
 
   const wordsRef = useRef(words);
   wordsRef.current = words;
-  const lastTargetIdRef = useRef<string | null>(null);
+  const bagRef = useRef<ReturnType<typeof createWordBag> | null>(null);
+  if (!bagRef.current) bagRef.current = createWordBag(words);
 
   const tuning = useMemo(() => runnerTuningForPhase(phase), [phase]);
   const tuningRef = useRef(tuning);
@@ -389,8 +390,7 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
     }
 
     // Palabras repetibles: objetivo al azar, sin repetir la ultima
-    const target = pickNextTarget(wordsRef.current, lastTargetIdRef.current);
-    lastTargetIdRef.current = target.id;
+    const target = bagRef.current!.next();
     // Piedras por mundo: Mundo 1 deja 1 piedra (2 carteles), 2+ sin piedras
     const lanes = buildLanes(target, wordsRef.current, rocksForPhase(phase), shuffle);
     const targetLane = lanes.findIndex((l) => l.word?.id === target.id);
@@ -552,7 +552,7 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
     energy.reset();
     level.reset();
     leoLaneRef.current = 1;
-    lastTargetIdRef.current = null;
+    bagRef.current = createWordBag(words);
     invulnUntilRef.current = 0;
     obstaclesRef.current?.reset();
     setGamePhase("running");

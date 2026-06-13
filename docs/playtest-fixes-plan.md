@@ -10,7 +10,7 @@ cada uno. Todo lo nuevo configurable en los TUNING. Push al final.
       juego sigue terminando por energía. `tick(dt)` queda solo como reloj de
       juego (invulnerabilidad de obstáculos); el nivel sube en `registerCorrect()`
       al acertar. Toca los 7 juegos + tests.
-- [ ] **2** Distribución pareja: selector de objetivo = "bolsa barajada"
+- [x] **2** Distribución pareja: selector de objetivo = "bolsa barajada"
       (`createWordBag`) que recorre todas las palabras del bloque una vez antes
       de rebarajar; sin repetir la última al cruzar barajadas. Reemplaza
       `pickNextTarget` en los 7 juegos.
