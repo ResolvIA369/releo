@@ -54,6 +54,16 @@ describe("tuning de energia", () => {
     }
   });
 
+  it("los pajaros restan energia y hay ventana de invulnerabilidad", () => {
+    for (const phase of [1, 2, 3, 4, 5] as PhaseNumber[]) {
+      const t = LEO_VUELA_TUNING[phase];
+      expect(t.energyLossPerBird).toBeGreaterThan(0);
+      expect(t.birdHitInvulnSec).toBeGreaterThan(0);
+      // Mas suave que un error de lectura: el castigo fuerte es leer mal
+      expect(t.energyLossPerBird).toBeLessThanOrEqual(t.energyLossWrong);
+    }
+  });
+
   it("tuningForPhase cae a fase 1 ante un valor invalido", () => {
     expect(tuningForPhase(99 as PhaseNumber)).toBe(LEO_VUELA_TUNING[1]);
   });

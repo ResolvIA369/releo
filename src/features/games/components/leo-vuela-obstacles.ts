@@ -38,6 +38,9 @@ export interface ObstacleFrame {
   // (pajaros, rayos), negativo = hacia arriba (nubes rasantes)
   knock: number;
   gravityMul: number; // 1 normal; >1 mientras llueve
+  // true en el frame en que un pajaro golpea: el unico obstaculo que
+  // ademas resta energia (el componente aplica la invulnerabilidad)
+  birdHit: boolean;
 }
 
 // Tirada de spawn por frame (60fps): ratePerMin eventos por minuto.
@@ -95,6 +98,7 @@ export class LeoVuelaObstacles {
   update(dt: number, level: LeoVuelaLevel, leo: { x: number; y: number }): ObstacleFrame {
     const { W, groundY } = this.bounds;
     let knock = 0;
+    let birdHit = false;
 
     // ── Pajaros: cruzan de derecha a izquierda, mas rapidos que las nubes ──
     if (spawnRoll(level.birdsPerMin, dt)) {
@@ -112,6 +116,7 @@ export class LeoVuelaObstacles {
         b.hit = true;
         b.node.alpha = 0.5;
         knock = Math.max(knock, BIRD_KNOCK);
+        birdHit = true;
       }
       if (b.node.x < -40) {
         b.node.destroy({ children: true });
@@ -195,7 +200,7 @@ export class LeoVuelaObstacles {
       return true;
     });
 
-    return { knock, gravityMul: this.rainFrames > 0 ? RAIN_GRAVITY_MUL : 1 };
+    return { knock, gravityMul: this.rainFrames > 0 ? RAIN_GRAVITY_MUL : 1, birdHit };
   }
 
   reset(): void {

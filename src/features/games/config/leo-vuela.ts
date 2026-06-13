@@ -47,6 +47,11 @@ export interface LeoVuelaTuning {
   energyLossWrong: number;
   energyLossEscape: number;
   energyDrainPerSec: number; // drenaje pasivo
+  // Los pajaros, ademas de empujar, restan energia; tras un golpe hay
+  // una ventana de invulnerabilidad para que una rafaga no drene todo.
+  // Rayos, lluvia y nubes rasantes siguen solo empujando.
+  energyLossPerBird: number;
+  birdHitInvulnSec: number;
   levelDurationSec: number; // duracion de cada nivel (126s: ~2min por nivel)
   levels: LeoVuelaLevel[];
   levelCoinBonus: number[]; // monedas extra por nivel alcanzado al terminar
@@ -79,11 +84,11 @@ const DEFAULT_MUSIC_TRACKS = [
 const DEFAULT_COIN_BONUS = [0, 10, 25];
 
 export const LEO_VUELA_TUNING: Record<PhaseNumber, LeoVuelaTuning> = {
-  1: { energyStart: 60, energyMax: 100, energyGainCorrect: 14, energyLossWrong: 10, energyLossEscape: 8, energyDrainPerSec: 1.0, levelDurationSec: 126, levels: DEFAULT_LEVELS, levelCoinBonus: DEFAULT_COIN_BONUS, horizontalSpeed: 3, musicTracks: DEFAULT_MUSIC_TRACKS, musicVolumeDb: -22, musicDuckDb: -34 },
-  2: { energyStart: 60, energyMax: 100, energyGainCorrect: 13, energyLossWrong: 10, energyLossEscape: 8, energyDrainPerSec: 1.2, levelDurationSec: 126, levels: DEFAULT_LEVELS, levelCoinBonus: DEFAULT_COIN_BONUS, horizontalSpeed: 3, musicTracks: DEFAULT_MUSIC_TRACKS, musicVolumeDb: -22, musicDuckDb: -34 },
-  3: { energyStart: 60, energyMax: 100, energyGainCorrect: 12, energyLossWrong: 11, energyLossEscape: 9, energyDrainPerSec: 1.4, levelDurationSec: 126, levels: DEFAULT_LEVELS, levelCoinBonus: DEFAULT_COIN_BONUS, horizontalSpeed: 3, musicTracks: DEFAULT_MUSIC_TRACKS, musicVolumeDb: -22, musicDuckDb: -34 },
-  4: { energyStart: 60, energyMax: 100, energyGainCorrect: 12, energyLossWrong: 11, energyLossEscape: 9, energyDrainPerSec: 1.6, levelDurationSec: 126, levels: DEFAULT_LEVELS, levelCoinBonus: DEFAULT_COIN_BONUS, horizontalSpeed: 3, musicTracks: DEFAULT_MUSIC_TRACKS, musicVolumeDb: -22, musicDuckDb: -34 },
-  5: { energyStart: 60, energyMax: 100, energyGainCorrect: 11, energyLossWrong: 12, energyLossEscape: 10, energyDrainPerSec: 1.8, levelDurationSec: 126, levels: DEFAULT_LEVELS, levelCoinBonus: DEFAULT_COIN_BONUS, horizontalSpeed: 3, musicTracks: DEFAULT_MUSIC_TRACKS, musicVolumeDb: -22, musicDuckDb: -34 },
+  1: { energyStart: 60, energyMax: 100, energyGainCorrect: 14, energyLossWrong: 10, energyLossEscape: 8, energyDrainPerSec: 1.0, energyLossPerBird: 6, birdHitInvulnSec: 1.5, levelDurationSec: 126, levels: DEFAULT_LEVELS, levelCoinBonus: DEFAULT_COIN_BONUS, horizontalSpeed: 3, musicTracks: DEFAULT_MUSIC_TRACKS, musicVolumeDb: -22, musicDuckDb: -34 },
+  2: { energyStart: 60, energyMax: 100, energyGainCorrect: 13, energyLossWrong: 10, energyLossEscape: 8, energyDrainPerSec: 1.2, energyLossPerBird: 6, birdHitInvulnSec: 1.5, levelDurationSec: 126, levels: DEFAULT_LEVELS, levelCoinBonus: DEFAULT_COIN_BONUS, horizontalSpeed: 3, musicTracks: DEFAULT_MUSIC_TRACKS, musicVolumeDb: -22, musicDuckDb: -34 },
+  3: { energyStart: 60, energyMax: 100, energyGainCorrect: 12, energyLossWrong: 11, energyLossEscape: 9, energyDrainPerSec: 1.4, energyLossPerBird: 6, birdHitInvulnSec: 1.5, levelDurationSec: 126, levels: DEFAULT_LEVELS, levelCoinBonus: DEFAULT_COIN_BONUS, horizontalSpeed: 3, musicTracks: DEFAULT_MUSIC_TRACKS, musicVolumeDb: -22, musicDuckDb: -34 },
+  4: { energyStart: 60, energyMax: 100, energyGainCorrect: 12, energyLossWrong: 11, energyLossEscape: 9, energyDrainPerSec: 1.6, energyLossPerBird: 6, birdHitInvulnSec: 1.5, levelDurationSec: 126, levels: DEFAULT_LEVELS, levelCoinBonus: DEFAULT_COIN_BONUS, horizontalSpeed: 3, musicTracks: DEFAULT_MUSIC_TRACKS, musicVolumeDb: -22, musicDuckDb: -34 },
+  5: { energyStart: 60, energyMax: 100, energyGainCorrect: 11, energyLossWrong: 12, energyLossEscape: 10, energyDrainPerSec: 1.8, energyLossPerBird: 6, birdHitInvulnSec: 1.5, levelDurationSec: 126, levels: DEFAULT_LEVELS, levelCoinBonus: DEFAULT_COIN_BONUS, horizontalSpeed: 3, musicTracks: DEFAULT_MUSIC_TRACKS, musicVolumeDb: -22, musicDuckDb: -34 },
 };
 
 // Indice de nivel (0-based) segun tiempo jugado; clampea al ultimo

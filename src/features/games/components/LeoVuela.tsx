@@ -117,6 +117,7 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
   const energySyncRef = useRef(0);
   const onEnergyOutRef = useRef<() => void>(() => {});
 
+  const birdInvulnUntilRef = useRef(0); // fin de la invulnerabilidad (en seg de juego)
   const playSecRef = useRef(0); // tiempo jugado, para el nivel
   const levelRef = useRef(0);
   const [levelUi, setLevelUi] = useState(0);
@@ -287,7 +288,17 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
             vyRef.current = frame.knock > 0
               ? Math.max(vyRef.current, frame.knock)
               : Math.min(vyRef.current, frame.knock);
-            crashTRef.current = 0; // sacudida visual, sin costo de energia
+            crashTRef.current = 0; // sacudida visual
+          }
+          // Solo los pajaros restan energia, con ventana de
+          // invulnerabilidad para que una rafaga no drene de golpe
+          if (frame.birdHit && playSecRef.current >= birdInvulnUntilRef.current) {
+            birdInvulnUntilRef.current = playSecRef.current + tun.birdHitInvulnSec;
+            energyRef.current = clampEnergy(
+              energyRef.current - tun.energyLossPerBird,
+              tun.energyMax,
+            );
+            setEnergyUi(Math.round(energyRef.current));
           }
           gravityMul = frame.gravityMul;
         }
@@ -640,6 +651,7 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
     energyRef.current = tuningRef.current.energyStart;
     setEnergyUi(tuningRef.current.energyStart);
     playSecRef.current = 0;
+    birdInvulnUntilRef.current = 0;
     levelRef.current = 0;
     setLevelUi(0);
     obstaclesRef.current?.reset();
