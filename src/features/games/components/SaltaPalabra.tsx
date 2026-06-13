@@ -8,8 +8,10 @@ import { useGameState } from "../hooks/useGameState";
 import { useGameKeys } from "../hooks/useGameKeys";
 import { useArcadeEnergy } from "../hooks/useArcadeEnergy";
 import { useArcadeLevel } from "../hooks/useArcadeLevel";
+import { useSofiaIntro } from "../hooks/useSofiaIntro";
 import { GameShell, usePause } from "./GameShell";
 import { ArcadeHud } from "./ArcadeHud";
+import { ArcadeMusic } from "./arcade-music";
 import { useRewards } from "@/shared/components/RewardsLayer";
 import { FeedbackFlash } from "@/shared/components/FeedbackFlash";
 import { GameCompleteScreen } from "@/shared/components/GameCompleteScreen";
@@ -50,7 +52,14 @@ const WORD_GAP = 270; // spacing between floating words (los niveles lo achican)
 const BASE_SPEED = 2.1; // px per frame at 60fps (los niveles la multiplican)
 const FADE_RATE = 0.04; // alpha/frame de la tanda anterior al irse
 
-type Phase = "loading" | "running" | "finished";
+// Intro de Sofia al arrancar (mp3 edge-tts es-AR-ElenaNeural; este
+// texto es el fallback hablado si el audio no carga)
+const INTRO_TEXT =
+  "¡Hola! Soy la Seño Sofía. Leo va a saltar bien alto. " +
+  "Escuchá la palabra, y tocá la pantalla para que Leo salte y la atrape. " +
+  "¡Y ojo con los bichitos del camino! ¡Vos podés! ¡A saltar!";
+
+type Phase = "loading" | "intro" | "running" | "finished";
 
 interface FloatingWord {
   box: Container;
@@ -111,6 +120,24 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
   const energy = useArcadeEnergy(tuning);
   const level = useArcadeLevel(tuning.levelDurationSec, tuning.levels.length);
   const { levelRef } = level;
+
+  // Musica de selva: los 3 loops compartidos; el audio recien se crea
+  // tras el primer gesto (ensureStarted)
+  const musicRef = useRef<ArcadeMusic | null>(null);
+  if (!musicRef.current) {
+    musicRef.current = new ArcadeMusic(tuning.musicVolumeDb, tuning.musicDuckDb, tuning.musicTracks);
+  }
+  useEffect(() => () => {
+    musicRef.current?.dispose();
+    musicRef.current = null;
+  }, []);
+
+  // Sofia habla → la musica se agacha hasta que termina
+  const speakDucked = useCallback((speak: () => Promise<unknown>) => {
+    stopVoice();
+    musicRef.current?.duck(true);
+    void speak().finally(() => musicRef.current?.duck(false));
+  }, []);
 
   // ─── Pixi init (same lifecycle pattern as the other arcade games) ──
 
@@ -189,7 +216,7 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
 
         // Nivel por tiempo + drenaje de energia (el flujo nunca para)
         if (round.active && gamePhaseRef.current === "running") {
-          level.tick(dt);
+          if (level.tick(dt)) musicRef.current?.setLevel(levelRef.current);
           if (energy.drainTick(dt)) {
             round.active = false;
             round.resolved = true;
@@ -311,7 +338,7 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
         }
       });
 
-      setGamePhase("running");
+      setGamePhase("intro");
     })();
 
     return () => {
@@ -340,8 +367,10 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
     if (paused) {
       app.ticker.stop();
       stopVoice();
+      musicRef.current?.pause();
     } else {
       app.ticker.start();
+      if (gamePhaseRef.current === "running") musicRef.current?.resume();
     }
   }, [paused]);
 
@@ -421,10 +450,16 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
     setTargetWord(target);
     setWaveIdx((w) => w + 1);
 
-    // Sofia anuncia en paralelo — el juego no se frena
-    stopVoice();
-    void sofiaNameWord(target.text);
+    // Sofia anuncia en paralelo — el juego no se frena; la musica
+    // se agacha mientras habla
+    speakDucked(() => sofiaNameWord(target.text));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Intro de Sofia — SOLO al arrancar; la primera tanda recien sale
+  // cuando termina. Cero pausas nuevas durante el juego.
+  useSofiaIntro(gamePhase === "intro", "reglas-salta-palabra", INTRO_TEXT, () => {
+    if (!cancelledRef.current) setGamePhase("running");
+  });
 
   // First wave once Pixi is up
   useEffect(() => {
@@ -437,6 +472,7 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
   const finishGame = useCallback(() => {
     if (cancelledRef.current) return;
     stopVoice();
+    musicRef.current?.pause();
     setGamePhase("finished");
     finish().then(() => onComplete?.(state));
   }, [finish, onComplete, state]);
@@ -462,8 +498,7 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
         rewardCorrect(rect.left + LEO_X * scale, rect.top + FLY_Y * scale);
       }
       squashTRef.current = 0; // celebration squash-and-stretch
-      stopVoice();
-      void sofiaPlayAudio("reaccion-muy-bien", "¡Muy bien!", "excited");
+      speakDucked(() => sofiaPlayAudio("reaccion-muy-bien", "¡Muy bien!", "excited"));
       spawnWave();
     } else {
       // Error mudo: solo tint + energia abajo; la ronda sigue si el
@@ -486,8 +521,7 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
     recordAttempt(false);
     energy.adjust(-tuningRef.current.energyLossEscape);
     flashFeedback("wrong");
-    stopVoice();
-    void sofiaPlayAudio("reaccion-se-escapo", "¡Se escapó!", "gentle");
+    speakDucked(() => sofiaPlayAudio("reaccion-se-escapo", "¡Se escapó!", "gentle"));
     spawnWave();
   }, [recordAttempt, energy, flashFeedback, spawnWave]);
 
@@ -498,6 +532,8 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
 
   const handleJump = useCallback(() => {
     if (gamePhaseRef.current !== "running" || paused) return;
+    // Primer gesto del usuario: momento valido para destrabar el audio
+    void musicRef.current?.ensureStarted(levelRef.current);
     if (jumpTRef.current >= 1) {
       jumpTRef.current = 0;
       if (typeof navigator !== "undefined" && "vibrate" in navigator) navigator.vibrate(15);
@@ -516,6 +552,8 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
     level.reset();
     lastTargetIdRef.current = null;
     setGamePhase("running");
+    musicRef.current?.setLevel(0);
+    musicRef.current?.resume();
     spawnWave();
   }, [reset, energy, level, spawnWave]);
 
@@ -578,7 +616,7 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
         </div>
 
         <p style={{ fontSize: fontSizes.sm, color: colors.text.muted, margin: 0, textAlign: "center" }}>
-          Toca para que Leo salte y atrape la palabra
+          {gamePhase === "intro" ? "Escucha a Sofía..." : "Toca para que Leo salte y atrape la palabra"}
         </p>
 
         <FeedbackFlash type={feedbackType} />

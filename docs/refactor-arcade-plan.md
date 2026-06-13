@@ -46,7 +46,7 @@ Todo ajustable en un tuning por juego.
       con invulnerabilidad breve).
 - [x] **B4** Salta la Palabra — `SALTA_TUNING` + flujo continuo, energía,
       niveles, premios, error mudo.
-- [ ] **B5** Salta la Palabra — música de selva + intro de Sofía (edge-tts
+- [x] **B5** Salta la Palabra — música de selva + intro de Sofía (edge-tts
       es-AR-ElenaNeural). Texto: «¡Hola! Soy la Seño Sofía. Leo va a saltar
       bien alto. Escuchá la palabra, y tocá la pantalla para que Leo salte y
       la atrape. ¡Y ojo con los bichitos del camino! ¡Vos podés! ¡A saltar!»
