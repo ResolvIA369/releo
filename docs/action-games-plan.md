@@ -29,7 +29,7 @@ tiempo, premios, música de selva + ducking, intro de Sofía, error mudo.
 
 ## Ítems
 
-- [ ] **0** `useArcadeClock`: hook rAF compartido que emite `dt` (frames) cada
+- [x] **0** `useArcadeClock`: hook rAF compartido que emite `dt` (frames) cada
       frame respetando un flag `active` (pausa/fase). Driver de energía/nivel
       para los juegos DOM.
 
