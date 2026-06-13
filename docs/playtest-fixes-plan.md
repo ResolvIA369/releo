@@ -32,7 +32,7 @@ cada uno. Todo lo nuevo configurable en los TUNING. Push al final.
 - [x] **8** Tren: que el "¡Muy bien!" suene completo — la tanda siguiente espera
       a que termine la felicitación en vez de cortarla.
 
-- [ ] **Final** Playwright + verificación en navegador de los juegos tocados + push.
+- [x] **Final** Playwright + verificación en navegador de los juegos tocados + push.
 
 ## Textos de intro (sin "Hola")
 
@@ -56,4 +56,17 @@ cada uno. Todo lo nuevo configurable en los TUNING. Push al final.
 
 ## Estado / pendientes
 
-(se completa al cerrar)
+**COMPLETADO** (2026-06-13). 8 ítems + plan + cierre, un commit cada uno.
+Verificación: tsc + 187 unit tests + Playwright 53/53 en verde; smoke en Chromium
+real de Tren, Salta, Leo Corre y los juegos tocados (intro con avatar de Sofía
+que se va al arrancar, HUD con energía/nivel, demo resolviendo correctas, botones
+de mover en Salta, sin errores de página).
+
+Notas:
+- Niveles ahora por aciertos (wordsPerLevel: 10) en los 7 juegos; el reloj de
+  juego (playSecRef) se mantiene para la invulnerabilidad de obstáculos.
+- El 4º carril de Leo Corre entra en Nivel 3 (tras 20 aciertos); cubierto por
+  tests de config/buildLanes (no alcanzable en un smoke corto).
+- El arreglo de audio se aplicó solo a Tren (el reportado). El mismo patrón de
+  delay fijo existe en los otros juegos pero sus felicitaciones no se reportaron
+  cortadas; si aparece, se replica el encadenado al .finally.
