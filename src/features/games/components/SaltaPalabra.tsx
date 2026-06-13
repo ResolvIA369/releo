@@ -10,7 +10,7 @@ import { useArcadeEnergy } from "../hooks/useArcadeEnergy";
 import { useArcadeLevel } from "../hooks/useArcadeLevel";
 import { useSofiaIntro } from "../hooks/useSofiaIntro";
 import { GameShell, usePause } from "./GameShell";
-import { ArcadeHud } from "./ArcadeHud";
+import { ArcadeHud, MoveButtons } from "./ArcadeHud";
 import { ArcadeIntro } from "./ArcadeIntro";
 import { ArcadeMusic } from "./arcade-music";
 import { GroundObstacles } from "./arcade-obstacles";
@@ -42,7 +42,9 @@ const LEO_SPRITE_URL = "/images/games/leo-salta-sprite.png";
 const W = 640;
 const H = 420;
 const GROUND_Y = H - 58;
-const LEO_X = W * 0.5;
+const LEO_X = W * 0.5; // posicion base
+const LEO_MIN_X = 70; // limites del movimiento adelante/atras
+const LEO_MAX_X = W - 70;
 const FLY_Y = 150; // words float at jump height
 const JUMP_H = 175; // jump apex offset
 const JUMP_FRAMES = 40; // ~650ms at 60fps
@@ -90,6 +92,8 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
   const hostRef = useRef<HTMLDivElement>(null);
   const appRef = useRef<Application | null>(null);
   const leoRef = useRef<Container | null>(null);
+  const leoXRef = useRef(LEO_X);
+  const moveDirRef = useRef<-1 | 0 | 1>(0);
   const leoSpriteRef = useRef<Sprite | null>(null);
   const wordsLayerRef = useRef<Container | null>(null);
   const obstaclesRef = useRef<GroundObstacles | null>(null);
@@ -240,7 +244,7 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
         // energia con ventana de invulnerabilidad
         if (round.active && gamePhaseRef.current === "running" && obstaclesRef.current && leoRef.current) {
           const frame = obstaclesRef.current.update(dt, levelCfg, {
-            x: LEO_X,
+            x: leoXRef.current,
             y: leoRef.current.y,
           });
           if (frame.hit && level.playSecRef.current >= invulnUntilRef.current) {
@@ -270,6 +274,11 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
           });
         }
 
+        // Movimiento horizontal (esquive): teclas o botones ◀ ▶
+        if (round.active && gamePhaseRef.current === "running" && moveDirRef.current !== 0) {
+          leoXRef.current = Math.min(LEO_MAX_X, Math.max(LEO_MIN_X, leoXRef.current + moveDirRef.current * tuningRef.current.horizontalSpeed * dt));
+        }
+
         // Leo: idle bob on the ground, parabola while jumping
         const leoC = leoRef.current;
         if (leoC) {
@@ -287,12 +296,12 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
           }
           if (crashTRef.current < 1) {
             crashTRef.current = Math.min(1, crashTRef.current + dt / 30);
-            leoC.x = LEO_X + Math.sin(crashTRef.current * Math.PI * 6) * 5;
+            leoC.x = leoXRef.current + Math.sin(crashTRef.current * Math.PI * 6) * 5;
             if (leoSpriteRef.current) {
               leoSpriteRef.current.tint = crashTRef.current < 1 ? 0xffb0b0 : 0xffffff;
             }
           } else {
-            leoC.x = LEO_X;
+            leoC.x = leoXRef.current;
             if (leoSpriteRef.current && leoSpriteRef.current.tint !== 0xffffff) {
               leoSpriteRef.current.tint = 0xffffff;
             }
@@ -331,7 +340,7 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
           const nearApex = jt < 1 && Math.sin(p * Math.PI) > 0.6;
           if (nearApex && round.active && !round.resolved) {
             for (const fw of round.words) {
-              if (!fw.caught && Math.abs(fw.box.x - LEO_X) < CATCH_X) {
+              if (!fw.caught && Math.abs(fw.box.x - leoXRef.current) < CATCH_X) {
                 fw.caught = true;
                 fw.box.visible = false;
                 onCatchRef.current(fw);
@@ -356,7 +365,7 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
           const targetFw = round.words.find((fw) => fw.word.id === round.target?.id && !fw.caught);
           if (targetFw) {
             const lead = effSpeed * APEX_FRAMES; // px traveled until apex
-            const dist = targetFw.box.x - LEO_X;
+            const dist = targetFw.box.x - leoXRef.current;
             if (dist > 0 && dist <= lead + 10) jumpTRef.current = 0;
           }
         }
@@ -520,7 +529,7 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
       if (canvas) {
         const rect = canvas.getBoundingClientRect();
         const scale = rect.width / W;
-        rewardCorrect(rect.left + LEO_X * scale, rect.top + FLY_Y * scale);
+        rewardCorrect(rect.left + leoXRef.current * scale, rect.top + FLY_Y * scale);
       }
       squashTRef.current = 0; // celebration squash-and-stretch
       speakDucked(() => sofiaPlayAudio("reaccion-muy-bien", "¡Muy bien!", "excited"));
@@ -570,6 +579,30 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
     " ": handleJump,
     ArrowUp: handleJump,
   });
+
+  // ←/→ esquivan: keydown/keyup propios para soportar mantener la tecla
+  useEffect(() => {
+    if (!(gamePhase === "running" && !paused)) { moveDirRef.current = 0; return; }
+    const onDown = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft") { e.preventDefault(); moveDirRef.current = -1; }
+      else if (e.key === "ArrowRight") { e.preventDefault(); moveDirRef.current = 1; }
+    };
+    const onUp = (e: KeyboardEvent) => {
+      if ((e.key === "ArrowLeft" && moveDirRef.current === -1) ||
+          (e.key === "ArrowRight" && moveDirRef.current === 1)) moveDirRef.current = 0;
+    };
+    window.addEventListener("keydown", onDown);
+    window.addEventListener("keyup", onUp);
+    return () => {
+      window.removeEventListener("keydown", onDown);
+      window.removeEventListener("keyup", onUp);
+      moveDirRef.current = 0;
+    };
+  }, [gamePhase, paused]);
+
+  const handleMoveDir = useCallback((dir: -1 | 0 | 1) => {
+    moveDirRef.current = gamePhaseRef.current === "running" ? dir : 0;
+  }, []);
 
   const handleReplay = useCallback(() => {
     reset();
@@ -641,6 +674,7 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
               cursor: gamePhase === "running" ? "pointer" : "default",
             }}
           />
+          <MoveButtons color={GAME_COLOR} active={gamePhase === "running"} onDir={handleMoveDir} />
         </div>
 
         <p style={{ fontSize: fontSizes.sm, color: colors.text.muted, margin: 0, textAlign: "center" }}>

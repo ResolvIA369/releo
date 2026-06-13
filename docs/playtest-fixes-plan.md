@@ -25,7 +25,7 @@ cada uno. Todo lo nuevo configurable en los TUNING. Push al final.
 - [x] **5** Leo Salta: separación mínima entre obstáculos del piso
       (`minGroundGapPx`, configurable) para que los puercoespines siempre se
       puedan esquivar.
-- [ ] **6** Leo Salta: movimiento horizontal (←/→ + botones ◀▶, como Leo Vuela)
+- [x] **6** Leo Salta: movimiento horizontal (←/→ + botones ◀▶, como Leo Vuela)
       además del salto.
 - [ ] **7** Leo Corre: 4º carril en Nivel 3 (`lanesByLevel: [3,3,4]`,
       configurable).
