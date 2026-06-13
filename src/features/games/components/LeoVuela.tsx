@@ -15,7 +15,7 @@ import { sofiaNameWord, sofiaPlayAudio, stopVoice } from "@/shared/services/sofi
 import { domanCanvasText } from "../config/doman-canvas";
 import { physicsForPhase, stepFlight, buildCloudRound, tuningForPhase, clampEnergy, levelForElapsed, rewardForLevel, pickNextTarget } from "../config/leo-vuela";
 import { LeoVuelaObstacles } from "./leo-vuela-obstacles";
-import { LeoVuelaHud, MoveButtons } from "./LeoVuelaHud";
+import { ArcadeHud, MoveButtons } from "./ArcadeHud";
 import { LeoVuelaMusic } from "./leo-vuela-music";
 
 function shuffle<T>(arr: T[]): T[] {
@@ -707,7 +707,9 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
   return (
     <GameShell title="Leo Vuela" icon="🪁" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})}>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: spacing.md, paddingTop: spacing.sm }}>
-        <LeoVuelaHud
+        <ArcadeHud
+          color={GAME_COLOR}
+          targetPrefix="Volá a:"
           level={levelUi}
           correct={state.correctAttempts}
           targetWord={targetWord}
@@ -737,7 +739,7 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
               cursor: gamePhase === "running" ? "pointer" : "default",
             }}
           />
-          <MoveButtons active={gamePhase === "running"} onDir={handleMoveDir} />
+          <MoveButtons color={GAME_COLOR} active={gamePhase === "running"} onDir={handleMoveDir} />
         </div>
 
         <p style={{ fontSize: fontSizes.sm, color: colors.text.muted, margin: 0, textAlign: "center" }}>

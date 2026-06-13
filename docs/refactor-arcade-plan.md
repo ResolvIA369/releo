@@ -13,7 +13,7 @@ Si algo queda pendiente, se anota al pie y se frena.
 - [x] **A2** `components/arcade-music.ts`: la clase de loops con crossfade
       (ex `LeoVuelaMusic`) renombrada `ArcadeMusic`, genérica;
       `leo-vuela-music.ts` queda como re-export.
-- [ ] **A3** `components/ArcadeHud.tsx`: HUD genérico (badge nivel + aciertos +
+- [x] **A3** `components/ArcadeHud.tsx`: HUD genérico (badge nivel + aciertos +
       pill objetivo con prefijo configurable + barra de energía) parametrizado
       por color; Leo Vuela lo usa.
 - [ ] **A4** Hooks `useArcadeEnergy` (ref + UI + drenaje + game over),

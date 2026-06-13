@@ -6,12 +6,14 @@ import type { DomanWord } from "@/shared/types/doman";
 import { colors, spacing, radii, fontSizes, fonts } from "@/shared/styles/design-tokens";
 import { domanCanvasText } from "../config/doman-canvas";
 
-const GAME_COLOR = "#9f7aea";
 const MAX_W = "min(640px, calc(100vw - 32px))";
 
-// ─── HUD: badge de nivel + aciertos + pill fija del objetivo + energia ──
+// ─── HUD compartido de los juegos arcade: badge de nivel + aciertos +
+// pill fija del objetivo (prefijo por juego) + barra de energia ──────
 
-interface LeoVuelaHudProps {
+interface ArcadeHudProps {
+  color: string; // color del juego (registry)
+  targetPrefix: string; // "Volá a:", "Tocá:", "Saltá a:"
   level: number; // 0-based
   correct: number;
   targetWord: DomanWord | null;
@@ -20,7 +22,7 @@ interface LeoVuelaHudProps {
   energyMax: number;
 }
 
-export const LeoVuelaHud: React.FC<LeoVuelaHudProps> = ({ level, correct, targetWord, waveKey, energy, energyMax }) => (
+export const ArcadeHud: React.FC<ArcadeHudProps> = ({ color, targetPrefix, level, correct, targetWord, waveKey, energy, energyMax }) => (
   <>
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", maxWidth: MAX_W }}>
       <span style={{ display: "flex", alignItems: "center", gap: spacing.sm, fontSize: fontSizes.sm, color: colors.text.placeholder }}>
@@ -30,7 +32,7 @@ export const LeoVuelaHud: React.FC<LeoVuelaHudProps> = ({ level, correct, target
           animate={{ scale: 1 }}
           style={{
             padding: `2px ${spacing.sm}px`, borderRadius: radii.pill,
-            backgroundColor: `${GAME_COLOR}20`, color: GAME_COLOR,
+            backgroundColor: `${color}20`, color,
             fontWeight: "bold", fontFamily: fonts.display,
           }}
         >
@@ -42,12 +44,12 @@ export const LeoVuelaHud: React.FC<LeoVuelaHudProps> = ({ level, correct, target
         <div
           style={{
             padding: `${spacing.xs}px ${spacing.lg}px`,
-            backgroundColor: `${GAME_COLOR}15`, border: `2px solid ${GAME_COLOR}`,
+            backgroundColor: `${color}15`, border: `2px solid ${color}`,
             borderRadius: radii.pill, fontSize: fontSizes.xl,
-            fontWeight: "bold", fontFamily: fonts.display, color: GAME_COLOR,
+            fontWeight: "bold", fontFamily: fonts.display, color,
           }}
         >
-          Volá a: <motion.span
+          {targetPrefix} <motion.span
             key={targetWord.id + waveKey}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -66,7 +68,7 @@ export const LeoVuelaHud: React.FC<LeoVuelaHudProps> = ({ level, correct, target
         aria-valuenow={energy}
         aria-valuemin={0}
         aria-valuemax={energyMax}
-        style={{ flex: 1, height: 14, borderRadius: radii.pill, backgroundColor: "#e9e5f5", overflow: "hidden", border: `1px solid ${colors.border.light}` }}
+        style={{ flex: 1, height: 14, borderRadius: radii.pill, backgroundColor: "#eeeaf3", overflow: "hidden", border: `1px solid ${colors.border.light}` }}
       >
         <div
           style={{
@@ -82,14 +84,15 @@ export const LeoVuelaHud: React.FC<LeoVuelaHudProps> = ({ level, correct, target
   </>
 );
 
-// ─── Botones ◀ ▶ para esquivar (mobile) — el resto del canvas aletea ──
+// ─── Botones ◀ ▶ para esquivar (mobile) — el resto del canvas es accion ──
 
 interface MoveButtonsProps {
+  color: string;
   active: boolean;
   onDir: (dir: -1 | 0 | 1) => void;
 }
 
-export const MoveButtons: React.FC<MoveButtonsProps> = ({ active, onDir }) => {
+export const MoveButtons: React.FC<MoveButtonsProps> = ({ color, active, onDir }) => {
   const btnStyle = (side: "left" | "right"): React.CSSProperties => ({
     position: "absolute",
     bottom: 10,
@@ -97,14 +100,14 @@ export const MoveButtons: React.FC<MoveButtonsProps> = ({ active, onDir }) => {
     width: 56,
     height: 56,
     borderRadius: "50%",
-    border: `2px solid ${GAME_COLOR}80`,
+    border: `2px solid ${color}80`,
     backgroundColor: "rgba(255,255,255,0.55)",
-    color: GAME_COLOR,
+    color,
     fontSize: 22,
     cursor: active ? "pointer" : "default",
     touchAction: "none",
     userSelect: "none",
-    zIndex: 6, // encima del boton de aleteo y de la mascota LeoCompanion (zIndex 5)
+    zIndex: 6, // encima del boton de accion y de la mascota LeoCompanion (zIndex 5)
   });
 
   const bind = (dir: -1 | 1) => ({
@@ -116,7 +119,7 @@ export const MoveButtons: React.FC<MoveButtonsProps> = ({ active, onDir }) => {
     onPointerUp: (e: React.PointerEvent) => { e.stopPropagation(); onDir(0); },
     onPointerLeave: () => onDir(0),
     onPointerCancel: () => onDir(0),
-    // Que el click no burbujee hasta el boton de aleteo
+    // Que el click no burbujee hasta el boton de accion del canvas
     onClick: (e: React.MouseEvent) => e.stopPropagation(),
   });
 
