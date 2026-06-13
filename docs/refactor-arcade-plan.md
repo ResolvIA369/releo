@@ -50,7 +50,7 @@ Todo ajustable en un tuning por juego.
       es-AR-ElenaNeural). Texto: «¡Hola! Soy la Seño Sofía. Leo va a saltar
       bien alto. Escuchá la palabra, y tocá la pantalla para que Leo salte y
       la atrape. ¡Y ojo con los bichitos del camino! ¡Vos podés! ¡A saltar!»
-- [ ] **B6** Salta la Palabra — obstáculos de piso: troncos, pájaros que
+- [x] **B6** Salta la Palabra — obstáculos de piso: troncos, pájaros que
       bajan, lluvia y **puercoespines que caminan por el piso** (hay que
       saltarlos); tocarlos resta energía con invulnerabilidad breve.
 - [ ] **Final** — suite Playwright completa + verificación en navegador de los

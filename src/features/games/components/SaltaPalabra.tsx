@@ -12,6 +12,7 @@ import { useSofiaIntro } from "../hooks/useSofiaIntro";
 import { GameShell, usePause } from "./GameShell";
 import { ArcadeHud } from "./ArcadeHud";
 import { ArcadeMusic } from "./arcade-music";
+import { GroundObstacles } from "./arcade-obstacles";
 import { useRewards } from "@/shared/components/RewardsLayer";
 import { FeedbackFlash } from "@/shared/components/FeedbackFlash";
 import { GameCompleteScreen } from "@/shared/components/GameCompleteScreen";
@@ -90,6 +91,8 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
   const leoRef = useRef<Container | null>(null);
   const leoSpriteRef = useRef<Sprite | null>(null);
   const wordsLayerRef = useRef<Container | null>(null);
+  const obstaclesRef = useRef<GroundObstacles | null>(null);
+  const invulnUntilRef = useRef(0); // fin de invulnerabilidad (seg de juego)
 
   const jumpTRef = useRef(1); // 0→1 jump progress; 1 = on the ground
   const crashTRef = useRef(1); // 0→1 stumble progress
@@ -182,6 +185,11 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
       app.stage.addChild(wordsLayer);
       wordsLayerRef.current = wordsLayer;
 
+      // Obstaculos del piso (troncos, puercoespines, pajaros en picada)
+      const obstaclesLayer = new PIXI.Container();
+      app.stage.addChild(obstaclesLayer);
+      obstaclesRef.current = new GroundObstacles(PIXI, obstaclesLayer, { W, groundY: GROUND_Y });
+
       // Leo — sprite if the texture loads, emoji fallback otherwise
       const leo = new PIXI.Container();
       try {
@@ -225,6 +233,20 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
         }
         const levelCfg = tun.levels[levelRef.current] ?? tun.levels[0];
         const effSpeed = round.speed * levelCfg.speedMul;
+
+        // Obstaculos del piso: hay que saltarlos; tocarlos resta
+        // energia con ventana de invulnerabilidad
+        if (round.active && gamePhaseRef.current === "running" && obstaclesRef.current && leoRef.current) {
+          const frame = obstaclesRef.current.update(dt, levelCfg, {
+            x: LEO_X,
+            y: leoRef.current.y,
+          });
+          if (frame.hit && level.playSecRef.current >= invulnUntilRef.current) {
+            invulnUntilRef.current = level.playSecRef.current + tun.obstacleInvulnSec;
+            energy.adjust(-tun.energyLossPerObstacle);
+            crashTRef.current = 0; // tropezon visual
+          }
+        }
 
         // Floating words: drift left + gentle bob — NUNCA se frenan
         round.words.forEach((fw, i) => {
@@ -355,6 +377,7 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
         leoRef.current = null;
         leoSpriteRef.current = null;
         wordsLayerRef.current = null;
+        obstaclesRef.current = null;
         fadingRef.current = [];
       }
     };
@@ -551,6 +574,8 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
     energy.reset();
     level.reset();
     lastTargetIdRef.current = null;
+    invulnUntilRef.current = 0;
+    obstaclesRef.current?.reset();
     setGamePhase("running");
     musicRef.current?.setLevel(0);
     musicRef.current?.resume();
