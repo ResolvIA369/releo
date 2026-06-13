@@ -53,9 +53,22 @@ Todo ajustable en un tuning por juego.
 - [x] **B6** Salta la Palabra — obstáculos de piso: troncos, pájaros que
       bajan, lluvia y **puercoespines que caminan por el piso** (hay que
       saltarlos); tocarlos resta energía con invulnerabilidad breve.
-- [ ] **Final** — suite Playwright completa + verificación en navegador de los
+- [x] **Final** — suite Playwright completa + verificación en navegador de los
       3 juegos, push.
 
 ## Estado / pendientes
 
-(se completa al cerrar)
+**COMPLETADO** (2026-06-12). Los 11 ítems ejecutados, un commit cada uno.
+Verificación final: tsc + 168 unit tests + Playwright 53/53 en verde, y los
+3 juegos verificados en Chromium real vía /demo (intro pedida y acción
+arrancando al terminar, HUD con energía y nivel, demo autoplay atrapando
+la correcta → moneda al cofre → tanda siguiente, sin errores de página).
+
+Notas para después (no bloqueantes):
+- LeoVuela.tsx sigue en ~690 líneas (regla de 500): partirlo en hooks
+  (p. ej. extraer el bloque de física/ticker) en una sesión propia.
+- Los obstáculos de Leo Corre y Salta arrancan recién en Nivel 2 por
+  config; si se quiere algo en Nivel 1, es solo subir las tasas en
+  LEO_RUNNER_TUNING / SALTA_TUNING.
+- El demo de Salta no esquiva obstáculos (en Nivel 1 no hay, así que
+  no afecta las corridas cortas de QA).
