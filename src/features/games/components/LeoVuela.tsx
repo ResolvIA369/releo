@@ -125,7 +125,7 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
   // tras el primer gesto (ensureStarted)
   const musicRef = useRef<LeoVuelaMusic | null>(null);
   if (!musicRef.current) {
-    musicRef.current = new LeoVuelaMusic(tuning.musicVolumeDb, tuning.musicDuckDb, tuning.musicPalette);
+    musicRef.current = new LeoVuelaMusic(tuning.musicVolumeDb, tuning.musicDuckDb, tuning.musicTracks);
   }
   useEffect(() => () => {
     musicRef.current?.dispose();
@@ -229,7 +229,7 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
           if (lvl !== levelRef.current) {
             levelRef.current = lvl;
             setLevelUi(lvl);
-            musicRef.current?.setBpm(tun.musicBpm[lvl] ?? tun.musicBpm[0]);
+            musicRef.current?.setLevel(lvl);
           }
         }
         const levelCfg = tun.levels[levelRef.current] ?? tun.levels[0];
@@ -589,7 +589,7 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
   const handleFlap = useCallback(() => {
     if (gamePhaseRef.current !== "running" || paused) return;
     // Primer gesto del usuario: momento valido para destrabar el audio
-    void musicRef.current?.ensureStarted(tuningRef.current.musicBpm[levelRef.current] ?? 90);
+    void musicRef.current?.ensureStarted(levelRef.current);
     vyRef.current = -physicsRef.current.impulse;
     if (typeof navigator !== "undefined" && "vibrate" in navigator) navigator.vibrate(10);
   }, [paused]);
@@ -626,7 +626,7 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
 
   const handleMoveDir = useCallback((dir: -1 | 0 | 1) => {
     if (dir !== 0) {
-      void musicRef.current?.ensureStarted(tuningRef.current.musicBpm[levelRef.current] ?? 90);
+      void musicRef.current?.ensureStarted(levelRef.current);
     }
     moveDirRef.current = gamePhaseRef.current === "running" ? dir : 0;
   }, []);
@@ -646,7 +646,7 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
     lastTargetIdRef.current = null;
     setRoundIdx(0);
     setGamePhase("running");
-    musicRef.current?.setBpm(tuningRef.current.musicBpm[0] ?? 90);
+    musicRef.current?.setLevel(0);
     musicRef.current?.resume();
     spawnWave();
   }, [reset, spawnWave]);

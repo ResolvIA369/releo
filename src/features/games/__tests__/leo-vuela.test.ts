@@ -13,6 +13,8 @@ import {
   MAX_FALL_SPEED,
 } from "../config/leo-vuela";
 import { spawnRoll } from "../components/leo-vuela-obstacles";
+import fs from "node:fs";
+import path from "node:path";
 import { PHASE1_WORDS } from "@/shared/constants";
 import type { PhaseNumber } from "@/shared/types/doman";
 
@@ -83,37 +85,28 @@ describe("levelForElapsed", () => {
 });
 
 describe("musica", () => {
-  it("hay un BPM por nivel y el tempo sube con la dificultad", () => {
+  it("hay un loop por nivel, servido desde /audio/music/", () => {
     for (const phase of [1, 2, 3, 4, 5] as PhaseNumber[]) {
       const t = LEO_VUELA_TUNING[phase];
-      expect(t.musicBpm.length).toBe(t.levels.length);
-      for (let i = 1; i < t.musicBpm.length; i++) {
-        expect(t.musicBpm[i]).toBeGreaterThan(t.musicBpm[i - 1]);
+      expect(t.musicTracks.length).toBe(t.levels.length);
+      expect(new Set(t.musicTracks).size).toBe(t.musicTracks.length);
+      for (const track of t.musicTracks) {
+        expect(track.startsWith("/audio/music/")).toBe(true);
+        expect(track.endsWith(".mp3")).toBe(true);
       }
     }
   });
 
-  it("paleta tribal: membrana grave + toms medios, ordenados de grave a agudo", () => {
-    const noteIndex = (n: string) => {
-      const m = n.match(/^([A-G]#?)(\d)$/);
-      expect(m).not.toBeNull();
-      const semis: Record<string, number> = { C: 0, "C#": 1, D: 2, "D#": 3, E: 4, F: 5, "F#": 6, G: 7, "G#": 8, A: 9, "A#": 10, B: 11 };
-      return parseInt(m![2], 10) * 12 + semis[m![1]];
-    };
-    for (const phase of [1, 2, 3, 4, 5] as PhaseNumber[]) {
-      const { musicPalette } = LEO_VUELA_TUNING[phase];
-      expect(musicPalette.drumNotes.length).toBeGreaterThanOrEqual(2);
-      const idx = musicPalette.drumNotes.map(noteIndex);
-      // La primera es la mas grave; el resto son los toms medios
-      for (let i = 1; i < idx.length; i++) expect(idx[i]).toBeGreaterThan(idx[0]);
-      expect(typeof musicPalette.shaker).toBe("boolean");
+  it("los archivos de loop existen en public/", () => {
+    for (const track of LEO_VUELA_TUNING[1].musicTracks) {
+      expect(fs.existsSync(path.join(process.cwd(), "public", track))).toBe(true);
     }
   });
 
-  it("volumen base bajo y ducking aun mas bajo cuando habla Sofia", () => {
+  it("volumen base bien bajo y ducking aun mas bajo cuando habla Sofia", () => {
     for (const phase of [1, 2, 3, 4, 5] as PhaseNumber[]) {
       const t = LEO_VUELA_TUNING[phase];
-      expect(t.musicVolumeDb).toBeLessThan(0);
+      expect(t.musicVolumeDb).toBeLessThanOrEqual(-20);
       expect(t.musicDuckDb).toBeLessThan(t.musicVolumeDb);
     }
   });

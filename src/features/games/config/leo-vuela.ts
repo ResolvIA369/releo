@@ -51,20 +51,13 @@ export interface LeoVuelaTuning {
   levels: LeoVuelaLevel[];
   levelCoinBonus: number[]; // monedas extra por nivel alcanzado al terminar
   horizontalSpeed: number; // velocidad de Leo adelante/atras (px/frame)
-  // Musica de percusion (Tone.js): BPM por nivel y volumenes en dB.
-  // El volumen base es bajo; al hablar Sofia se agacha a musicDuckDb.
-  musicBpm: number[];
+  // Musica: un loop real por nivel (generados desde assets/ con ffmpeg,
+  // atempo para variar velocidad sin cambiar el tono). El volumen base
+  // es BIEN bajo para que la voz siempre se escuche clara, y al hablar
+  // Sofia se agacha todavia mas (musicDuckDb).
+  musicTracks: string[];
   musicVolumeDb: number;
   musicDuckDb: number;
-  musicPalette: LeoVuelaMusicPalette;
-}
-
-// Paleta tribal: la primera nota es la membrana grave (tambor base),
-// las siguientes son los toms medios que rotan; shaker opcional con
-// ruido filtrado.
-export interface LeoVuelaMusicPalette {
-  drumNotes: string[];
-  shaker: boolean;
 }
 
 const DEFAULT_LEVELS: LeoVuelaLevel[] = [
@@ -75,23 +68,22 @@ const DEFAULT_LEVELS: LeoVuelaLevel[] = [
   { speedMul: 1.85, gapMul: 0.7, birdsPerMin: 9, boltsPerMin: 4, rainPerMin: 1.2, floorCloudsPerMin: 18 },
 ];
 
-// Tempo del loop de tambores por nivel (sube con la dificultad)
-const DEFAULT_MUSIC_BPM = [85, 105, 125];
-
-const DEFAULT_MUSIC_PALETTE: LeoVuelaMusicPalette = {
-  drumNotes: ["C2", "G2", "C3", "E3"],
-  shaker: true,
-};
+// Un loop por nivel, de intensidad creciente (mismo tema fuente)
+const DEFAULT_MUSIC_TRACKS = [
+  "/audio/music/leo-vuela-nivel-1.mp3",
+  "/audio/music/leo-vuela-nivel-2.mp3",
+  "/audio/music/leo-vuela-nivel-3.mp3",
+];
 
 // Mas nivel alcanzado = mejor recompensa al terminar
 const DEFAULT_COIN_BONUS = [0, 10, 25];
 
 export const LEO_VUELA_TUNING: Record<PhaseNumber, LeoVuelaTuning> = {
-  1: { energyStart: 60, energyMax: 100, energyGainCorrect: 14, energyLossWrong: 10, energyLossEscape: 8, energyDrainPerSec: 1.0, levelDurationSec: 180, levels: DEFAULT_LEVELS, levelCoinBonus: DEFAULT_COIN_BONUS, horizontalSpeed: 3, musicBpm: DEFAULT_MUSIC_BPM, musicVolumeDb: -18, musicDuckDb: -30, musicPalette: DEFAULT_MUSIC_PALETTE },
-  2: { energyStart: 60, energyMax: 100, energyGainCorrect: 13, energyLossWrong: 10, energyLossEscape: 8, energyDrainPerSec: 1.2, levelDurationSec: 180, levels: DEFAULT_LEVELS, levelCoinBonus: DEFAULT_COIN_BONUS, horizontalSpeed: 3, musicBpm: DEFAULT_MUSIC_BPM, musicVolumeDb: -18, musicDuckDb: -30, musicPalette: DEFAULT_MUSIC_PALETTE },
-  3: { energyStart: 60, energyMax: 100, energyGainCorrect: 12, energyLossWrong: 11, energyLossEscape: 9, energyDrainPerSec: 1.4, levelDurationSec: 180, levels: DEFAULT_LEVELS, levelCoinBonus: DEFAULT_COIN_BONUS, horizontalSpeed: 3, musicBpm: DEFAULT_MUSIC_BPM, musicVolumeDb: -18, musicDuckDb: -30, musicPalette: DEFAULT_MUSIC_PALETTE },
-  4: { energyStart: 60, energyMax: 100, energyGainCorrect: 12, energyLossWrong: 11, energyLossEscape: 9, energyDrainPerSec: 1.6, levelDurationSec: 180, levels: DEFAULT_LEVELS, levelCoinBonus: DEFAULT_COIN_BONUS, horizontalSpeed: 3, musicBpm: DEFAULT_MUSIC_BPM, musicVolumeDb: -18, musicDuckDb: -30, musicPalette: DEFAULT_MUSIC_PALETTE },
-  5: { energyStart: 60, energyMax: 100, energyGainCorrect: 11, energyLossWrong: 12, energyLossEscape: 10, energyDrainPerSec: 1.8, levelDurationSec: 180, levels: DEFAULT_LEVELS, levelCoinBonus: DEFAULT_COIN_BONUS, horizontalSpeed: 3, musicBpm: DEFAULT_MUSIC_BPM, musicVolumeDb: -18, musicDuckDb: -30, musicPalette: DEFAULT_MUSIC_PALETTE },
+  1: { energyStart: 60, energyMax: 100, energyGainCorrect: 14, energyLossWrong: 10, energyLossEscape: 8, energyDrainPerSec: 1.0, levelDurationSec: 180, levels: DEFAULT_LEVELS, levelCoinBonus: DEFAULT_COIN_BONUS, horizontalSpeed: 3, musicTracks: DEFAULT_MUSIC_TRACKS, musicVolumeDb: -22, musicDuckDb: -34 },
+  2: { energyStart: 60, energyMax: 100, energyGainCorrect: 13, energyLossWrong: 10, energyLossEscape: 8, energyDrainPerSec: 1.2, levelDurationSec: 180, levels: DEFAULT_LEVELS, levelCoinBonus: DEFAULT_COIN_BONUS, horizontalSpeed: 3, musicTracks: DEFAULT_MUSIC_TRACKS, musicVolumeDb: -22, musicDuckDb: -34 },
+  3: { energyStart: 60, energyMax: 100, energyGainCorrect: 12, energyLossWrong: 11, energyLossEscape: 9, energyDrainPerSec: 1.4, levelDurationSec: 180, levels: DEFAULT_LEVELS, levelCoinBonus: DEFAULT_COIN_BONUS, horizontalSpeed: 3, musicTracks: DEFAULT_MUSIC_TRACKS, musicVolumeDb: -22, musicDuckDb: -34 },
+  4: { energyStart: 60, energyMax: 100, energyGainCorrect: 12, energyLossWrong: 11, energyLossEscape: 9, energyDrainPerSec: 1.6, levelDurationSec: 180, levels: DEFAULT_LEVELS, levelCoinBonus: DEFAULT_COIN_BONUS, horizontalSpeed: 3, musicTracks: DEFAULT_MUSIC_TRACKS, musicVolumeDb: -22, musicDuckDb: -34 },
+  5: { energyStart: 60, energyMax: 100, energyGainCorrect: 11, energyLossWrong: 12, energyLossEscape: 10, energyDrainPerSec: 1.8, levelDurationSec: 180, levels: DEFAULT_LEVELS, levelCoinBonus: DEFAULT_COIN_BONUS, horizontalSpeed: 3, musicTracks: DEFAULT_MUSIC_TRACKS, musicVolumeDb: -22, musicDuckDb: -34 },
 };
 
 // Indice de nivel (0-based) segun tiempo jugado; clampea al ultimo
