@@ -677,9 +677,6 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
           <MoveButtons color={GAME_COLOR} active={gamePhase === "running"} onDir={handleMoveDir} />
         </div>
 
-        <p style={{ fontSize: fontSizes.sm, color: colors.text.muted, margin: 0, textAlign: "center" }}>
-          {gamePhase === "intro" ? "Escucha a Sofía..." : "Toca para que Leo salte y atrape la palabra"}
-        </p>
 
         <FeedbackFlash type={feedbackType} />
       </div>

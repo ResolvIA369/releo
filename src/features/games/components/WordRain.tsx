@@ -327,9 +327,6 @@ export const WordRain: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
           )}
         </div>
 
-        <p style={{ fontSize: fontSizes.sm, color: colors.text.muted, margin: 0, textAlign: "center" }}>
-          {gamePhase === "intro" ? "Escucha a Sofía..." : "Toca la palabra correcta antes de que caiga"}
-        </p>
       </div>
       <FeedbackFlash type={feedbackType} />
     </GameShell>

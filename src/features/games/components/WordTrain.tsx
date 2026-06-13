@@ -343,9 +343,6 @@ export const WordTrain: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
           )}
         </div>
 
-        <p style={{ fontSize: fontSizes.sm, color: colors.text.muted, margin: 0, textAlign: "center" }}>
-          {gamePhase === "intro" ? "Escucha a Sofía..." : "Toca el vagón con la palabra correcta"}
-        </p>
 
         <FeedbackFlash type={feedbackType} />
       </div>
