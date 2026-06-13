@@ -54,7 +54,7 @@ const FADE_RATE = 0.04; // alpha/frame con que se desvanece la tanda anterior
 // Intro de Sofia al arrancar (mp3 generado con edge-tts es-AR-ElenaNeural;
 // este texto es el fallback hablado si el audio no carga)
 const INTRO_TEXT =
-  "¡Hola! Soy la Seño Sofía. Hoy Leo quiere volar entre las nubes. " +
+  "¡Soy la Seño Sofía! Hoy Leo quiere volar entre las nubes. " +
   "Escuchá la palabra, y tocá la pantalla para que Leo vuele hasta la nube correcta. " +
   "¡Vos podés! ¡A volar!";
 

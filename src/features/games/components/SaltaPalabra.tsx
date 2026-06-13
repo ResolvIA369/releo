@@ -56,7 +56,7 @@ const FADE_RATE = 0.04; // alpha/frame de la tanda anterior al irse
 // Intro de Sofia al arrancar (mp3 edge-tts es-AR-ElenaNeural; este
 // texto es el fallback hablado si el audio no carga)
 const INTRO_TEXT =
-  "¡Hola! Soy la Seño Sofía. Leo va a saltar bien alto. " +
+  "¡Soy la Seño Sofía! Leo va a saltar bien alto. " +
   "Escuchá la palabra, y tocá la pantalla para que Leo salte y la atrape. " +
   "¡Y ojo con los bichitos del camino! ¡Vos podés! ¡A saltar!";
 

@@ -33,7 +33,7 @@ const GAME_COLOR = "#f093fb";
 const BUBBLE_COLORS = ["#f093fb", "#667eea", "#48bb78", "#ed8936", "#e53e3e", "#0bc5ea", "#38b2ac"];
 
 const INTRO_TEXT =
-  "¡Hola! Soy la Seño Sofía. Las palabras flotan en burbujas. " +
+  "¡Soy la Seño Sofía! Las palabras flotan en burbujas. " +
   "Escuchá cuál reventar, y tocá la burbuja correcta. " +
   "¡Vos podés! ¡A reventar!";
 

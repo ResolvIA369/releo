@@ -34,7 +34,7 @@ const GAME_COLOR = "#0bc5ea";
 const FISH_EMOJIS = ["🐟", "🐠", "🐡", "🦈"];
 
 const INTRO_TEXT =
-  "¡Hola! Soy la Seño Sofía. Los peces nadan con palabras. " +
+  "¡Soy la Seño Sofía! Los peces nadan con palabras. " +
   "Escuchá cuál pescar, y tocá el pez correcto. " +
   "¡Vos podés! ¡A pescar!";
 

@@ -33,7 +33,7 @@ function shuffle<T>(arr: T[]): T[] {
 const GAME_COLOR = "#38a169";
 
 const INTRO_TEXT =
-  "¡Hola! Soy la Seño Sofía. Mirá los trenes que pasan. " +
+  "¡Soy la Seño Sofía! Mirá los trenes que pasan. " +
   "Escuchá la palabra, y tocá el vagón donde está escrita antes de que se vaya. " +
   "¡Vos podés! ¡Allá va el tren!";
 

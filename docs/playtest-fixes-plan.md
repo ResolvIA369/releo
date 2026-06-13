@@ -14,7 +14,7 @@ cada uno. Todo lo nuevo configurable en los TUNING. Push al final.
       (`createWordBag`) que recorre todas las palabras del bloque una vez antes
       de rebarajar; sin repetir la última al cruzar barajadas. Reemplaza
       `pickNextTarget` en los 7 juegos.
-- [ ] **3** Intros de Sofía sin el "Hola" apagado: regenerar las 7 locuciones
+- [x] **3** Intros de Sofía sin el "Hola" apagado: regenerar las 7 locuciones
       (arrancan directo "¡Soy la Seño Sofía!...") con edge-tts es-AR-ElenaNeural,
       y actualizar los textos fallback.
 - [ ] **4** Mostrar el avatar de Sofía durante la intro (reusar `SofiaAvatar` +

@@ -35,7 +35,7 @@ const GAME_COLOR = "#4299e1";
 const LANES = 3;
 
 const INTRO_TEXT =
-  "¡Hola! Soy la Seño Sofía. Del cielo caen palabras. " +
+  "¡Soy la Seño Sofía! Del cielo caen palabras. " +
   "Escuchá cuál te pido, y tocala antes de que llegue al suelo. " +
   "¡Vos podés! ¡A atrapar!";
 
