@@ -34,7 +34,7 @@ Todo ajustable en un tuning por juego.
 - [x] **B1** Leo Corre — `LEO_RUNNER_TUNING` + flujo continuo (carteles nunca
       paran, pill fija, Sofía en paralelo, palabras repetibles), energía,
       niveles por tiempo (126s), premios por nivel, error mudo.
-- [ ] **B2** Leo Corre — música de selva (mismos 3 loops, crossfade por nivel,
+- [x] **B2** Leo Corre — música de selva (mismos 3 loops, crossfade por nivel,
       ducking, gesto) + intro de Sofía (edge-tts es-AR-ElenaNeural). Texto:
       «¡Hola! Soy la Seño Sofía. Leo va a correr por el camino. Escuchá la
       palabra, y tocá el camino donde está escrita para que Leo corra hacia

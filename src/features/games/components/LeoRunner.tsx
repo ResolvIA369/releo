@@ -8,9 +8,11 @@ import { useGameState } from "../hooks/useGameState";
 import { useGameKeys } from "../hooks/useGameKeys";
 import { useArcadeEnergy } from "../hooks/useArcadeEnergy";
 import { useArcadeLevel } from "../hooks/useArcadeLevel";
+import { useSofiaIntro } from "../hooks/useSofiaIntro";
 import { useDemoAutoplay } from "../hooks/useDemoAutoplay";
 import { GameShell, usePause } from "./GameShell";
 import { ArcadeHud } from "./ArcadeHud";
+import { ArcadeMusic } from "./arcade-music";
 import { useRewards } from "@/shared/components/RewardsLayer";
 import { FeedbackFlash } from "@/shared/components/FeedbackFlash";
 import { GameCompleteScreen } from "@/shared/components/GameCompleteScreen";
@@ -47,7 +49,14 @@ const SIGN_SPAWN_Y = -70;
 const BASE_SPEED = 1.5;
 const FADE_RATE = 0.04; // alpha/frame de la tanda anterior al irse
 
-type Phase = "loading" | "running" | "finished";
+// Intro de Sofia al arrancar (mp3 edge-tts es-AR-ElenaNeural; este
+// texto es el fallback hablado si el audio no carga)
+const INTRO_TEXT =
+  "¡Hola! Soy la Seño Sofía. Leo va a correr por el camino. " +
+  "Escuchá la palabra, y tocá el camino donde está escrita para que Leo corra hacia ella. " +
+  "¡Vos podés! ¡A correr!";
+
+type Phase = "loading" | "intro" | "running" | "finished";
 
 interface RoundData {
   signs: { box: Container; lane: number }[];
@@ -103,6 +112,24 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
   const energy = useArcadeEnergy(tuning);
   const level = useArcadeLevel(tuning.levelDurationSec, tuning.levels.length);
   const { levelRef } = level;
+
+  // Musica de selva: los 3 loops compartidos; el audio recien se crea
+  // tras el primer gesto (ensureStarted)
+  const musicRef = useRef<ArcadeMusic | null>(null);
+  if (!musicRef.current) {
+    musicRef.current = new ArcadeMusic(tuning.musicVolumeDb, tuning.musicDuckDb, tuning.musicTracks);
+  }
+  useEffect(() => () => {
+    musicRef.current?.dispose();
+    musicRef.current = null;
+  }, []);
+
+  // Sofia habla → la musica se agacha hasta que termina
+  const speakDucked = useCallback((speak: () => Promise<unknown>) => {
+    stopVoice();
+    musicRef.current?.duck(true);
+    void speak().finally(() => musicRef.current?.duck(false));
+  }, []);
 
   // ─── Pixi init (dynamic import keeps pixi.js out of the main bundle) ──
 
@@ -193,7 +220,7 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
 
         // Nivel por tiempo + drenaje de energia (el flujo nunca para)
         if (round.active && gamePhaseRef.current === "running") {
-          level.tick(dt);
+          if (level.tick(dt)) musicRef.current?.setLevel(levelRef.current);
           if (energy.drainTick(dt)) {
             round.active = false;
             round.resolved = true;
@@ -278,7 +305,7 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
         }
       });
 
-      setGamePhase("running");
+      setGamePhase("intro");
     })();
 
     return () => {
@@ -308,8 +335,10 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
     if (paused) {
       app.ticker.stop();
       stopVoice();
+      musicRef.current?.pause();
     } else {
       app.ticker.start();
+      if (gamePhaseRef.current === "running") musicRef.current?.resume();
     }
   }, [paused]);
 
@@ -399,10 +428,16 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
     // Setear el data-word-id de los botones de carril
     setLaneWords(lanes.map((l) => l.word));
 
-    // Sofia anuncia en paralelo — el camino no se frena
-    stopVoice();
-    void sofiaNameWord(target.text);
+    // Sofia anuncia en paralelo — el camino no se frena; la musica
+    // se agacha mientras habla
+    speakDucked(() => sofiaNameWord(target.text));
   }, [phase]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Intro de Sofia — SOLO al arrancar; la primera tanda recien sale
+  // cuando termina. Cero pausas nuevas durante el juego.
+  useSofiaIntro(gamePhase === "intro", "reglas-leo-corre", INTRO_TEXT, () => {
+    if (!cancelledRef.current) setGamePhase("running");
+  });
 
   // First wave once Pixi is up
   useEffect(() => {
@@ -415,6 +450,7 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
   const finishGame = useCallback(() => {
     if (cancelledRef.current) return;
     stopVoice();
+    musicRef.current?.pause();
     setGamePhase("finished");
     finish().then(() => onComplete?.(state));
   }, [finish, onComplete, state]);
@@ -442,8 +478,7 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
       squashTRef.current = 0; // celebration squash-and-stretch
       energy.adjust(tuningRef.current.energyGainCorrect);
       flashFeedback("correct");
-      stopVoice();
-      void sofiaPlayAudio("reaccion-muy-bien", "¡Muy bien!", "excited");
+      speakDucked(() => sofiaPlayAudio("reaccion-muy-bien", "¡Muy bien!", "excited"));
     } else {
       // Error mudo: solo el tropezon visual + energia abajo. El
       // objetivo sigue visible en la pill del HUD.
@@ -462,6 +497,8 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
 
   const handleLaneTap = useCallback((lane: number) => {
     if (gamePhase !== "running") return;
+    // Primer gesto del usuario: momento valido para destrabar el audio
+    void musicRef.current?.ensureStarted(levelRef.current);
     if (lane !== leoLaneRef.current) {
       leoLaneRef.current = lane;
       jumpTRef.current = 0;
@@ -495,6 +532,8 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
     leoLaneRef.current = 1;
     lastTargetIdRef.current = null;
     setGamePhase("running");
+    musicRef.current?.setLevel(0);
+    musicRef.current?.resume();
     spawnWave();
   }, [reset, energy, level, spawnWave]);
 
@@ -561,7 +600,7 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
         </div>
 
         <p style={{ fontSize: fontSizes.sm, color: colors.text.muted, margin: 0, textAlign: "center" }}>
-          Toca el camino con la palabra correcta
+          {gamePhase === "intro" ? "Escucha a Sofía..." : "Toca el camino con la palabra correcta"}
         </p>
 
         <FeedbackFlash type={feedbackType} />
