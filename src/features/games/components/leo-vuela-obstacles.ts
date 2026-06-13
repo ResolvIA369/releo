@@ -1,5 +1,11 @@
 import type { Container, Graphics, Text } from "pixi.js";
 import type { LeoVuelaLevel } from "../config/leo-vuela";
+import { drawBird } from "./arcade-obstacles";
+
+// spawnRoll vive en la base compartida; se re-exporta para mantener
+// los imports/tests existentes
+export { spawnRoll } from "./arcade-obstacles";
+import { spawnRoll } from "./arcade-obstacles";
 
 // Obstaculos de Leo Vuela: pajaros que cruzan, relampagos que caen y
 // rafagas de lluvia que empujan hacia abajo. Solo agregan dificultad
@@ -43,13 +49,6 @@ export interface ObstacleFrame {
   birdHit: boolean;
 }
 
-// Tirada de spawn por frame (60fps): ratePerMin eventos por minuto.
-// Pura e inyectable para poder testearla.
-export function spawnRoll(ratePerMin: number, dt: number, rng: () => number = Math.random): boolean {
-  if (ratePerMin <= 0) return false;
-  return rng() < (ratePerMin * dt) / 3600;
-}
-
 const BIRD_KNOCK = 2.4;
 const BOLT_KNOCK = 3.2;
 const FLOOR_CLOUD_KNOCK = -2.8; // hacia arriba: no se puede volar rasante
@@ -75,23 +74,9 @@ export class LeoVuelaObstacles {
     return new this.PIXI.Text({ text, style: { fontSize: size } });
   }
 
-  // Silueta clara de pajaro en vuelo (mirando a la izquierda, hacia
-  // donde se mueve): cuerpo, cabeza, pico, cola, ojo y ala que aletea
+  // Silueta de pajaro compartida (arcade-obstacles)
   private makeBird(): { node: Container; wing: Graphics } {
-    const C = 0x455a64;
-    const node = new this.PIXI.Container();
-    const body = new this.PIXI.Graphics();
-    body.ellipse(0, 0, 16, 9).fill(C); // cuerpo
-    body.circle(-14, -5, 6.5).fill(C); // cabeza
-    body.poly([-19, -6, -28, -3, -19, -1]).fill(0xff9800); // pico
-    body.poly([13, -3, 26, -10, 24, 3]).fill(C); // cola
-    body.circle(-15.5, -6.5, 1.5).fill(0xffffff); // ojo
-    node.addChild(body);
-    const wing = new this.PIXI.Graphics();
-    wing.poly([0, 0, 13, -16, 9, 1]).fill(0x37474f);
-    wing.position.set(1, -4); // pivote en la base del ala
-    node.addChild(wing);
-    return { node, wing };
+    return drawBird(this.PIXI);
   }
 
   // Un paso de simulacion. Devuelve el efecto sobre Leo este frame.

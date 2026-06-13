@@ -19,7 +19,7 @@ Si algo queda pendiente, se anota al pie y se frena.
 - [x] **A4** Hooks `useArcadeEnergy` (ref + UI + drenaje + game over),
       `useArcadeLevel` (tiempo jugado → nivel) y `useSofiaIntro` (intro que
       bloquea el arranque). Leo Vuela migra a los hooks, tests verdes.
-- [ ] **A5** `components/arcade-obstacles.ts`: base compartida (`spawnRoll`,
+- [x] **A5** `components/arcade-obstacles.ts`: base compartida (`spawnRoll`,
       tipos de frame con knock/energía, helpers de entidades) +
       `FloorObstacles` genérico para juegos "de piso" (troncos, pájaros que
       bajan, lluvia, puercoespines opcionales). Leo Vuela sigue con su sistema
