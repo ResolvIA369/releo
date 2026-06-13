@@ -12,6 +12,7 @@ import { useSofiaIntro } from "../hooks/useSofiaIntro";
 import { useDemoAutoplay } from "../hooks/useDemoAutoplay";
 import { GameShell, usePause } from "./GameShell";
 import { ArcadeHud } from "./ArcadeHud";
+import { ArcadeIntro } from "./ArcadeIntro";
 import { ArcadeMusic } from "./arcade-music";
 import { LaneObstacles } from "./arcade-obstacles";
 import { useRewards } from "@/shared/components/RewardsLayer";
@@ -585,6 +586,7 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
   return (
     <GameShell title="Leo Corre" icon="🦁" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})}>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: spacing.md, paddingTop: spacing.sm }}>
+        {gamePhase === "intro" && <ArcadeIntro color={GAME_COLOR} />}
         <ArcadeHud
           color={GAME_COLOR}
           targetPrefix="Tocá:"

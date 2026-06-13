@@ -17,7 +17,7 @@ cada uno. Todo lo nuevo configurable en los TUNING. Push al final.
 - [x] **3** Intros de Sofía sin el "Hola" apagado: regenerar las 7 locuciones
       (arrancan directo "¡Soy la Seño Sofía!...") con edge-tts es-AR-ElenaNeural,
       y actualizar los textos fallback.
-- [ ] **4** Mostrar el avatar de Sofía durante la intro (reusar `SofiaAvatar` +
+- [x] **4** Mostrar el avatar de Sofía durante la intro (reusar `SofiaAvatar` +
       `AudioWaves` del GameIntro). Componente compartido `ArcadeIntro` en los 7.
 
 ## Por juego

@@ -20,6 +20,7 @@ import { physicsForPhase, stepFlight, buildCloudRound, tuningForPhase, rewardFor
 import { createWordBag } from "../config/arcade-tuning";
 import { LeoVuelaObstacles } from "./leo-vuela-obstacles";
 import { ArcadeHud, MoveButtons } from "./ArcadeHud";
+import { ArcadeIntro } from "./ArcadeIntro";
 import { LeoVuelaMusic } from "./leo-vuela-music";
 
 function shuffle<T>(arr: T[]): T[] {
@@ -674,6 +675,7 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
   return (
     <GameShell title="Leo Vuela" icon="🪁" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})}>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: spacing.md, paddingTop: spacing.sm }}>
+        {gamePhase === "intro" && <ArcadeIntro color={GAME_COLOR} />}
         <ArcadeHud
           color={GAME_COLOR}
           targetPrefix="Volá a:"

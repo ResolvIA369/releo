@@ -11,6 +11,7 @@ import { useArcadeClock } from "../hooks/useArcadeClock";
 import { useSofiaIntro } from "../hooks/useSofiaIntro";
 import { GameShell, usePause } from "./GameShell";
 import { ArcadeHud } from "./ArcadeHud";
+import { ArcadeIntro } from "./ArcadeIntro";
 import { ArcadeMusic } from "./arcade-music";
 import { useRewards } from "@/shared/components/RewardsLayer";
 import { FeedbackFlash } from "@/shared/components/FeedbackFlash";
@@ -251,6 +252,7 @@ export const WordRain: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
   return (
     <GameShell title="Lluvia de Palabras" icon="🌧️" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})}>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: spacing.md, paddingTop: spacing.sm }}>
+        {gamePhase === "intro" && <ArcadeIntro color={GAME_COLOR} />}
         <ArcadeHud
           color={GAME_COLOR}
           targetPrefix="Atrapá:"
