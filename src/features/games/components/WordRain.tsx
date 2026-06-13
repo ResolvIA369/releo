@@ -184,14 +184,22 @@ export const WordRain: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
       energy.adjust(tuning.energyGainCorrect);
       if (level.registerCorrect()) musicRef.current?.setLevel(levelRef.current);
       flashFeedback("correct");
-      speakDucked(() => sofiaPlayAudio("reaccion-muy-bien", "¡Muy bien!", "excited"));
-      resolveRef.current(450);
+      // La felicitacion suena COMPLETA: la tanda siguiente espera a que
+      // termine (en vez de un delay fijo que la cortaba al anunciar la
+      // proxima palabra).
+      resolvedRef.current = true;
+      stopVoice();
+      musicRef.current?.duck(true);
+      sofiaPlayAudio("reaccion-muy-bien", "¡Muy bien!", "excited").finally(() => {
+        if (!cancelledRef.current) spawnWave();
+        else musicRef.current?.duck(false);
+      });
     } else {
       // Error mudo: solo flash + energia abajo; el target sigue cayendo
       energy.adjust(-tuning.energyLossWrong);
       flashFeedback("wrong");
     }
-  }, [energy, tuning, recordAttempt, rewardCorrect, speakDucked, flashFeedback, levelRef]);
+  }, [energy, tuning, recordAttempt, rewardCorrect, speakDucked, spawnWave, flashFeedback, levelRef]);
 
   // Una palabra termino de caer
   const onDropLand = useCallback((isTarget: boolean) => {

@@ -199,14 +199,22 @@ export const BitsReading: React.FC<GameProps> = ({ words, phase = 1, onComplete,
       } else {
         rewardCorrect();
       }
-      speakDucked(() => sofiaPlayAudio("reaccion-muy-bien", "¡Muy bien!", "excited"));
-      resolveRef.current(500);
+      // La felicitacion suena COMPLETA: la tanda siguiente espera a que
+      // termine (en vez de un delay fijo que la cortaba al anunciar la
+      // proxima palabra).
+      resolvedRef.current = true;
+      stopVoice();
+      musicRef.current?.duck(true);
+      sofiaPlayAudio("reaccion-muy-bien", "¡Muy bien!", "excited").finally(() => {
+        if (!cancelledRef.current) spawnWave();
+        else musicRef.current?.duck(false);
+      });
     } else {
       // Error mudo: solo flash + energia abajo; las burbujas siguen
       energy.adjust(-tuning.energyLossWrong);
       flashFeedback("wrong");
     }
-  }, [energy, tuning, recordAttempt, rewardCorrect, speakDucked, flashFeedback, poppedId, levelRef]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [energy, tuning, recordAttempt, rewardCorrect, speakDucked, spawnWave, flashFeedback, poppedId, levelRef]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Demo: cada tanda, revienta la burbuja correcta
   useEffect(() => {
