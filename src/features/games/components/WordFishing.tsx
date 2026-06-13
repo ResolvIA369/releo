@@ -13,6 +13,7 @@ import { GameShell, usePause } from "./GameShell";
 import { ArcadeHud } from "./ArcadeHud";
 import { ArcadeIntro } from "./ArcadeIntro";
 import { ArcadeMusic } from "./arcade-music";
+import { UnderwaterAmbience } from "./GameAmbience";
 import { useRewards } from "@/shared/components/RewardsLayer";
 import { GameCompleteScreen } from "@/shared/components/GameCompleteScreen";
 import { FeedbackFlash } from "@/shared/components/FeedbackFlash";
@@ -260,6 +261,7 @@ export const WordFishing: React.FC<GameProps> = ({ words, phase = 1, onComplete,
           background: "linear-gradient(180deg, #b3e5fc 0%, #4fc3f7 25%, #0288d1 60%, #01579b 100%)",
           border: `2px solid ${colors.border.light}`,
         }}>
+          <UnderwaterAmbience />
           <motion.div animate={{ x: [-30, 30, -30] }}
             transition={{ repeat: Infinity, duration: 5, ease: "easeInOut" }}
             style={{ position: "absolute", top: "12%", left: -20, right: -20, height: 6, backgroundColor: "rgba(255,255,255,0.25)", borderRadius: 3 }} />

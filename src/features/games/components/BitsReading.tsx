@@ -13,6 +13,7 @@ import { GameShell, usePause } from "./GameShell";
 import { ArcadeHud } from "./ArcadeHud";
 import { ArcadeIntro } from "./ArcadeIntro";
 import { ArcadeMusic } from "./arcade-music";
+import { FloatingBubbles } from "./GameAmbience";
 import { useRewards } from "@/shared/components/RewardsLayer";
 import { GameCompleteScreen } from "@/shared/components/GameCompleteScreen";
 import { FeedbackFlash } from "@/shared/components/FeedbackFlash";
@@ -282,6 +283,7 @@ export const BitsReading: React.FC<GameProps> = ({ words, phase = 1, onComplete,
           background: "linear-gradient(180deg, #e8daef 0%, #d2b4de 40%, #bb8fce 100%)",
           border: `2px solid ${colors.border.light}`,
         }}>
+          <FloatingBubbles />
           {[0, 1, 2, 3, 4].map((i) => (
             <motion.div key={i} animate={{ opacity: [0.2, 0.6, 0.2], scale: [0.8, 1.2, 0.8] }}
               transition={{ repeat: Infinity, duration: 2 + i * 0.5, delay: i * 0.3 }}

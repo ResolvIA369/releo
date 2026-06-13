@@ -13,6 +13,7 @@ import { GameShell, usePause } from "./GameShell";
 import { ArcadeHud } from "./ArcadeHud";
 import { ArcadeIntro } from "./ArcadeIntro";
 import { ArcadeMusic } from "./arcade-music";
+import { SkyBirds } from "./GameAmbience";
 import { useRewards } from "@/shared/components/RewardsLayer";
 import { FeedbackFlash } from "@/shared/components/FeedbackFlash";
 import { VictoryBurst } from "@/shared/components/VictoryBurst";
@@ -315,6 +316,7 @@ export const WordTrain: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
           backgroundColor: "#e8f5e9", border: `2px solid ${colors.border.light}`,
           padding: `${spacing.xl}px 0`, position: "relative", minHeight: 120,
         }}>
+          <SkyBirds />
           {/* Rails */}
           <div style={{ position: "relative", height: 82 }}>
             <div style={{ position: "absolute", left: 0, right: 0, top: 18, height: 4, backgroundColor: "#8d6e63" }} />

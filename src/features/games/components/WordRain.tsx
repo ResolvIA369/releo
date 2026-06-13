@@ -13,6 +13,7 @@ import { GameShell, usePause } from "./GameShell";
 import { ArcadeHud } from "./ArcadeHud";
 import { ArcadeIntro } from "./ArcadeIntro";
 import { ArcadeMusic } from "./arcade-music";
+import { RainAndThunder } from "./GameAmbience";
 import { useRewards } from "@/shared/components/RewardsLayer";
 import { FeedbackFlash } from "@/shared/components/FeedbackFlash";
 import { VictoryBurst } from "@/shared/components/VictoryBurst";
@@ -279,6 +280,7 @@ export const WordRain: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
           background: "linear-gradient(180deg, #ebf8ff 0%, #bee3f8 60%, #90cdf4 100%)",
           border: `2px solid ${colors.border.light}`, overflow: "hidden",
         }}>
+          <RainAndThunder />
           <div style={{ position: "absolute", top: 8, left: "10%", fontSize: 36, opacity: 0.4 }}>☁️</div>
           <div style={{ position: "absolute", top: 4, right: "15%", fontSize: 28, opacity: 0.3 }}>☁️</div>
 
