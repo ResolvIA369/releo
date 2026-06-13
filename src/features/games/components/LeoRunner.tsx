@@ -9,7 +9,6 @@ import { useGameKeys } from "../hooks/useGameKeys";
 import { useArcadeEnergy } from "../hooks/useArcadeEnergy";
 import { useArcadeLevel } from "../hooks/useArcadeLevel";
 import { useSofiaIntro } from "../hooks/useSofiaIntro";
-import { useDemoAutoplay } from "../hooks/useDemoAutoplay";
 import { GameShell, usePause } from "./GameShell";
 import { ArcadeHud } from "./ArcadeHud";
 import { ArcadeIntro } from "./ArcadeIntro";
@@ -55,6 +54,31 @@ const SIGN_SPAWN_Y = -70;
 // Travel speed in px/frame at 60fps; los niveles la multiplican
 const BASE_SPEED = 1.5;
 const FADE_RATE = 0.04; // alpha/frame de la tanda anterior al irse
+const DASH = 26, DASH_GAP = 26, DASH_PERIOD = DASH + DASH_GAP;
+
+// Las lineas punteadas van ENTRE carriles (n-1 separadores), asi
+// coinciden con la cantidad real de carriles (3 o 4 en Nivel 3).
+function separatorXs(lanesX: number[]): number[] {
+  const seps: number[] = [];
+  for (let i = 0; i < lanesX.length - 1; i++) seps.push((lanesX[i] + lanesX[i + 1]) / 2);
+  return seps;
+}
+
+// (Re)dibuja las lineas punteadas en las X dadas, envueltas en vertical
+// para la ilusion de scroll. Conserva la posicion de scroll del layer.
+function rebuildDashes(PIXI: typeof import("pixi.js"), layer: Container, seps: number[]): void {
+  layer.removeChildren().forEach((c) => c.destroy());
+  for (const bx of seps) {
+    for (let y = -DASH_PERIOD; y < H + DASH_PERIOD; y += DASH_PERIOD) {
+      const d = new PIXI.Graphics();
+      d.roundRect(-3, 0, 6, DASH, 3).fill("#ffffff");
+      d.alpha = 0.9;
+      d.x = bx;
+      d.y = y;
+      layer.addChild(d);
+    }
+  }
+}
 
 // Intro de Sofia al arrancar (mp3 edge-tts es-AR-ElenaNeural; este
 // texto es el fallback hablado si el audio no carga)
@@ -96,6 +120,7 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
 
   const leoLaneRef = useRef(1);
   const lanesXRef = useRef<number[]>(DEFAULT_LANES_X);
+  const dashLaneCountRef = useRef(3); // para redibujar separadores al cambiar de carriles
   const jumpTRef = useRef(1); // 0→1 jump progress; 1 = on the ground
   const crashTRef = useRef(1); // 0→1 stumble progress
   const squashTRef = useRef(1); // 0→1 squash-and-stretch on a correct pass
@@ -176,19 +201,10 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
       road.rect(W - 14, 0, 14, H).fill("#a8d5b0");
       app.stage.addChild(road);
 
-      // Dashed lane separators, wrapped vertically for the scroll illusion
+      // Dashed lane separators (entre carriles) — se redibujan si el
+      // Nivel 3 agrega un cuarto carril
       const dashLayer = new PIXI.Container();
-      const DASH = 26, GAP = 26, PERIOD = DASH + GAP;
-      for (const bx of [W / 3, (2 * W) / 3]) {
-        for (let y = -PERIOD; y < H + PERIOD; y += PERIOD) {
-          const d = new PIXI.Graphics();
-          d.roundRect(-3, 0, 6, DASH, 3).fill("#ffffff");
-          d.alpha = 0.9;
-          d.x = bx;
-          d.y = y;
-          dashLayer.addChild(d);
-        }
-      }
+      rebuildDashes(PIXI, dashLayer, separatorXs(DEFAULT_LANES_X));
       app.stage.addChild(dashLayer);
       dashLayerRef.current = dashLayer;
 
@@ -260,7 +276,7 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
 
         // Scroll the lane dashes to fake forward motion
         if (dashLayerRef.current) {
-          dashLayerRef.current.y = (dashLayerRef.current.y + effSpeed * dt * 1.4) % PERIOD;
+          dashLayerRef.current.y = (dashLayerRef.current.y + effSpeed * dt * 1.4) % DASH_PERIOD;
         }
 
         // Leo: lerp toward his lane + running bob + jump arc
@@ -402,6 +418,11 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
     const laneCount = tuningRef.current.lanesByLevel[levelRef.current] ?? 3;
     lanesXRef.current = lanesXForCount(laneCount, W);
     if (leoLaneRef.current > laneCount - 1) leoLaneRef.current = laneCount - 1;
+    // Redibujar los separadores punteados si cambio la cantidad de carriles
+    if (laneCount !== dashLaneCountRef.current && dashLayerRef.current) {
+      dashLaneCountRef.current = laneCount;
+      rebuildDashes(PIXI, dashLayerRef.current, separatorXs(lanesXRef.current));
+    }
     const lanes = buildLanes(target, wordsRef.current, rocksForPhase(phase), laneCount, shuffle);
     const targetLane = lanes.findIndex((l) => l.word?.id === target.id);
 
@@ -562,11 +583,17 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
     ArrowRight: () => moveLane(1),
   });
 
-  // Demo mode: tap the correct lane while the signs are still far
-  useDemoAutoplay(isDemo, gamePhase === "running", () => {
-    const btn = document.querySelector(`[data-word-id="${roundRef.current.target?.id}"]`) as HTMLElement;
-    if (btn) btn.click();
-  }, 2500);
+  // Demo mode: cada tanda, mueve a Leo al carril correcto mientras los
+  // carteles estan lejos (keyed en waveIdx para re-armarse en cada
+  // tanda del flujo continuo, no solo en la primera)
+  useEffect(() => {
+    if (!isDemo || gamePhase !== "running" || !targetWord) return;
+    const t = setTimeout(() => {
+      const btn = document.querySelector(`[data-word-id="${roundRef.current.target?.id}"]`) as HTMLElement;
+      if (btn) btn.click();
+    }, 1200);
+    return () => clearTimeout(t);
+  }, [isDemo, gamePhase, waveIdx, targetWord]);
 
   const handleReplay = useCallback(() => {
     reset();
