@@ -67,7 +67,7 @@ export const WordTrain: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
   const cancelledRef = useRef(false);
 
   const energy = useArcadeEnergy(tuning);
-  const level = useArcadeLevel(tuning.levelDurationSec, tuning.levels.length);
+  const level = useArcadeLevel(tuning.wordsPerLevel, tuning.levels.length);
   const { levelRef } = level;
 
   // Musica: instancia liviana, el audio recien se crea tras el gesto
@@ -153,7 +153,7 @@ export const WordTrain: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
 
   // ─── Clock: mueve el tren + drena energia + sube nivel ───────────
   useArcadeClock(gamePhase === "running" && !paused, (dt) => {
-    if (level.tick(dt)) musicRef.current?.setLevel(levelRef.current);
+    level.tick(dt);
     if (energy.drainTick(dt)) { finishRef.current(); return; }
 
     if (resolvedRef.current) return;
@@ -192,6 +192,7 @@ export const WordTrain: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
       setBurstPos({ x: cx, y: cy });
       rewardCorrect(cx, cy);
       energy.adjust(tuning.energyGainCorrect);
+      if (level.registerCorrect()) musicRef.current?.setLevel(levelRef.current);
       flashFeedback("correct");
       speakDucked(() => sofiaPlayAudio("reaccion-muy-bien", "¡Muy bien!", "excited"));
     } else {

@@ -73,7 +73,7 @@ export const WordFishing: React.FC<GameProps> = ({ words, phase = 1, onComplete,
   const cancelledRef = useRef(false);
 
   const energy = useArcadeEnergy(tuning);
-  const level = useArcadeLevel(tuning.levelDurationSec, tuning.levels.length);
+  const level = useArcadeLevel(tuning.wordsPerLevel, tuning.levels.length);
   const { levelRef, levelUi } = level;
   const speedMul = (tuning.levels[levelUi] ?? tuning.levels[0]).speedMul;
 
@@ -149,7 +149,7 @@ export const WordFishing: React.FC<GameProps> = ({ words, phase = 1, onComplete,
   }, [gamePhase, spawnWave]);
 
   useArcadeClock(gamePhase === "running" && !paused, (dt) => {
-    if (level.tick(dt)) musicRef.current?.setLevel(levelRef.current);
+    level.tick(dt);
     if (energy.drainTick(dt)) finishRef.current();
   });
 
@@ -173,6 +173,7 @@ export const WordFishing: React.FC<GameProps> = ({ words, phase = 1, onComplete,
       setBurstPos({ x: cx, y: cy });
       rewardCorrect(cx, cy);
       energy.adjust(tuning.energyGainCorrect);
+      if (level.registerCorrect()) musicRef.current?.setLevel(levelRef.current);
       flashFeedback("correct");
       speakDucked(() => sofiaPlayAudio("reaccion-muy-bien", "¡Muy bien!", "excited"));
       resolveRef.current(550);

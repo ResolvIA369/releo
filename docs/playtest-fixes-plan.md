@@ -5,7 +5,7 @@ cada uno. Todo lo nuevo configurable en los TUNING. Push al final.
 
 ## Sistémicos (vía hooks/módulos compartidos)
 
-- [ ] **1** Niveles por palabras acertadas, no por tiempo. `useArcadeLevel`
+- [x] **1** Niveles por palabras acertadas, no por tiempo. `useArcadeLevel`
       avanza tras `wordsPerLevel` (10, configurable) aciertos; topa en 3; el
       juego sigue terminando por energía. `tick(dt)` queda solo como reloj de
       juego (invulnerabilidad de obstáculos); el nivel sube en `registerCorrect()`

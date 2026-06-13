@@ -76,7 +76,7 @@ export const BitsReading: React.FC<GameProps> = ({ words, phase = 1, onComplete,
   const cancelledRef = useRef(false);
 
   const energy = useArcadeEnergy(tuning);
-  const level = useArcadeLevel(tuning.levelDurationSec, tuning.levels.length);
+  const level = useArcadeLevel(tuning.wordsPerLevel, tuning.levels.length);
   const { levelRef, levelUi } = level;
 
   const musicRef = useRef<ArcadeMusic | null>(null);
@@ -157,7 +157,7 @@ export const BitsReading: React.FC<GameProps> = ({ words, phase = 1, onComplete,
 
   // Clock: deriva de burbujas + drenaje de energia + nivel
   useArcadeClock(gamePhase === "running" && !paused, (dt) => {
-    if (level.tick(dt)) musicRef.current?.setLevel(levelRef.current);
+    level.tick(dt);
     if (energy.drainTick(dt)) { finishRef.current(); return; }
 
     const speedMul = (tuning.levels[levelRef.current] ?? tuning.levels[0]).speedMul;
@@ -190,6 +190,7 @@ export const BitsReading: React.FC<GameProps> = ({ words, phase = 1, onComplete,
     if (correct) {
       setPoppedId(bubble.word.id);
       energy.adjust(tuning.energyGainCorrect);
+      if (level.registerCorrect()) musicRef.current?.setLevel(levelRef.current);
       flashFeedback("correct");
       if (e) {
         const rect = (e.target as HTMLElement).getBoundingClientRect();

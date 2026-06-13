@@ -121,7 +121,7 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
 
   const onEnergyOutRef = useRef<() => void>(() => {});
   const energy = useArcadeEnergy(tuning);
-  const level = useArcadeLevel(tuning.levelDurationSec, tuning.levels.length);
+  const level = useArcadeLevel(tuning.wordsPerLevel, tuning.levels.length);
   const { levelRef } = level;
 
   // Musica de selva: los 3 loops compartidos; el audio recien se crea
@@ -224,7 +224,7 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
 
         // Nivel por tiempo + drenaje de energia (el flujo nunca para)
         if (round.active && gamePhaseRef.current === "running") {
-          if (level.tick(dt)) musicRef.current?.setLevel(levelRef.current);
+          level.tick(dt);
           if (energy.drainTick(dt)) {
             round.active = false;
             round.resolved = true;
@@ -513,6 +513,7 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
       round.resolved = true;
       recordAttempt(true, target.id);
       energy.adjust(tuningRef.current.energyGainCorrect);
+      if (level.registerCorrect()) musicRef.current?.setLevel(levelRef.current);
       flashFeedback("correct");
       const canvas = appRef.current?.canvas;
       if (canvas) {

@@ -113,7 +113,7 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
 
   const onEnergyOutRef = useRef<() => void>(() => {});
   const energy = useArcadeEnergy(tuning);
-  const level = useArcadeLevel(tuning.levelDurationSec, tuning.levels.length);
+  const level = useArcadeLevel(tuning.wordsPerLevel, tuning.levels.length);
   const { levelRef } = level;
 
   // Musica de selva: los 3 loops compartidos; el audio recien se crea
@@ -228,7 +228,7 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
 
         // Nivel por tiempo + drenaje de energia (el flujo nunca para)
         if (round.active && gamePhaseRef.current === "running") {
-          if (level.tick(dt)) musicRef.current?.setLevel(levelRef.current);
+          level.tick(dt);
           if (energy.drainTick(dt)) {
             round.active = false;
             round.resolved = true;
@@ -498,6 +498,7 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
       jumpTRef.current = 0; // victory hop
       squashTRef.current = 0; // celebration squash-and-stretch
       energy.adjust(tuningRef.current.energyGainCorrect);
+      if (level.registerCorrect()) musicRef.current?.setLevel(levelRef.current);
       flashFeedback("correct");
       speakDucked(() => sofiaPlayAudio("reaccion-muy-bien", "¡Muy bien!", "excited"));
     } else {

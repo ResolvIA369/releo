@@ -78,7 +78,7 @@ export const GameShell: React.FC<GameShellProps> = ({ title, icon, color, sessio
               border: "2px solid #FFD54F",
               boxShadow: "0 2px 6px rgba(218,165,32,0.25)",
             }}>
-              <img src="/images/cofre.png" alt="cofre" style={{ height: 26, width: "auto", objectFit: "contain" }} />
+              <img src="/images/cofre.png" alt="cofre" style={{ height: 26, width: 55, flexShrink: 0, objectFit: "contain", display: "block" }} />
               <span style={{ fontSize: fontSizes.sm, fontWeight: "bold", fontFamily: fonts.display, color: "#F59E0B" }}>
                 {session.correctAttempts}
               </span>

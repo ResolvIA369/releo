@@ -125,7 +125,7 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
   const onEnergyOutRef = useRef<() => void>(() => {});
   const energy = useArcadeEnergy(tuning);
   const { energyRef } = energy;
-  const level = useArcadeLevel(tuning.levelDurationSec, tuning.levels.length);
+  const level = useArcadeLevel(tuning.wordsPerLevel, tuning.levels.length);
   const { playSecRef, levelRef, levelUi } = level;
 
   const birdInvulnUntilRef = useRef(0); // fin de la invulnerabilidad (en seg de juego)
@@ -233,7 +233,7 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
         // Nivel por tiempo jugado: mas velocidad y nubes mas juntas
         const tun = tuningRef.current;
         if (round.active && gamePhaseRef.current === "running") {
-          if (level.tick(dt)) musicRef.current?.setLevel(levelRef.current);
+          level.tick(dt);
           // Drenaje pasivo de energia; en 0 se termina
           if (energy.drainTick(dt)) {
             round.active = false;
@@ -552,6 +552,7 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
       }
       squashTRef.current = 0; // celebration squash-and-stretch
       adjustEnergy(tuningRef.current.energyGainCorrect);
+      if (level.registerCorrect()) musicRef.current?.setLevel(levelRef.current);
       speakDucked(() => sofiaPlayAudio("reaccion-muy-bien", "¡Muy bien!", "excited"));
       nextWave();
     } else {

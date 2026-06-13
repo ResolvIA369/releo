@@ -3,7 +3,7 @@ import { ARCADE_MUSIC_TRACKS } from "./arcade-tuning";
 
 // Helpers compartidos del arcade: mismos nombres que siempre exporto
 // este modulo, ahora viven en arcade-tuning.ts
-export { clampEnergy, levelForElapsed, rewardForLevel, pickNextTarget } from "./arcade-tuning";
+export { clampEnergy, levelForCorrectCount, rewardForLevel, pickNextTarget } from "./arcade-tuning";
 
 // El "feel" de vuelo por mundo/fase, ajustable sin tocar el juego
 // (mismo patron que LEO_ROCKS_BY_PHASE). Unidades en px/frame a 60fps,
@@ -57,7 +57,7 @@ export interface LeoVuelaTuning {
   // Rayos, lluvia y nubes rasantes siguen solo empujando.
   energyLossPerBird: number;
   birdHitInvulnSec: number;
-  levelDurationSec: number; // duracion de cada nivel (126s: ~2min por nivel)
+  wordsPerLevel: number; // aciertos para subir un nivel (topa en 3)
   levels: LeoVuelaLevel[];
   levelCoinBonus: number[]; // monedas extra por nivel alcanzado al terminar
   horizontalSpeed: number; // velocidad de Leo adelante/atras (px/frame)
@@ -85,11 +85,11 @@ const DEFAULT_MUSIC_TRACKS = ARCADE_MUSIC_TRACKS;
 const DEFAULT_COIN_BONUS = [0, 10, 25];
 
 export const LEO_VUELA_TUNING: Record<PhaseNumber, LeoVuelaTuning> = {
-  1: { energyStart: 60, energyMax: 100, energyGainCorrect: 14, energyLossWrong: 10, energyLossEscape: 8, energyDrainPerSec: 1.0, energyLossPerBird: 6, birdHitInvulnSec: 1.5, levelDurationSec: 126, levels: DEFAULT_LEVELS, levelCoinBonus: DEFAULT_COIN_BONUS, horizontalSpeed: 3, musicTracks: DEFAULT_MUSIC_TRACKS, musicVolumeDb: -22, musicDuckDb: -34 },
-  2: { energyStart: 60, energyMax: 100, energyGainCorrect: 13, energyLossWrong: 10, energyLossEscape: 8, energyDrainPerSec: 1.2, energyLossPerBird: 6, birdHitInvulnSec: 1.5, levelDurationSec: 126, levels: DEFAULT_LEVELS, levelCoinBonus: DEFAULT_COIN_BONUS, horizontalSpeed: 3, musicTracks: DEFAULT_MUSIC_TRACKS, musicVolumeDb: -22, musicDuckDb: -34 },
-  3: { energyStart: 60, energyMax: 100, energyGainCorrect: 12, energyLossWrong: 11, energyLossEscape: 9, energyDrainPerSec: 1.4, energyLossPerBird: 6, birdHitInvulnSec: 1.5, levelDurationSec: 126, levels: DEFAULT_LEVELS, levelCoinBonus: DEFAULT_COIN_BONUS, horizontalSpeed: 3, musicTracks: DEFAULT_MUSIC_TRACKS, musicVolumeDb: -22, musicDuckDb: -34 },
-  4: { energyStart: 60, energyMax: 100, energyGainCorrect: 12, energyLossWrong: 11, energyLossEscape: 9, energyDrainPerSec: 1.6, energyLossPerBird: 6, birdHitInvulnSec: 1.5, levelDurationSec: 126, levels: DEFAULT_LEVELS, levelCoinBonus: DEFAULT_COIN_BONUS, horizontalSpeed: 3, musicTracks: DEFAULT_MUSIC_TRACKS, musicVolumeDb: -22, musicDuckDb: -34 },
-  5: { energyStart: 60, energyMax: 100, energyGainCorrect: 11, energyLossWrong: 12, energyLossEscape: 10, energyDrainPerSec: 1.8, energyLossPerBird: 6, birdHitInvulnSec: 1.5, levelDurationSec: 126, levels: DEFAULT_LEVELS, levelCoinBonus: DEFAULT_COIN_BONUS, horizontalSpeed: 3, musicTracks: DEFAULT_MUSIC_TRACKS, musicVolumeDb: -22, musicDuckDb: -34 },
+  1: { energyStart: 60, energyMax: 100, energyGainCorrect: 14, energyLossWrong: 10, energyLossEscape: 8, energyDrainPerSec: 1.0, energyLossPerBird: 6, birdHitInvulnSec: 1.5, wordsPerLevel: 10, levels: DEFAULT_LEVELS, levelCoinBonus: DEFAULT_COIN_BONUS, horizontalSpeed: 3, musicTracks: DEFAULT_MUSIC_TRACKS, musicVolumeDb: -22, musicDuckDb: -34 },
+  2: { energyStart: 60, energyMax: 100, energyGainCorrect: 13, energyLossWrong: 10, energyLossEscape: 8, energyDrainPerSec: 1.2, energyLossPerBird: 6, birdHitInvulnSec: 1.5, wordsPerLevel: 10, levels: DEFAULT_LEVELS, levelCoinBonus: DEFAULT_COIN_BONUS, horizontalSpeed: 3, musicTracks: DEFAULT_MUSIC_TRACKS, musicVolumeDb: -22, musicDuckDb: -34 },
+  3: { energyStart: 60, energyMax: 100, energyGainCorrect: 12, energyLossWrong: 11, energyLossEscape: 9, energyDrainPerSec: 1.4, energyLossPerBird: 6, birdHitInvulnSec: 1.5, wordsPerLevel: 10, levels: DEFAULT_LEVELS, levelCoinBonus: DEFAULT_COIN_BONUS, horizontalSpeed: 3, musicTracks: DEFAULT_MUSIC_TRACKS, musicVolumeDb: -22, musicDuckDb: -34 },
+  4: { energyStart: 60, energyMax: 100, energyGainCorrect: 12, energyLossWrong: 11, energyLossEscape: 9, energyDrainPerSec: 1.6, energyLossPerBird: 6, birdHitInvulnSec: 1.5, wordsPerLevel: 10, levels: DEFAULT_LEVELS, levelCoinBonus: DEFAULT_COIN_BONUS, horizontalSpeed: 3, musicTracks: DEFAULT_MUSIC_TRACKS, musicVolumeDb: -22, musicDuckDb: -34 },
+  5: { energyStart: 60, energyMax: 100, energyGainCorrect: 11, energyLossWrong: 12, energyLossEscape: 10, energyDrainPerSec: 1.8, energyLossPerBird: 6, birdHitInvulnSec: 1.5, wordsPerLevel: 10, levels: DEFAULT_LEVELS, levelCoinBonus: DEFAULT_COIN_BONUS, horizontalSpeed: 3, musicTracks: DEFAULT_MUSIC_TRACKS, musicVolumeDb: -22, musicDuckDb: -34 },
 };
 
 export function tuningForPhase(phase: PhaseNumber): LeoVuelaTuning {

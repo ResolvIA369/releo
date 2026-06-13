@@ -835,7 +835,7 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
                 boxShadow: "0 2px 8px rgba(218,165,32,0.3)",
               }}
             >
-              <img src="/images/cofre.png" alt="cofre" style={{ height: 28, width: "auto", objectFit: "contain" }} />
+              <img src="/images/cofre.png" alt="cofre" style={{ height: 28, width: 59, flexShrink: 0, objectFit: "contain", display: "block" }} />
               <motion.span
                 key={score}
                 initial={{ scale: 1.4 }}

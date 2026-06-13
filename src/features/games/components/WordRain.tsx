@@ -76,7 +76,7 @@ export const WordRain: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
   const cancelledRef = useRef(false);
 
   const energy = useArcadeEnergy(tuning);
-  const level = useArcadeLevel(tuning.levelDurationSec, tuning.levels.length);
+  const level = useArcadeLevel(tuning.wordsPerLevel, tuning.levels.length);
   const { levelRef } = level;
 
   const musicRef = useRef<ArcadeMusic | null>(null);
@@ -157,7 +157,7 @@ export const WordRain: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
 
   // Clock: solo drena energia + sube nivel (la caida la anima framer)
   useArcadeClock(gamePhase === "running" && !paused, (dt) => {
-    if (level.tick(dt)) musicRef.current?.setLevel(levelRef.current);
+    level.tick(dt);
     if (energy.drainTick(dt)) finishRef.current();
   });
 
@@ -181,6 +181,7 @@ export const WordRain: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
       setBurstPos({ x: cx, y: cy });
       rewardCorrect(cx, cy);
       energy.adjust(tuning.energyGainCorrect);
+      if (level.registerCorrect()) musicRef.current?.setLevel(levelRef.current);
       flashFeedback("correct");
       speakDucked(() => sofiaPlayAudio("reaccion-muy-bien", "¡Muy bien!", "excited"));
       resolveRef.current(450);

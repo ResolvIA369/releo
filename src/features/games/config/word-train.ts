@@ -26,7 +26,7 @@ const TRAIN_BASE = {
   energyStart: 60, energyMax: 100,
   energyGainCorrect: 14, energyLossWrong: 10, energyLossEscape: 8,
   energyLossPerObstacle: 0, obstacleInvulnSec: 0, // sin obstaculos
-  levelDurationSec: 126,
+  wordsPerLevel: 10,
   levels: TRAIN_LEVELS,
   levelCoinBonus: [0, 10, 25],
   musicTracks: ARCADE_MUSIC_TRACKS,

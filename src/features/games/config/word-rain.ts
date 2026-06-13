@@ -24,7 +24,7 @@ const RAIN_BASE = {
   energyStart: 60, energyMax: 100,
   energyGainCorrect: 14, energyLossWrong: 10, energyLossEscape: 8,
   energyLossPerObstacle: 0, obstacleInvulnSec: 0,
-  levelDurationSec: 126,
+  wordsPerLevel: 10,
   levels: RAIN_LEVELS,
   levelCoinBonus: [0, 10, 25],
   musicTracks: ARCADE_MUSIC_TRACKS,

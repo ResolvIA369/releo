@@ -1,22 +1,30 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import { levelForElapsed } from "../config/arcade-tuning";
+import { levelForCorrectCount } from "../config/arcade-tuning";
 
-// Nivel por tiempo jugado (0-based). `tick(dt)` se llama desde el
-// ticker de Pixi y devuelve true en el frame en que se sube de nivel
-// (para reaccionar: acelerar musica, etc.).
-export function useArcadeLevel(durationSec: number, levelCount: number) {
-  const cfgRef = useRef({ durationSec, levelCount });
-  cfgRef.current = { durationSec, levelCount };
+// Nivel por palabras acertadas (0-based). Sube tras `wordsPerLevel`
+// aciertos y topa en `levelCount`. `tick(dt)` ya NO cambia el nivel:
+// solo avanza un reloj de juego (playSecRef) que algunos juegos usan
+// para la invulnerabilidad de obstaculos. El nivel sube en
+// `registerCorrect()`, que devuelve true en el acierto que sube de
+// nivel (para reaccionar: acelerar musica, etc.).
+export function useArcadeLevel(wordsPerLevel: number, levelCount: number) {
+  const cfgRef = useRef({ wordsPerLevel, levelCount });
+  cfgRef.current = { wordsPerLevel, levelCount };
 
-  const playSecRef = useRef(0); // tiempo jugado acumulado (seg)
+  const playSecRef = useRef(0); // reloj de juego acumulado (seg)
+  const correctRef = useRef(0); // aciertos acumulados
   const levelRef = useRef(0);
   const [levelUi, setLevelUi] = useState(0);
 
-  const tick = useCallback((dt: number): boolean => {
+  const tick = useCallback((dt: number): void => {
     playSecRef.current += dt / 60;
-    const lvl = levelForElapsed(playSecRef.current, cfgRef.current.durationSec, cfgRef.current.levelCount);
+  }, []);
+
+  const registerCorrect = useCallback((): boolean => {
+    correctRef.current += 1;
+    const lvl = levelForCorrectCount(correctRef.current, cfgRef.current.wordsPerLevel, cfgRef.current.levelCount);
     if (lvl !== levelRef.current) {
       levelRef.current = lvl;
       setLevelUi(lvl);
@@ -27,9 +35,10 @@ export function useArcadeLevel(durationSec: number, levelCount: number) {
 
   const reset = useCallback(() => {
     playSecRef.current = 0;
+    correctRef.current = 0;
     levelRef.current = 0;
     setLevelUi(0);
   }, []);
 
-  return { playSecRef, levelRef, levelUi, tick, reset };
+  return { playSecRef, correctRef, levelRef, levelUi, tick, registerCorrect, reset };
 }

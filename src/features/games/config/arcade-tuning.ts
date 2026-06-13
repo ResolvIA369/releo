@@ -19,9 +19,9 @@ export interface ArcadeEnergyTuning {
   obstacleInvulnSec: number;
 }
 
-// ─── Niveles por tiempo + premios + musica ─────────────────────────
+// ─── Niveles por palabras acertadas + premios + musica ─────────────
 export interface ArcadeTuningBase extends ArcadeEnergyTuning {
-  levelDurationSec: number; // duracion de cada nivel
+  wordsPerLevel: number; // aciertos para subir un nivel (topa en 3)
   levelCoinBonus: number[]; // monedas extra por nivel alcanzado
   // Un loop real por nivel; volumen base BIEN bajo para que la voz se
   // escuche clara, y ducking mas profundo mientras Sofia habla.
@@ -41,10 +41,10 @@ export function clampEnergy(value: number, max: number): number {
   return Math.min(max, Math.max(0, value));
 }
 
-// Indice de nivel (0-based) segun tiempo jugado; clampea al ultimo
-export function levelForElapsed(elapsedSec: number, durationSec: number, levelCount: number): number {
-  if (durationSec <= 0 || levelCount <= 0) return 0;
-  return Math.min(levelCount - 1, Math.max(0, Math.floor(elapsedSec / durationSec)));
+// Indice de nivel (0-based) segun palabras acertadas; clampea al ultimo
+export function levelForCorrectCount(correct: number, wordsPerLevel: number, levelCount: number): number {
+  if (wordsPerLevel <= 0 || levelCount <= 0) return 0;
+  return Math.min(levelCount - 1, Math.max(0, Math.floor(correct / wordsPerLevel)));
 }
 
 // Recompensa al terminar segun el nivel alcanzado: monedas extra y

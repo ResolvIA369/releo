@@ -8,7 +8,7 @@ describe("BUBBLES_TUNING (modelo arcade)", () => {
       const t = BUBBLES_TUNING[phase];
       expect(t.energyDrainPerSec).toBeGreaterThan(0);
       expect(t.energyGainCorrect).toBeGreaterThan(0);
-      expect(t.levelDurationSec).toBe(126);
+      expect(t.wordsPerLevel).toBe(10);
       expect(t.levels).toHaveLength(3);
       expect(t.levelCoinBonus).toHaveLength(3);
       expect(t.musicTracks).toHaveLength(3);

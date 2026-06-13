@@ -5,7 +5,7 @@ import {
   physicsForPhase,
   tuningForPhase,
   clampEnergy,
-  levelForElapsed,
+  levelForCorrectCount,
   rewardForLevel,
   pickNextTarget,
   stepFlight,
@@ -69,17 +69,17 @@ describe("tuning de energia", () => {
   });
 });
 
-describe("levelForElapsed", () => {
-  it("mapea minutos 0-3 / 3-6 / 6-9 a niveles 1 / 2 / 3", () => {
-    expect(levelForElapsed(0, 180, 3)).toBe(0);
-    expect(levelForElapsed(179, 180, 3)).toBe(0);
-    expect(levelForElapsed(180, 180, 3)).toBe(1);
-    expect(levelForElapsed(359, 180, 3)).toBe(1);
-    expect(levelForElapsed(360, 180, 3)).toBe(2);
+describe("levelForCorrectCount", () => {
+  it("sube de nivel cada wordsPerLevel aciertos (10 → nivel 2, 20 → nivel 3)", () => {
+    expect(levelForCorrectCount(0, 10, 3)).toBe(0);
+    expect(levelForCorrectCount(9, 10, 3)).toBe(0);
+    expect(levelForCorrectCount(10, 10, 3)).toBe(1);
+    expect(levelForCorrectCount(19, 10, 3)).toBe(1);
+    expect(levelForCorrectCount(20, 10, 3)).toBe(2);
   });
 
-  it("pasado el ultimo umbral se queda en el nivel final", () => {
-    expect(levelForElapsed(9999, 180, 3)).toBe(2);
+  it("topa en el ultimo nivel", () => {
+    expect(levelForCorrectCount(9999, 10, 3)).toBe(2);
   });
 
   it("cada nivel es mas dificil: mas velocidad y nubes mas juntas", () => {
