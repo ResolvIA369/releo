@@ -123,39 +123,66 @@ function LearnContent() {
               // TODO: restore lock logic after testing
               const isLocked = false;
 
+              const thumb = `/thumbnails/thumbnail-sesion-${String(session.id).padStart(2, "0")}.png`;
+
               return (
                 <motion.button
                   key={session.id}
                   variants={staggerItem}
                   whileHover={{ y: -2, boxShadow: shadows.glow(world.color) }}
-                  onClick={() => setSelectedSession(session)}
+                  onClick={() => !isLocked && setSelectedSession(session)}
                   style={{
+                    position: "relative",
+                    overflow: "hidden",
                     display: "flex", alignItems: "center", gap: spacing.md,
                     padding: `${spacing.md}px ${spacing.lg}px`,
                     backgroundColor: colors.bg.card,
-                    border: `2px solid ${colors.border.light}`,
+                    border: isCompleted ? `3px solid #22C55E` : `2px solid ${colors.border.light}`,
                     borderRadius: radii.lg,
-                    cursor: "pointer",
+                    cursor: isLocked ? "not-allowed" : "pointer",
                     opacity: 1,
                     textAlign: "left",
                     boxShadow: shadows.sm,
                     transition: "border-color 0.2s",
                   }}
                 >
+                  {/* Thumbnail background */}
+                  <div
+                    aria-hidden
+                    style={{
+                      position: "absolute", inset: 0,
+                      backgroundImage: `url(${thumb})`,
+                      backgroundSize: "cover",
+                      backgroundPosition: "center",
+                      filter: isLocked ? "grayscale(100%)" : "none",
+                      zIndex: 0,
+                    }}
+                  />
+                  {/* Dark overlay so text/status stay legible over the image */}
+                  <div
+                    aria-hidden
+                    style={{
+                      position: "absolute", inset: 0,
+                      backgroundColor: isLocked ? "rgba(0,0,0,0.6)" : "rgba(0,0,0,0.35)",
+                      zIndex: 1,
+                    }}
+                  />
+
                   {/* Status icon */}
-                  <span style={{ fontSize: 24, flexShrink: 0 }}>
-                    {isCompleted ? "✅" : "📖"}
+                  <span style={{ position: "relative", zIndex: 2, fontSize: 24, flexShrink: 0 }}>
+                    {isLocked ? "🔒" : isCompleted ? "✅" : "📖"}
                   </span>
 
-                  <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ position: "relative", zIndex: 2, flex: 1, minWidth: 0 }}>
                     <div style={{
                       fontSize: fontSizes.md, fontWeight: "bold",
                       fontFamily: fonts.display,
-                      color: isLocked ? colors.text.muted : colors.text.primary,
+                      color: "#ffffff",
+                      textShadow: "0 1px 3px rgba(0,0,0,0.6)",
                     }}>
                       {session.words.map((w) => w.text).join(", ")}
                     </div>
-                    <div style={{ fontSize: fontSizes.xs, color: colors.text.placeholder, marginTop: 2, display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap" }}>
+                    <div style={{ fontSize: fontSizes.xs, color: "rgba(255,255,255,0.92)", marginTop: 2, display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap", textShadow: "0 1px 2px rgba(0,0,0,0.6)" }}>
                       <span>Sesión {session.id} —</span>
                       {session.words.map((w) =>
                         WORD_IMAGE_MAP[w.text]

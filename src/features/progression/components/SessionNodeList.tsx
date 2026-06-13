@@ -166,20 +166,41 @@ export const SessionNodeList: React.FC<SessionNodeListProps> = ({
 
               {/* Node content */}
               <div style={{
+                position: "relative",
+                overflow: "hidden",
                 flex: 1,
                 padding: `${spacing.sm}px ${spacing.md}px`,
                 backgroundColor: colors.bg.card,
                 borderRadius: radii.lg,
-                border: `2px solid ${isCurrent ? world.color : colors.border.light}`,
+                border: isCompleted
+                  ? `3px solid #22C55E`
+                  : `2px solid ${isCurrent ? world.color : colors.border.light}`,
                 boxShadow: isCurrent ? shadows.glow(world.color) : shadows.sm,
                 transition: "border-color 0.2s",
               }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                {/* Thumbnail background */}
+                <div aria-hidden style={{
+                  position: "absolute", inset: 0,
+                  backgroundImage: `url(/thumbnails/thumbnail-sesion-${String(session.id).padStart(2, "0")}.png)`,
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
+                  filter: isLocked ? "grayscale(100%)" : "none",
+                  zIndex: 0,
+                }} />
+                {/* Dark overlay so text/status stay legible over the image */}
+                <div aria-hidden style={{
+                  position: "absolute", inset: 0,
+                  backgroundColor: isLocked ? "rgba(0,0,0,0.6)" : "rgba(0,0,0,0.35)",
+                  zIndex: 1,
+                }} />
+
+                <div style={{ position: "relative", zIndex: 2, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   <span style={{
                     fontSize: fontSizes.md,
                     fontWeight: "bold",
                     fontFamily: fonts.display,
-                    color: isLocked ? colors.text.muted : isCompleted ? colors.success : world.color,
+                    color: "#ffffff",
+                    textShadow: "0 1px 3px rgba(0,0,0,0.6)",
                   }}>
                     {session.id - sessionIds[0] + 1}. {name}
                   </span>
@@ -199,14 +220,15 @@ export const SessionNodeList: React.FC<SessionNodeListProps> = ({
 
                 {/* Word chips */}
                 {!isLocked && (
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: spacing.xs }}>
+                  <div style={{ position: "relative", zIndex: 2, display: "flex", flexWrap: "wrap", gap: 4, marginTop: spacing.xs }}>
                     {session.words.map((w) => (
                       <span key={w.id} style={{
                         fontSize: fontSizes.xs,
                         padding: `1px ${spacing.xs}px`,
-                        backgroundColor: isCompleted ? `${colors.success}15` : `${world.color}15`,
-                        color: isCompleted ? colors.success : world.color,
+                        backgroundColor: "rgba(0,0,0,0.4)",
+                        color: "#ffffff",
                         borderRadius: radii.sm,
+                        textShadow: "0 1px 2px rgba(0,0,0,0.5)",
                       }}>
                         {w.text}
                       </span>

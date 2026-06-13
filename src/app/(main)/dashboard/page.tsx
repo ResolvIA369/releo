@@ -116,7 +116,14 @@ export default function DashboardPage() {
             display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32,
           }}>⚡</div>
           <div>
-            <div style={{ fontSize: fontSizes.xl, fontFamily: fonts.display, fontWeight: "bold", color: "#e53e3e" }}>
+            <div style={{
+              display: "inline-block",
+              fontSize: fontSizes.xl, fontFamily: fonts.display, fontWeight: "bold",
+              color: "#ffffff",
+              backgroundColor: "rgba(0,0,0,0.5)",
+              padding: "4px 8px",
+              borderRadius: 4,
+            }}>
               Flash de Palabras
             </div>
             <div style={{ fontSize: fontSizes.sm, color: colors.text.muted, marginTop: 2 }}>
@@ -142,7 +149,12 @@ export default function DashboardPage() {
             display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32,
           }}>🎮</div>
           <div>
-            <div style={{ fontSize: fontSizes.xl, fontFamily: fonts.display, fontWeight: "bold", color: "#38a169" }}>
+            <div style={{
+              display: "inline-block",
+              fontSize: fontSizes.xl, fontFamily: fonts.display, fontWeight: "bold",
+              color: "#ffffff", backgroundColor: "rgba(0,0,0,0.5)",
+              padding: "4px 8px", borderRadius: 4,
+            }}>
               Por Juego
             </div>
             <div style={{ fontSize: fontSizes.sm, color: colors.text.muted, marginTop: 2 }}>
@@ -168,7 +180,12 @@ export default function DashboardPage() {
             display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32,
           }}>📖</div>
           <div>
-            <div style={{ fontSize: fontSizes.xl, fontFamily: fonts.display, fontWeight: "bold", color: "#667eea" }}>
+            <div style={{
+              display: "inline-block",
+              fontSize: fontSizes.xl, fontFamily: fonts.display, fontWeight: "bold",
+              color: "#ffffff", backgroundColor: "rgba(0,0,0,0.5)",
+              padding: "4px 8px", borderRadius: 4,
+            }}>
               Por Palabras
             </div>
             <div style={{ fontSize: fontSizes.sm, color: colors.text.muted, marginTop: 2 }}>
@@ -194,7 +211,12 @@ export default function DashboardPage() {
             display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32,
           }}>🎬</div>
           <div>
-            <div style={{ fontSize: fontSizes.xl, fontFamily: fonts.display, fontWeight: "bold", color: "#ed8936" }}>
+            <div style={{
+              display: "inline-block",
+              fontSize: fontSizes.xl, fontFamily: fonts.display, fontWeight: "bold",
+              color: "#ffffff", backgroundColor: "rgba(0,0,0,0.5)",
+              padding: "4px 8px", borderRadius: 4,
+            }}>
               Aprender con Videos
             </div>
             <div style={{ fontSize: fontSizes.sm, color: colors.text.muted, marginTop: 2 }}>
@@ -220,7 +242,12 @@ export default function DashboardPage() {
             display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32,
           }}>📚</div>
           <div>
-            <div style={{ fontSize: fontSizes.xl, fontFamily: fonts.display, fontWeight: "bold", color: "#9f7aea" }}>
+            <div style={{
+              display: "inline-block",
+              fontSize: fontSizes.xl, fontFamily: fonts.display, fontWeight: "bold",
+              color: "#ffffff", backgroundColor: "rgba(0,0,0,0.5)",
+              padding: "4px 8px", borderRadius: 4,
+            }}>
               Método Doman
             </div>
             <div style={{ fontSize: fontSizes.sm, color: colors.text.muted, marginTop: 2 }}>
