@@ -39,7 +39,7 @@ Todo ajustable en un tuning por juego.
       «¡Hola! Soy la Seño Sofía. Leo va a correr por el camino. Escuchá la
       palabra, y tocá el camino donde está escrita para que Leo corra hacia
       ella. ¡Vos podés! ¡A correr!»
-- [ ] **B3** Leo Corre — obstáculos de piso por nivel (troncos cruzando el
+- [x] **B3** Leo Corre — obstáculos de piso por nivel (troncos cruzando el
       camino, pájaros que bajan, ráfagas de lluvia), coherentes con las
       piedras existentes (las piedras siguen siendo parte de la decisión de
       lectura; los obstáculos nuevos aparecen entre tandas y restan energía

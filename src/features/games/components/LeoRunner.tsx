@@ -13,6 +13,7 @@ import { useDemoAutoplay } from "../hooks/useDemoAutoplay";
 import { GameShell, usePause } from "./GameShell";
 import { ArcadeHud } from "./ArcadeHud";
 import { ArcadeMusic } from "./arcade-music";
+import { LaneObstacles } from "./arcade-obstacles";
 import { useRewards } from "@/shared/components/RewardsLayer";
 import { FeedbackFlash } from "@/shared/components/FeedbackFlash";
 import { GameCompleteScreen } from "@/shared/components/GameCompleteScreen";
@@ -84,6 +85,8 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
   const leoSpriteRef = useRef<Sprite | null>(null);
   const signsLayerRef = useRef<Container | null>(null);
   const dashLayerRef = useRef<Container | null>(null);
+  const obstaclesRef = useRef<LaneObstacles | null>(null);
+  const invulnUntilRef = useRef(0); // fin de invulnerabilidad (seg de juego)
 
   const leoLaneRef = useRef(1);
   const jumpTRef = useRef(1); // 0→1 jump progress; 1 = on the ground
@@ -186,6 +189,11 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
       app.stage.addChild(signsLayer);
       signsLayerRef.current = signsLayer;
 
+      // Obstaculos del camino (troncos, pajaros que bajan, lluvia)
+      const obstaclesLayer = new PIXI.Container();
+      app.stage.addChild(obstaclesLayer);
+      obstaclesRef.current = new LaneObstacles(PIXI, obstaclesLayer, { lanesX: LANES_X, H, leoY: LEO_Y });
+
       // Leo — sprite if the texture loads, emoji fallback otherwise
       const leo = new PIXI.Container();
       try {
@@ -229,6 +237,18 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
         }
         const levelCfg = tun.levels[levelRef.current] ?? tun.levels[0];
         const effSpeed = round.speed * levelCfg.speedMul;
+
+        // Obstaculos del camino: tocarlos resta energia, con ventana
+        // de invulnerabilidad (las piedras de los carteles siguen
+        // siendo parte de la decision de lectura, no de esto)
+        if (round.active && gamePhaseRef.current === "running" && obstaclesRef.current) {
+          const frame = obstaclesRef.current.update(dt, levelCfg, leoLaneRef.current, effSpeed);
+          if (frame.hit && level.playSecRef.current >= invulnUntilRef.current) {
+            invulnUntilRef.current = level.playSecRef.current + tun.obstacleInvulnSec;
+            energy.adjust(-tun.energyLossPerObstacle);
+            crashTRef.current = 0; // tropezon visual
+          }
+        }
 
         // Scroll the lane dashes to fake forward motion
         if (dashLayerRef.current) {
@@ -323,6 +343,7 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
         leoSpriteRef.current = null;
         signsLayerRef.current = null;
         dashLayerRef.current = null;
+        obstaclesRef.current = null;
         fadingRef.current = [];
       }
     };
@@ -531,6 +552,8 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
     level.reset();
     leoLaneRef.current = 1;
     lastTargetIdRef.current = null;
+    invulnUntilRef.current = 0;
+    obstaclesRef.current?.reset();
     setGamePhase("running");
     musicRef.current?.setLevel(0);
     musicRef.current?.resume();
