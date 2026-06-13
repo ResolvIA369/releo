@@ -17,9 +17,9 @@ export interface BubblesTuning extends ArcadeTuningBase {
 }
 
 const BUBBLES_LEVELS: BubblesLevel[] = [
-  { speedMul: 1.0, count: 5 },
-  { speedMul: 1.4, count: 6 },
-  { speedMul: 1.8, count: 7 },
+  { speedMul: 0.85, count: 5 },
+  { speedMul: 1.15, count: 6 },
+  { speedMul: 1.5, count: 7 },
 ];
 
 const BUBBLES_BASE = {

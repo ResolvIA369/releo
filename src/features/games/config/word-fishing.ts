@@ -16,8 +16,8 @@ export interface WordFishingTuning extends ArcadeTuningBase {
 
 const FISHING_LEVELS: WordFishingLevel[] = [
   { speedMul: 1.0 },
-  { speedMul: 1.3 },
-  { speedMul: 1.65 },
+  { speedMul: 1.2 },
+  { speedMul: 1.45 },
 ];
 
 const FISHING_BASE = {

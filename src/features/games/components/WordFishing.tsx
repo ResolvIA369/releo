@@ -115,7 +115,7 @@ export const WordFishing: React.FC<GameProps> = ({ words, phase = 1, onComplete,
     targetRef.current = t;
     const others = shuffle(wordsRef.current.filter((w) => w.id !== t.id)).slice(0, 3);
     const all = shuffle([t, ...others]);
-    setFishes(all.map((w, i) => ({ word: w, emoji: FISH_EMOJIS[i % FISH_EMOJIS.length], row: i, speed: 6 + Math.random() * 3 })));
+    setFishes(all.map((w, i) => ({ word: w, emoji: FISH_EMOJIS[i % FISH_EMOJIS.length], row: i, speed: 9 + Math.random() * 3 })));
     setTarget(t);
     setCaughtId(null);
     setBurstPos(null);
@@ -201,7 +201,7 @@ export const WordFishing: React.FC<GameProps> = ({ words, phase = 1, onComplete,
       if (done || resolvedRef.current) return;
       const btn = document.querySelector(`[data-word-id="${target.id}"]`) as HTMLElement;
       if (btn) { done = true; btn.click(); }
-    }, 1600);
+    }, 3000);
     return () => clearTimeout(t);
   }, [isDemo, gamePhase, waveIdx, target]);
 

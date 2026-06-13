@@ -224,7 +224,7 @@ export const BitsReading: React.FC<GameProps> = ({ words, phase = 1, onComplete,
       if (done || resolvedRef.current) return;
       const btn = document.querySelector(`[data-word-id="${target.id}"]`) as HTMLElement;
       if (btn) { done = true; btn.click(); }
-    }, 1600);
+    }, 3000);
     return () => clearTimeout(t);
   }, [isDemo, gamePhase, waveIdx, target]);
 
