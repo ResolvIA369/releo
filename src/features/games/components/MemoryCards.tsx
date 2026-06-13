@@ -7,6 +7,7 @@ import type { DomanWord } from "@/shared/types/doman";
 import { useGameState } from "../hooks/useGameState";
 import { useDemoAutoplay } from "../hooks/useDemoAutoplay";
 import { GameShell, usePause } from "./GameShell";
+import { useGameMusic } from "../hooks/useGameMusic";
 import { useRewards } from "@/shared/components/RewardsLayer";
 import { GameIntro } from "./GameIntro";
 import { FeedbackFlash } from "@/shared/components/FeedbackFlash";
@@ -110,6 +111,7 @@ export const MemoryCards: React.FC<GameProps> = ({ words, phase = 1, onComplete,
   const { state, recordAttempt, finish, reset } = useGameState("memory-cards", { phase });
   const { rewardCorrect } = useRewards();
   const { paused } = usePause();
+  const music = useGameMusic(paused);
 
   const [gamePhase, setGamePhase] = useState<Phase>("intro");
   const [roundIdx, setRoundIdx] = useState(0);
@@ -147,7 +149,7 @@ export const MemoryCards: React.FC<GameProps> = ({ words, phase = 1, onComplete,
       // 2s after Sofia finishes, then disappears so the child works from
       // visual/auditory memory.
       setShowWordHint(true);
-      await sofiaNameWord(currentWord.text);
+      await music.speakDucked(() => sofiaNameWord(currentWord.text));
       if (cancelled) return;
       // Show shuffled pieces
       setPieces(shuffledPieces);
@@ -182,6 +184,7 @@ export const MemoryCards: React.FC<GameProps> = ({ words, phase = 1, onComplete,
   const handlePieceTap = useCallback(
     async (piece: PuzzlePiece, e: React.MouseEvent) => {
       if (gamePhase !== "playing" || feedbackType) return;
+      music.ensureStarted();
 
       const nextExpected = placed.length;
       const isCorrect = piece.index === nextExpected;

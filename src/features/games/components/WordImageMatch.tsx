@@ -7,6 +7,7 @@ import type { DomanWord } from "@/shared/types/doman";
 import { useGameState } from "../hooks/useGameState";
 import { useDemoAutoplay } from "../hooks/useDemoAutoplay";
 import { GameShell, usePause } from "./GameShell";
+import { useGameMusic } from "../hooks/useGameMusic";
 import { useRewards } from "@/shared/components/RewardsLayer";
 import { GameIntro } from "./GameIntro";
 import { FeedbackFlash } from "@/shared/components/FeedbackFlash";
@@ -39,6 +40,7 @@ export const WordImageMatch: React.FC<GameProps> = ({ words, phase = 1, onComple
   const { state, recordAttempt, finish, reset } = useGameState("word-image-match", { phase });
   const { rewardCorrect } = useRewards();
   const { paused } = usePause();
+  const music = useGameMusic(paused);
 
   const [gamePhase, setGamePhase] = useState<Phase>("intro");
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -69,7 +71,7 @@ export const WordImageMatch: React.FC<GameProps> = ({ words, phase = 1, onComple
   // knows which image to look for. Runs once per word while playing.
   useEffect(() => {
     if (gamePhase !== "playing" || !currentWord) return;
-    sofiaNameWord(currentWord.text);
+    void music.speakDucked(() => sofiaNameWord(currentWord.text));
   }, [gamePhase, currentWord]);
 
   // Options
@@ -102,6 +104,7 @@ export const WordImageMatch: React.FC<GameProps> = ({ words, phase = 1, onComple
   const handleSelect = useCallback(
     async (word: DomanWord, e: React.MouseEvent) => {
       if (gamePhase !== "playing" || feedbackType || !currentWord) return;
+      music.ensureStarted();
 
       setSelectedId(word.id);
       const correct = word.id === currentWord.id;
@@ -116,7 +119,7 @@ export const WordImageMatch: React.FC<GameProps> = ({ words, phase = 1, onComple
         setBurstPos({ x: cx, y: cy });
         rewardCorrect(cx, cy);
         // Only say the word AFTER correct answer
-        await sofiaNameWord(currentWord.text);
+        await music.speakDucked(() => sofiaNameWord(currentWord.text));
         await new Promise((r) => setTimeout(r, 400));
         setFeedbackType(null);
         setSelectedId(null);

@@ -6,7 +6,8 @@ import type { GameProps } from "../types";
 import type { DomanWord } from "@/shared/types/doman";
 import { useGameState } from "../hooks/useGameState";
 import { sofiaReads, sofiaCelebrates } from "@/shared/services/sofiaVoice";
-import { GameShell } from "./GameShell";
+import { GameShell, usePause } from "./GameShell";
+import { useGameMusic } from "../hooks/useGameMusic";
 import { useDemoAutoplay } from "../hooks/useDemoAutoplay";
 import { useRewards } from "@/shared/components/RewardsLayer";
 import { GameIntro } from "./GameIntro";
@@ -79,6 +80,8 @@ type Phase = "intro" | "playing" | "finished";
 export const BuildSentence: React.FC<GameProps> = ({ words, phase = 1, onComplete, onBack, isDemo = false }) => {
   const { state, recordAttempt, finish, reset } = useGameState("phrase-builder", { phase });
   const { rewardCorrect } = useRewards();
+  const { paused } = usePause();
+  const music = useGameMusic(paused);
 
   const [gamePhase, setGamePhase] = useState<Phase>("intro");
   const [roundIdx, setRoundIdx] = useState(0);
@@ -161,6 +164,7 @@ export const BuildSentence: React.FC<GameProps> = ({ words, phase = 1, onComplet
   const handleWordTap = useCallback(
     (tappedIndex: number) => {
       if (feedbackType || !currentSentence || isAdvancing) return;
+      music.ensureStarted();
 
       const word = shuffledWords[tappedIndex];
       const nextIdx = placed.length;
@@ -180,7 +184,7 @@ export const BuildSentence: React.FC<GameProps> = ({ words, phase = 1, onComplet
 
           (async () => {
             
-            await sofiaReads(currentSentence.text);
+            await music.speakDucked(() => sofiaReads(currentSentence.text));
             advanceRound();
           })();
         }
@@ -199,7 +203,7 @@ export const BuildSentence: React.FC<GameProps> = ({ words, phase = 1, onComplet
     setIsAdvancing(true);
 
     (async () => {
-      await sofiaReads(currentSentence.text);
+      await music.speakDucked(() => sofiaReads(currentSentence.text));
       advanceRound();
     })();
   }, [currentSentence, isAdvancing, recordAttempt, advanceRound]);
