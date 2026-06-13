@@ -1,21 +1,25 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import type { GameProps } from "../types";
 import type { DomanWord } from "@/shared/types/doman";
 import { useGameState } from "../hooks/useGameState";
-import { useDemoAutoplay } from "../hooks/useDemoAutoplay";
-import { GameShell, usePause, useLeoContext } from "./GameShell";
+import { useArcadeEnergy } from "../hooks/useArcadeEnergy";
+import { useArcadeLevel } from "../hooks/useArcadeLevel";
+import { useArcadeClock } from "../hooks/useArcadeClock";
+import { useSofiaIntro } from "../hooks/useSofiaIntro";
+import { GameShell, usePause } from "./GameShell";
+import { ArcadeHud } from "./ArcadeHud";
+import { ArcadeMusic } from "./arcade-music";
 import { useRewards } from "@/shared/components/RewardsLayer";
-import { GameIntro } from "./GameIntro";
 import { GameCompleteScreen } from "@/shared/components/GameCompleteScreen";
 import { FeedbackFlash } from "@/shared/components/FeedbackFlash";
 import { VictoryBurst } from "@/shared/components/VictoryBurst";
-import { TimeBar } from "@/shared/components/TimeBar";
-import { EMOJI_MAP } from "@/shared/constants/emoji-map";
-import { colors, spacing, radii, shadows, fontSizes, fonts } from "@/shared/styles/design-tokens";
-import { sofiaNameWord, sofiaPlayAudio } from "@/shared/services/sofiaVoice";
+import { colors, spacing, radii, fontSizes, fonts } from "@/shared/styles/design-tokens";
+import { sofiaNameWord, sofiaPlayAudio, stopVoice } from "@/shared/services/sofiaVoice";
+import { wordFishingTuningForPhase } from "../config/word-fishing";
+import { rewardForLevel, pickNextTarget } from "../config/arcade-tuning";
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -28,342 +32,280 @@ function shuffle<T>(arr: T[]): T[] {
 
 const GAME_COLOR = "#0bc5ea";
 const FISH_EMOJIS = ["🐟", "🐠", "🐡", "🦈"];
-const SECONDS_PER_ROUND = 10;
 
-type Phase = "intro" | "announcing" | "fishing" | "catching" | "feedback" | "finished";
+const INTRO_TEXT =
+  "¡Hola! Soy la Seño Sofía. Los peces nadan con palabras. " +
+  "Escuchá cuál pescar, y tocá el pez correcto. " +
+  "¡Vos podés! ¡A pescar!";
+
+interface Fish {
+  word: DomanWord;
+  emoji: string;
+  row: number;
+  speed: number; // segundos base de un loop
+}
+
+type Phase = "intro" | "running" | "finished";
 
 export const WordFishing: React.FC<GameProps> = ({ words, phase = 1, onComplete, onBack, isDemo = false }) => {
   const { state, recordAttempt, finish, reset } = useGameState("word-fishing", { phase });
   const { paused } = usePause();
-  const leo = useLeoContext();
   const { rewardCorrect } = useRewards();
 
+  const tuning = wordFishingTuningForPhase(phase);
+
   const [gamePhase, setGamePhase] = useState<Phase>("intro");
-  const [roundIdx, setRoundIdx] = useState(0);
   const [target, setTarget] = useState<DomanWord | null>(null);
-  const [fishes, setFishes] = useState<{ word: DomanWord; emoji: string; row: number; speed: number }[]>([]);
+  const [fishes, setFishes] = useState<Fish[]>([]);
+  const [waveIdx, setWaveIdx] = useState(0);
   const [feedbackType, setFeedbackType] = useState<"correct" | "wrong" | null>(null);
   const [burstPos, setBurstPos] = useState<{ x: number; y: number } | null>(null);
   const [caughtId, setCaughtId] = useState<string | null>(null);
-  const [hookY, setHookY] = useState(0); // 0 = top, 100 = extended down
-  const [timerKey, setTimerKey] = useState(0);
-  const [confetti, setConfetti] = useState(false);
 
-  const totalRounds = Math.min(words.length, 10);
-  const finished = roundIdx >= totalRounds;
+  const gamePhaseRef = useRef<Phase>("intro");
+  gamePhaseRef.current = gamePhase;
+  const wordsRef = useRef(words);
+  wordsRef.current = words;
+  const lastTargetIdRef = useRef<string | null>(null);
+  const targetRef = useRef<DomanWord | null>(null);
+  const resolvedRef = useRef(false);
+  const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cancelledRef = useRef(false);
 
-  const setupRound = useCallback((idx: number) => {
-    if (idx >= totalRounds) {
-      setGamePhase("finished");
-      finish().then(() => onComplete?.(state));
-      return;
-    }
-    const t = words[idx];
+  const energy = useArcadeEnergy(tuning);
+  const level = useArcadeLevel(tuning.levelDurationSec, tuning.levels.length);
+  const { levelRef, levelUi } = level;
+  const speedMul = (tuning.levels[levelUi] ?? tuning.levels[0]).speedMul;
+
+  const musicRef = useRef<ArcadeMusic | null>(null);
+  if (!musicRef.current) {
+    musicRef.current = new ArcadeMusic(tuning.musicVolumeDb, tuning.musicDuckDb, tuning.musicTracks);
+  }
+  useEffect(() => {
+    cancelledRef.current = false;
+    return () => {
+      cancelledRef.current = true;
+      stopVoice();
+      if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
+      musicRef.current?.dispose();
+      musicRef.current = null;
+    };
+  }, []);
+
+  const speakDucked = useCallback((speak: () => Promise<unknown>) => {
+    stopVoice();
+    musicRef.current?.duck(true);
+    void speak().finally(() => musicRef.current?.duck(false));
+  }, []);
+
+  const flashFeedback = useCallback((type: "correct" | "wrong") => {
+    setFeedbackType(type);
+    if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
+    feedbackTimerRef.current = setTimeout(() => {
+      if (!cancelledRef.current) setFeedbackType(null);
+    }, 700);
+  }, []);
+
+  // ─── Wave: nuevos peces ─────────────────────────────────────────
+  const spawnWave = useCallback(() => {
+    if (cancelledRef.current) return;
+    const t = pickNextTarget(wordsRef.current, lastTargetIdRef.current);
+    lastTargetIdRef.current = t.id;
+    targetRef.current = t;
+    const others = shuffle(wordsRef.current.filter((w) => w.id !== t.id)).slice(0, 3);
+    const all = shuffle([t, ...others]);
+    setFishes(all.map((w, i) => ({ word: w, emoji: FISH_EMOJIS[i % FISH_EMOJIS.length], row: i, speed: 6 + Math.random() * 3 })));
     setTarget(t);
     setCaughtId(null);
-    setHookY(0);
-    setConfetti(false);
-    setTimerKey((k) => k + 1);
+    setBurstPos(null);
+    resolvedRef.current = false;
+    setWaveIdx((w) => w + 1);
+    speakDucked(() => sofiaNameWord(t.text));
+  }, [speakDucked]);
 
-    const others = shuffle(words.filter((w) => w.id !== t.id)).slice(0, 3);
-    const all = shuffle([t, ...others]);
-
-    setFishes(all.map((w, i) => ({
-      word: w,
-      emoji: FISH_EMOJIS[i % FISH_EMOJIS.length],
-      row: i,
-      speed: 5 + Math.random() * 3,
-    })));
-
-    setGamePhase("announcing");
-  }, [totalRounds, words, finish, onComplete, state]);
-
-  // Announce
-  useEffect(() => {
-    if (gamePhase !== "announcing" || !target || paused) return;
-    let c = false;
-    sofiaNameWord(target.text).then(() => {
-      if (!c) setTimeout(() => { if (!c) setGamePhase("fishing"); }, 300);
-    });
-    return () => { c = true; };
-  }, [gamePhase, roundIdx, paused]); // eslint-disable-line react-hooks/exhaustive-deps
-
-
-  // Demo: auto-select correct answer
-  useDemoAutoplay(isDemo, gamePhase === "fishing" && !!target, () => {
-    const btn = document.querySelector(`[data-word-id="${target?.id}"]`) as HTMLElement;
-    if (btn) btn.click();
-  }, 1500);
-
-  // Game end
-  useEffect(() => {
-    if (!finished || gamePhase === "finished") return;
+  const finishGame = useCallback(() => {
+    if (cancelledRef.current) return;
+    stopVoice();
+    musicRef.current?.pause();
     setGamePhase("finished");
     finish().then(() => onComplete?.(state));
-  }, [finished, gamePhase]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [finish, onComplete, state]);
+  const finishRef = useRef(finishGame);
+  finishRef.current = finishGame;
 
-  // Time up
-  const handleTimeUp = useCallback(() => {
-    if (gamePhase !== "fishing") return;
-    recordAttempt(false);
-    setFeedbackType("wrong");
-    setGamePhase("feedback");
-    leo.encourage();
-    sofiaPlayAudio("animo-16", "¡Se acabó el tiempo!", "encouraging").then(() => {
-      setTimeout(() => {
-        setFeedbackType(null);
-        const next = roundIdx + 1;
-        setRoundIdx(next);
-        setupRound(next);
-      }, 500);
-    });
-  }, [gamePhase, recordAttempt, roundIdx, setupRound, leo]);
+  const resolveWave = useCallback((delayMs: number) => {
+    resolvedRef.current = true;
+    setTimeout(() => { if (!cancelledRef.current) spawnWave(); }, delayMs);
+  }, [spawnWave]);
+  const resolveRef = useRef(resolveWave);
+  resolveRef.current = resolveWave;
 
-  // Handle tap
-  const handleTap = useCallback(
-    async (fish: { word: DomanWord; row: number }, e: React.MouseEvent) => {
-      if (gamePhase !== "fishing" || feedbackType) return;
+  useSofiaIntro(gamePhase === "intro", "intro-pesca", INTRO_TEXT, () => {
+    if (!cancelledRef.current) setGamePhase("running");
+  });
 
-      const correct = fish.word.id === target?.id;
-      recordAttempt(correct, correct ? fish.word.id : undefined);
+  useEffect(() => {
+    if (gamePhase === "running" && targetRef.current === null) spawnWave();
+  }, [gamePhase, spawnWave]);
+
+  useArcadeClock(gamePhase === "running" && !paused, (dt) => {
+    if (level.tick(dt)) musicRef.current?.setLevel(levelRef.current);
+    if (energy.drainTick(dt)) finishRef.current();
+  });
+
+  useEffect(() => {
+    if (paused) { stopVoice(); musicRef.current?.pause(); }
+    else if (gamePhaseRef.current === "running") musicRef.current?.resume();
+  }, [paused]);
+
+  // ─── Tap ────────────────────────────────────────────────────────
+  const handleTap = useCallback((fish: Fish, e: React.MouseEvent) => {
+    if (gamePhaseRef.current !== "running" || resolvedRef.current) return;
+    void musicRef.current?.ensureStarted(levelRef.current);
+    const correct = fish.word.id === targetRef.current?.id;
+    recordAttempt(correct, correct ? fish.word.id : undefined);
+
+    if (correct) {
       setCaughtId(fish.word.id);
+      const rect = (e.target as HTMLElement).getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+      setBurstPos({ x: cx, y: cy });
+      rewardCorrect(cx, cy);
+      energy.adjust(tuning.energyGainCorrect);
+      flashFeedback("correct");
+      speakDucked(() => sofiaPlayAudio("reaccion-muy-bien", "¡Muy bien!", "excited"));
+      resolveRef.current(550);
+    } else {
+      // Error mudo: solo flash + energia abajo; los peces siguen
+      energy.adjust(-tuning.energyLossWrong);
+      flashFeedback("wrong");
+    }
+  }, [energy, tuning, recordAttempt, rewardCorrect, speakDucked, flashFeedback, levelRef]);
 
-      if (correct) {
-        // Animate hook going down to catch the fish
-        setGamePhase("catching");
-        const fishYPercent = 28 + fish.row * 18;
-        setHookY(fishYPercent);
-
-        await new Promise((r) => setTimeout(r, 600));
-
-        // Now reel up with the fish
-        setHookY(-20);
-        setConfetti(true);
-        setFeedbackType("correct");
-        const rect = (e.target as HTMLElement).getBoundingClientRect();
-        const cx = rect.left + rect.width / 2;
-        const cy = rect.top + rect.height / 2;
-        setBurstPos({ x: cx, y: cy });
-        leo.celebrate();
-        rewardCorrect(cx, cy);
-
-        await sofiaNameWord(fish.word.text);
-        await new Promise((r) => setTimeout(r, 800));
-
-        setFeedbackType(null);
-        setBurstPos(null);
-        setConfetti(false);
-        const next = roundIdx + 1;
-        setRoundIdx(next);
-        setupRound(next);
-      } else {
-        setFeedbackType("wrong");
-        setGamePhase("feedback");
-        leo.think();
-        await sofiaPlayAudio("animo-01", "¡Intenta otra vez!", "encouraging");
-        await new Promise((r) => setTimeout(r, 400));
-        setFeedbackType(null);
-        setCaughtId(null);
-        setGamePhase("fishing");
-      }
-    },
-    [gamePhase, target, feedbackType, recordAttempt, roundIdx, setupRound, leo]
-  );
+  // Demo: cada tanda, toca el pez correcto
+  useEffect(() => {
+    if (!isDemo || gamePhase !== "running" || !target) return;
+    let done = false;
+    const t = setTimeout(() => {
+      if (done || resolvedRef.current) return;
+      const btn = document.querySelector(`[data-word-id="${target.id}"]`) as HTMLElement;
+      if (btn) { done = true; btn.click(); }
+    }, 1600);
+    return () => clearTimeout(t);
+  }, [isDemo, gamePhase, waveIdx, target]);
 
   const handleReplay = useCallback(() => {
     reset();
-    setRoundIdx(0);
-    setGamePhase("intro");
-  }, [reset]);
+    energy.reset();
+    level.reset();
+    lastTargetIdRef.current = null;
+    targetRef.current = null;
+    setGamePhase("running");
+    musicRef.current?.setLevel(0);
+    musicRef.current?.resume();
+    spawnWave();
+  }, [reset, energy, level, spawnWave]);
 
   // ═══ RENDER ════════════════════════════════════════════════
 
-  if (gamePhase === "intro") {
+  if (gamePhase === "finished") {
+    const reward = rewardForLevel(levelUi, tuning);
     return (
       <GameShell title="Pesca de Palabras" icon="🎣" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})}>
-        <GameIntro gameName="Pesca de Palabras" gameIcon="🎣"
-          rulesText="¡Los peces nadan con palabras! Yo te digo cual pescar. ¡Toca el pez correcto!"
-          color={GAME_COLOR} onReady={() => setupRound(0)} />
-      </GameShell>
-    );
-  }
-
-  if (gamePhase === "finished" || finished) {
-    return (
-      <GameShell title="Pesca de Palabras" icon="🎣" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})}>
-        <GameCompleteScreen title="Pesca de Palabras" correct={state.correctAttempts} total={state.totalAttempts} color={GAME_COLOR} onReplay={handleReplay} onBack={onBack ?? (() => {})} />
+        <GameCompleteScreen
+          title="Pesca de Palabras"
+          correct={state.correctAttempts}
+          total={state.totalAttempts}
+          color={GAME_COLOR}
+          bonusCoins={reward.bonusCoins}
+          starsOverride={reward.stars}
+          subtitle={`Llegaste al Nivel ${levelUi + 1}`}
+          onReplay={handleReplay}
+          onBack={onBack ?? (() => {})}
+        />
       </GameShell>
     );
   }
 
   return (
     <GameShell title="Pesca de Palabras" icon="🎣" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})}>
-      <div style={{ display: "flex", gap: spacing.md, paddingTop: spacing.sm, maxWidth: "min(660px, calc(100vw - 32px))", margin: "0 auto" }}>
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: spacing.md }}>
-          {/* Target + counter */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
-            <span style={{ fontSize: fontSizes.sm, color: colors.text.placeholder }}>{roundIdx + 1}/{totalRounds}</span>
-            {target && (
-              <motion.div key={roundIdx} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: spacing.md, paddingTop: spacing.sm }}>
+        <ArcadeHud
+          color={GAME_COLOR}
+          targetPrefix="Pescá:"
+          level={levelUi}
+          correct={state.correctAttempts}
+          targetWord={target}
+          waveKey={waveIdx}
+          energy={energy.energyUi}
+          energyMax={tuning.energyMax}
+        />
+
+        {/* Ocean */}
+        <div style={{
+          position: "relative", width: "100%", maxWidth: "min(620px, calc(100vw - 32px))", height: "min(420px, 56vh)",
+          borderRadius: radii.xl, overflow: "hidden",
+          background: "linear-gradient(180deg, #b3e5fc 0%, #4fc3f7 25%, #0288d1 60%, #01579b 100%)",
+          border: `2px solid ${colors.border.light}`,
+        }}>
+          <motion.div animate={{ x: [-30, 30, -30] }}
+            transition={{ repeat: Infinity, duration: 5, ease: "easeInOut" }}
+            style={{ position: "absolute", top: "12%", left: -20, right: -20, height: 6, backgroundColor: "rgba(255,255,255,0.25)", borderRadius: 3 }} />
+
+          {/* Fish */}
+          {fishes.map((fish, i) => {
+            if (caughtId === fish.word.id) return null;
+            const yPos = 24 + i * 18;
+            const goesRight = i % 2 === 0;
+            return (
+              <motion.button
+                key={`${fish.word.id}-${waveIdx}`}
+                animate={paused ? {} : { x: goesRight ? [-140, 560, -140] : [560, -140, 560] }}
+                transition={{ repeat: Infinity, duration: fish.speed / speedMul, ease: "linear" }}
+                data-word-id={fish.word.id} onClick={(e) => handleTap(fish, e)}
                 style={{
-                  padding: `${spacing.xs}px ${spacing.lg}px`, backgroundColor: `${GAME_COLOR}15`,
-                  border: `2px solid ${GAME_COLOR}`, borderRadius: radii.pill,
-                  fontSize: fontSizes.xl, fontWeight: "bold", fontFamily: fonts.display, color: GAME_COLOR,
-                }}>
-                🎣 {target.text}
-              </motion.div>
-            )}
-            <span style={{ width: 30 }} />
-          </div>
+                  position: "absolute", top: `${yPos}%`, left: 0,
+                  padding: `${spacing.sm}px ${spacing.md}px`,
+                  backgroundColor: "rgba(255,255,255,0.95)", borderRadius: radii.xl,
+                  border: "3px solid rgba(255,255,255,0.7)", boxShadow: "0 4px 14px rgba(0,0,0,0.2)",
+                  fontSize: fontSizes.lg, fontWeight: "bold", fontFamily: fonts.display, color: "#1a365d",
+                  cursor: "pointer", zIndex: 10, display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap",
+                }}
+              >
+                <span style={{ display: "inline-block", transform: goesRight ? "none" : "scaleX(-1)" }}>{fish.emoji}</span>
+                <span>{fish.word.text}</span>
+              </motion.button>
+            );
+          })}
 
-          {/* Ocean */}
-          <div style={{
-            position: "relative", width: "100%", height: "min(400px, 50vh)",
-            borderRadius: radii.xl, overflow: "hidden",
-            background: "linear-gradient(180deg, #b3e5fc 0%, #4fc3f7 25%, #0288d1 60%, #01579b 100%)",
-            border: `2px solid ${colors.border.light}`,
-          }}>
-            {/* Waves */}
-            <motion.div animate={{ x: [-30, 30, -30] }}
-              transition={{ repeat: Infinity, duration: 5, ease: "easeInOut" }}
-              style={{ position: "absolute", top: "16%", left: -20, right: -20, height: 6, backgroundColor: "rgba(255,255,255,0.25)", borderRadius: 3 }} />
+          {/* Bubbles */}
+          {[0, 1, 2, 3].map((i) => (
+            <motion.div key={i}
+              animate={{ y: [-10, -180], opacity: [0.5, 0] }}
+              transition={{ repeat: Infinity, duration: 2.5, delay: i * 0.8 }}
+              style={{ position: "absolute", bottom: 30, left: `${15 + i * 25}%`, width: 6 + i * 2, height: 6 + i * 2, borderRadius: "50%", backgroundColor: "rgba(255,255,255,0.3)" }} />
+          ))}
 
-            {/* Animated fishing hook */}
-            <motion.div
-              animate={{ height: `${Math.max(hookY, 18)}%` }}
-              transition={{ duration: 0.5, ease: "easeInOut" }}
-              style={{
-                position: "absolute", top: 0, left: "50%", width: 2,
-                backgroundColor: "#555", transform: "translateX(-50%)", zIndex: 20,
-              }}
-            />
-            <div style={{ position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)", fontSize: 28, zIndex: 21 }}>🎣</div>
-            {/* Hook end */}
-            <motion.div
-              animate={{ top: `${Math.max(hookY, 18)}%` }}
-              transition={{ duration: 0.5, ease: "easeInOut" }}
-              style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", fontSize: 16, zIndex: 20 }}
-            >
-              🪝
-            </motion.div>
-
-            {/* Confetti overlay */}
-            <AnimatePresence>
-              {confetti && (
-                <>
-                  {Array.from({ length: 20 }).map((_, i) => (
-                    <motion.div key={i}
-                      initial={{ opacity: 1, y: 150, x: 300 + (Math.random() - 0.5) * 400, scale: 1 }}
-                      animate={{ y: -50, opacity: 0, rotate: Math.random() * 360 }}
-                      transition={{ duration: 1.2, delay: i * 0.05 }}
-                      style={{
-                        position: "absolute", width: 8, height: 8, borderRadius: 2,
-                        backgroundColor: ["#fbbf24", "#e53e3e", "#48bb78", "#667eea", "#f093fb", "#0bc5ea"][i % 6],
-                        zIndex: 30,
-                      }}
-                    />
-                  ))}
-                </>
-              )}
-            </AnimatePresence>
-
-            {/* Fish */}
-            {fishes.map((fish, i) => {
-              const isCaught = caughtId === fish.word.id && feedbackType === "correct";
-              if (isCaught) return null;
-              if (caughtId === fish.word.id && gamePhase === "catching") {
-                // Fish being reeled up
-                return (
-                  <motion.div key={`caught-${fish.word.id}`}
-                    animate={{ top: "-10%", left: "45%", scale: 1.2 }}
-                    transition={{ duration: 0.6 }}
-                    style={{
-                      position: "absolute", top: `${28 + fish.row * 18}%`,
-                      padding: `${spacing.sm}px ${spacing.md}px`,
-                      backgroundColor: "#fff",
-                      borderRadius: radii.xl, border: `3px solid ${colors.success}`,
-                      fontSize: fontSizes.lg, fontWeight: "bold", fontFamily: fonts.display,
-                      color: "#2d3748", zIndex: 25, display: "flex", alignItems: "center", gap: 6,
-                    }}>
-                    {fish.emoji} {fish.word.text}
-                  </motion.div>
-                );
-              }
-
-              const yPos = 28 + i * 18;
-              const goesRight = i % 2 === 0;
-
-              return (
-                <motion.button
-                  key={`${fish.word.id}-${roundIdx}`}
-                  animate={paused ? {} : {
-                    x: goesRight ? [-140, 500, -140] : [500, -140, 500],
-                  }}
-                  transition={{ repeat: Infinity, duration: fish.speed, ease: "linear" }}
-                  data-word-id={fish.word.id} onClick={(e) => handleTap(fish, e)}
-                  disabled={gamePhase !== "fishing" || !!feedbackType}
-                  style={{
-                    position: "absolute", top: `${yPos}%`, left: 0,
-                    padding: `${spacing.sm}px ${spacing.md}px`,
-                    backgroundColor: "rgba(255,255,255,0.95)",
-                    borderRadius: radii.xl,
-                    border: `3px solid rgba(255,255,255,0.7)`,
-                    boxShadow: "0 4px 14px rgba(0,0,0,0.2)",
-                    fontSize: fontSizes.lg, fontWeight: "bold",
-                    fontFamily: fonts.display, color: "#1a365d",
-                    cursor: gamePhase === "fishing" ? "pointer" : "default",
-                    zIndex: 10, display: "flex", alignItems: "center", gap: 6,
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  <span style={{ display: "inline-block", transform: goesRight ? "none" : "scaleX(-1)" }}>
-                    {fish.emoji}
-                  </span>
-                  <span>{fish.word.text}</span>
-                </motion.button>
-              );
-            })}
-
-            {/* Bubbles */}
-            {[0, 1, 2, 3].map((i) => (
-              <motion.div key={i}
-                animate={{ y: [-10, -180], opacity: [0.5, 0] }}
-                transition={{ repeat: Infinity, duration: 2.5, delay: i * 0.8 }}
-                style={{
-                  position: "absolute", bottom: 30, left: `${15 + i * 25}%`,
-                  width: 6 + i * 2, height: 6 + i * 2, borderRadius: "50%",
-                  backgroundColor: "rgba(255,255,255,0.3)",
-                }} />
+          {/* Seaweed */}
+          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 30, display: "flex", justifyContent: "space-around", alignItems: "flex-end" }}>
+            {["🪸", "🌿", "🪸", "🌿", "🪸"].map((s, i) => (
+              <motion.span key={i} animate={{ rotate: [-5, 5, -5] }}
+                transition={{ repeat: Infinity, duration: 2 + i * 0.3, ease: "easeInOut" }}
+                style={{ fontSize: 20, display: "block" }}>{s}</motion.span>
             ))}
-
-            {/* Seaweed */}
-            <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 30, display: "flex", justifyContent: "space-around", alignItems: "flex-end" }}>
-              {["🪸", "🌿", "🪸", "🌿", "🪸"].map((s, i) => (
-                <motion.span key={i} animate={{ rotate: [-5, 5, -5] }}
-                  transition={{ repeat: Infinity, duration: 2 + i * 0.3, ease: "easeInOut" }}
-                  style={{ fontSize: 20, display: "block" }}>{s}</motion.span>
-              ))}
-            </div>
-
-            {burstPos && (
-              <div style={{ position: "fixed", left: 0, top: 0, pointerEvents: "none", zIndex: 999 }}>
-                <VictoryBurst active x={burstPos.x} y={burstPos.y} count={15} />
-              </div>
-            )}
           </div>
+
+          {burstPos && (
+            <div style={{ position: "fixed", left: 0, top: 0, pointerEvents: "none", zIndex: 999 }}>
+              <VictoryBurst active x={burstPos.x} y={burstPos.y} count={15} />
+            </div>
+          )}
         </div>
 
-        {/* Time bar */}
-        <div style={{ display: "flex", alignItems: "stretch", paddingTop: 40, paddingBottom: 20 }}>
-          <TimeBar
-            key={timerKey}
-            seconds={SECONDS_PER_ROUND}
-            onTimeUp={handleTimeUp}
-            color={GAME_COLOR}
-            paused={paused || gamePhase !== "fishing"}
-            resetKey={timerKey}
-          />
-        </div>
+        <p style={{ fontSize: fontSizes.sm, color: colors.text.muted, margin: 0, textAlign: "center" }}>
+          {gamePhase === "intro" ? "Escucha a Sofía..." : "Toca el pez con la palabra correcta"}
+        </p>
       </div>
       <FeedbackFlash type={feedbackType} />
     </GameShell>

@@ -48,7 +48,7 @@ tiempo, premios, música de selva + ducking, intro de Sofía, error mudo.
       Intro: «¡Hola! Soy la Seño Sofía. Del cielo caen palabras. Escuchá cuál te
       pido, y tocala antes de que llegue al suelo. ¡Vos podés! ¡A atrapar!»
 
-- [ ] **3** Pesca de Palabras (`word-fishing`): `WORD_FISHING_TUNING`, flujo
+- [x] **3** Pesca de Palabras (`word-fishing`): `WORD_FISHING_TUNING`, flujo
       continuo (sin timer de 10s por ronda: la energía marca el ritmo), niveles
       que aceleran los peces, premios, música + ducking, intro, error mudo.
       Mecánica intacta: tocar el pez correcto. Sin obstáculos.
