@@ -62,8 +62,32 @@ tiempo, premios, música de selva + ducking, intro de Sofía, error mudo.
       Intro: «¡Hola! Soy la Seño Sofía. Las palabras flotan en burbujas. Escuchá
       cuál reventar, y tocá la burbuja correcta. ¡Vos podés! ¡A reventar!»
 
-- [ ] **Final** Playwright completo + verificación en navegador de los 4 + push.
+- [x] **Final** Playwright completo + verificación en navegador de los 4 + push.
 
 ## Estado / pendientes
 
-(se completa al cerrar)
+**COMPLETADO** (2026-06-13). Los 6 ítems ejecutados, un commit cada uno.
+Verificación: tsc + 179 unit tests + Playwright 53/53 en verde, y los 4 juegos
+verificados en Chromium real vía /demo (intro pedida y acción arrancando al
+terminar, HUD con energía + nivel + pill del objetivo, demo autoplay reventando/
+atrapando la correcta → moneda al cofre → tanda siguiente, sin errores de página).
+
+Decisiones documentadas:
+- **Obstáculos: ninguno de los 4 los lleva.** Son juegos de "tocá el target
+  correcto" sin avatar que pilotear; un obstáculo "que golpea a Leo" no tiene
+  dónde encajar (sería indistinguible de un distractor). Se respetó la consigna
+  de no forzar.
+- **Sin "escape" en Pesca y Burbujas:** los peces/burbujas flotan en loop, así
+  que no se van de pantalla. La energía que drena es la única presión (correcto).
+  Tren y Lluvia sí tienen escape natural (el tren cruza / la palabra cae al
+  suelo).
+- Las locuciones de intro se generaron con edge-tts es-AR-ElenaNeural (misma voz
+  que el resto): intro-tren / intro-lluvia / intro-pesca / intro-burbujas .mp3.
+  Las reglas viejas (reglas-tren, etc.) quedaron intactas porque GameIntro las
+  sigue usando en los juegos de pensar.
+
+Notas no bloqueantes:
+- Burbujas/Pesca pueden generar burbujas/peces que se solapan al spawn (posición
+  aleatoria) — venía igual del original, cosmético.
+- En Chromium headless los emojis de peces/algas se ven como cajas (falta la
+  fuente de emojis); en un navegador real se ven bien.
