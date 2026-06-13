@@ -195,14 +195,23 @@ export const WordTrain: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
       energy.adjust(tuning.energyGainCorrect);
       if (level.registerCorrect()) musicRef.current?.setLevel(levelRef.current);
       flashFeedback("correct");
-      speakDucked(() => sofiaPlayAudio("reaccion-muy-bien", "¡Muy bien!", "excited"));
+      // La felicitacion suena COMPLETA: la tanda siguiente espera a que
+      // termine (en vez de un delay fijo que la cortaba al anunciar la
+      // proxima palabra).
+      resolvedRef.current = true;
+      stopVoice();
+      musicRef.current?.duck(true);
+      sofiaPlayAudio("reaccion-muy-bien", "¡Muy bien!", "excited").finally(() => {
+        if (!cancelledRef.current) spawnWave();
+        else musicRef.current?.duck(false);
+      });
     } else {
       // Error mudo: solo el flash visual + energia abajo
       energy.adjust(-tuning.energyLossWrong);
       flashFeedback("wrong");
+      resolveRef.current(350);
     }
-    resolveRef.current(correct ? 500 : 350);
-  }, [energy, tuning, recordAttempt, rewardCorrect, speakDucked, levelRef]);
+  }, [energy, tuning, recordAttempt, rewardCorrect, spawnWave, flashFeedback, levelRef]);
 
   // Demo: cada tanda, toca el vagon correcto cuando el tren entra en
   // la ventana visible (polling porque el target se mueve)

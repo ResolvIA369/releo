@@ -29,7 +29,7 @@ cada uno. Todo lo nuevo configurable en los TUNING. Push al final.
       además del salto.
 - [x] **7** Leo Corre: 4º carril en Nivel 3 (`lanesByLevel: [3,3,4]`,
       configurable).
-- [ ] **8** Tren: que el "¡Muy bien!" suene completo — la tanda siguiente espera
+- [x] **8** Tren: que el "¡Muy bien!" suene completo — la tanda siguiente espera
       a que termine la felicitación en vez de cortarla.
 
 - [ ] **Final** Playwright + verificación en navegador de los juegos tocados + push.
