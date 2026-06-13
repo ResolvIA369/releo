@@ -39,13 +39,18 @@ const GAME_COLOR = "#ed8936";
 // adentro de la pantalla (procesado por scripts/prepare-leo-sprites.py)
 const LEO_SPRITE_URL = "/images/games/leo-corre-sprite.png";
 
-// Logical canvas size — CSS scales it to the container width
-const W = 640;
+// Logical canvas size — CSS scales it to the container width.
+// W es generoso para que aun con 4 carriles las palabras entren
+// completas y grandes (la legibilidad es lo primero).
+const W = 820;
 const H = 420;
 const DEFAULT_LANES_X = lanesXForCount(3, W);
 const LEO_Y = H - 72;
-const SIGN_W = 172;
 const SIGN_H = 56;
+const LANE_GAP = 16; // separacion entre carteles vecinos (px logicos)
+const SIGN_PAD = 16; // margen interno del cartel a cada lado del texto
+// Fraccion del ancho usable para carriles (igual que lanesXForCount)
+const ROAD_FRAC = 0.76;
 const SIGN_SPAWN_Y = -70;
 // Travel speed in px/frame at 60fps; los niveles la multiplican
 const BASE_SPEED = 1.5;
@@ -400,6 +405,13 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
     const lanes = buildLanes(target, wordsRef.current, rocksForPhase(phase), laneCount, shuffle);
     const targetLane = lanes.findIndex((l) => l.word?.id === target.id);
 
+    // El cartel se dimensiona al carril: ancho = separacion entre
+    // carriles menos un gap, asi DOS carteles vecinos nunca se
+    // superponen (garantia geometrica, sirve para 3 y 4 carriles).
+    const laneSpacing = (W * ROAD_FRAC) / lanes.length;
+    const plateW = laneSpacing - LANE_GAP;
+    const maxTextW = plateW - SIGN_PAD * 2;
+
     const signs: RoundData["signs"] = [];
     lanes.forEach(({ word }, lane) => {
       const box = new PIXI.Container();
@@ -413,7 +425,7 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
       } else {
         const plate = new PIXI.Graphics();
         plate
-          .roundRect(-SIGN_W / 2, -SIGN_H / 2, SIGN_W, SIGN_H, 14)
+          .roundRect(-plateW / 2, -SIGN_H / 2, plateW, SIGN_H, 14)
           .fill("#ffffff")
           .stroke({ width: 4, color: 0x8d6e63 });
         box.addChild(plate);
@@ -429,8 +441,12 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
           },
         });
         label.anchor.set(0.5);
-        // Shrink long words so they fit on the sign
-        if (label.width > SIGN_W - 24) label.scale.set((SIGN_W - 24) / label.width);
+        // La palabra entra COMPLETA dentro del cartel (nunca se corta);
+        // si no entra a tamano natural se reduce solo lo justo para
+        // caber — y como el cartel ya cabe en el carril, tampoco se
+        // encima con el vecino. El ancho generoso de W mantiene el
+        // texto grande aun con 4 carriles.
+        if (label.width > maxTextW) label.scale.set(maxTextW / label.width);
         box.addChild(label);
       }
 
@@ -603,7 +619,7 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
         />
 
         {/* Pixi canvas + invisible lane tap zones */}
-        <div style={{ position: "relative", width: "100%", maxWidth: "min(640px, calc(100vw - 32px))", borderRadius: radii.xl, overflow: "hidden", border: `2px solid ${colors.border.light}` }}>
+        <div style={{ position: "relative", width: "100%", maxWidth: "min(760px, calc(100vw - 32px))", borderRadius: radii.xl, overflow: "hidden", border: `2px solid ${colors.border.light}` }}>
           {/* React must never render children inside hostRef — Pixi
               appends its canvas there manually */}
           <div ref={hostRef} style={{ width: "100%", aspectRatio: `${W} / ${H}` }} />
