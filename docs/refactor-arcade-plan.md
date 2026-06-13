@@ -6,7 +6,7 @@ Si algo queda pendiente, se anota al pie y se frena.
 
 ## A) Refactor: sistemas comunes extraídos de Leo Vuela (sin cambiar su comportamiento)
 
-- [ ] **A1** `config/arcade-tuning.ts`: tipos compartidos (energía, niveles,
+- [x] **A1** `config/arcade-tuning.ts`: tipos compartidos (energía, niveles,
       premios, música) + helpers (`clampEnergy`, `levelForElapsed`,
       `rewardForLevel`, `pickNextTarget`). `leo-vuela.ts` re-exporta para que
       sus imports y tests sigan igual.

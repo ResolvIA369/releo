@@ -1,4 +1,9 @@
 import type { DomanWord, PhaseNumber } from "@/shared/types/doman";
+import { ARCADE_MUSIC_TRACKS } from "./arcade-tuning";
+
+// Helpers compartidos del arcade: mismos nombres que siempre exporto
+// este modulo, ahora viven en arcade-tuning.ts
+export { clampEnergy, levelForElapsed, rewardForLevel, pickNextTarget } from "./arcade-tuning";
 
 // El "feel" de vuelo por mundo/fase, ajustable sin tocar el juego
 // (mismo patron que LEO_ROCKS_BY_PHASE). Unidades en px/frame a 60fps,
@@ -74,11 +79,7 @@ const DEFAULT_LEVELS: LeoVuelaLevel[] = [
 ];
 
 // Un loop por nivel, de intensidad creciente (mismo tema fuente)
-const DEFAULT_MUSIC_TRACKS = [
-  "/audio/music/leo-vuela-nivel-1.mp3",
-  "/audio/music/leo-vuela-nivel-2.mp3",
-  "/audio/music/leo-vuela-nivel-3.mp3",
-];
+const DEFAULT_MUSIC_TRACKS = ARCADE_MUSIC_TRACKS;
 
 // Mas nivel alcanzado = mejor recompensa al terminar
 const DEFAULT_COIN_BONUS = [0, 10, 25];
@@ -91,28 +92,8 @@ export const LEO_VUELA_TUNING: Record<PhaseNumber, LeoVuelaTuning> = {
   5: { energyStart: 60, energyMax: 100, energyGainCorrect: 11, energyLossWrong: 12, energyLossEscape: 10, energyDrainPerSec: 1.8, energyLossPerBird: 6, birdHitInvulnSec: 1.5, levelDurationSec: 126, levels: DEFAULT_LEVELS, levelCoinBonus: DEFAULT_COIN_BONUS, horizontalSpeed: 3, musicTracks: DEFAULT_MUSIC_TRACKS, musicVolumeDb: -22, musicDuckDb: -34 },
 };
 
-// Indice de nivel (0-based) segun tiempo jugado; clampea al ultimo
-export function levelForElapsed(elapsedSec: number, durationSec: number, levelCount: number): number {
-  if (durationSec <= 0 || levelCount <= 0) return 0;
-  return Math.min(levelCount - 1, Math.max(0, Math.floor(elapsedSec / durationSec)));
-}
-
 export function tuningForPhase(phase: PhaseNumber): LeoVuelaTuning {
   return LEO_VUELA_TUNING[phase] ?? LEO_VUELA_TUNING[1];
-}
-
-export function clampEnergy(value: number, max: number): number {
-  return Math.min(max, Math.max(0, value));
-}
-
-// Recompensa al terminar segun el nivel alcanzado: monedas extra y
-// mapeo a las estrellas existentes (nivel 1 → ⭐, 2 → ⭐⭐, 3 → ⭐⭐⭐)
-export function rewardForLevel(levelIdx: number, tuning: LeoVuelaTuning): { bonusCoins: number; stars: number } {
-  const idx = Math.min(Math.max(levelIdx, 0), tuning.levels.length - 1);
-  return {
-    bonusCoins: tuning.levelCoinBonus[idx] ?? 0,
-    stars: Math.min(3, idx + 1),
-  };
 }
 
 // Caida maxima: sin clamp un descuido se vuelve un picado imposible
@@ -153,18 +134,6 @@ function defaultShuffle<T>(arr: T[]): T[] {
     [a[i], a[j]] = [a[j], a[i]];
   }
   return a;
-}
-
-// Proximo objetivo al azar: las palabras pueden repetirse durante la
-// partida (el flujo es continuo); solo se evita repetir la misma dos
-// veces seguidas para que no sea monotono.
-export function pickNextTarget(
-  pool: DomanWord[],
-  lastId: string | null,
-  rng: () => number = Math.random,
-): DomanWord {
-  const candidates = pool.length > 1 && lastId ? pool.filter((w) => w.id !== lastId) : pool;
-  return candidates[Math.min(candidates.length - 1, Math.floor(rng() * candidates.length))];
 }
 
 // Arma la ronda: target + 2 distractores, cada nube en una banda de
