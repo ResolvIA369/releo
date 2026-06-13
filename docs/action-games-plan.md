@@ -42,7 +42,7 @@ tiempo, premios, música de selva + ducking, intro de Sofía, error mudo.
       palabra, y tocá el vagón donde está escrita antes de que se vaya. ¡Vos
       podés! ¡Allá va el tren!»
 
-- [ ] **2** Lluvia de Palabras (`word-rain`): `WORD_RAIN_TUNING`, flujo continuo,
+- [x] **2** Lluvia de Palabras (`word-rain`): `WORD_RAIN_TUNING`, flujo continuo,
       energía, niveles que aceleran la caída, premios, música + ducking, intro,
       error mudo. Mecánica intacta: atrapar la palabra que cae. Sin obstáculos.
       Intro: «¡Hola! Soy la Seño Sofía. Del cielo caen palabras. Escuchá cuál te
