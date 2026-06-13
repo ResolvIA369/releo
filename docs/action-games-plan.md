@@ -33,7 +33,7 @@ tiempo, premios, música de selva + ducking, intro de Sofía, error mudo.
       frame respetando un flag `active` (pausa/fase). Driver de energía/nivel
       para los juegos DOM.
 
-- [ ] **1** Tren de Palabras (`word-train`): `WORD_TRAIN_TUNING`, flujo continuo
+- [x] **1** Tren de Palabras (`word-train`): `WORD_TRAIN_TUNING`, flujo continuo
       (sin pantalla de dificultad ni pausa de anuncio: el tren entra y Sofía
       nombra en paralelo), energía, niveles por tiempo (126s) que aceleran el
       tren, premios por nivel, música + ducking, intro de Sofía, error mudo.
