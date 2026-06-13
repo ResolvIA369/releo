@@ -19,6 +19,9 @@ export interface SaltaLevel {
 
 export interface SaltaTuning extends ArcadeTuningBase {
   levels: SaltaLevel[];
+  // Separacion minima entre obstaculos del piso (px) para que los
+  // puercoespines siempre se puedan esquivar.
+  minGroundGapPx: number;
 }
 
 const SALTA_LEVELS: SaltaLevel[] = [
@@ -37,6 +40,7 @@ const SALTA_BASE = {
   levelCoinBonus: [0, 10, 25],
   musicTracks: ARCADE_MUSIC_TRACKS,
   musicVolumeDb: -22, musicDuckDb: -34,
+  minGroundGapPx: 200,
 };
 
 export const SALTA_TUNING: Record<PhaseNumber, SaltaTuning> = {

@@ -15,6 +15,7 @@ describe("SALTA_TUNING (modelo arcade)", () => {
       expect(t.levels).toHaveLength(3);
       expect(t.levelCoinBonus).toHaveLength(3);
       expect(t.musicTracks).toHaveLength(3);
+      expect(t.minGroundGapPx).toBeGreaterThan(0);
     }
   });
 

@@ -22,7 +22,7 @@ cada uno. Todo lo nuevo configurable en los TUNING. Push al final.
 
 ## Por juego
 
-- [ ] **5** Leo Salta: separación mínima entre obstáculos del piso
+- [x] **5** Leo Salta: separación mínima entre obstáculos del piso
       (`minGroundGapPx`, configurable) para que los puercoespines siempre se
       puedan esquivar.
 - [ ] **6** Leo Salta: movimiento horizontal (←/→ + botones ◀▶, como Leo Vuela)

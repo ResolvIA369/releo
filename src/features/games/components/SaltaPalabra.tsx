@@ -190,7 +190,7 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
       // Obstaculos del piso (troncos, puercoespines, pajaros en picada)
       const obstaclesLayer = new PIXI.Container();
       app.stage.addChild(obstaclesLayer);
-      obstaclesRef.current = new GroundObstacles(PIXI, obstaclesLayer, { W, groundY: GROUND_Y });
+      obstaclesRef.current = new GroundObstacles(PIXI, obstaclesLayer, { W, groundY: GROUND_Y, minGapPx: tuning.minGroundGapPx });
 
       // Leo — sprite if the texture loads, emoji fallback otherwise
       const leo = new PIXI.Container();

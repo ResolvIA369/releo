@@ -104,8 +104,18 @@ export class GroundObstacles {
   constructor(
     private PIXI: PixiModule,
     private layer: Container,
-    private bounds: { W: number; groundY: number },
+    private bounds: { W: number; groundY: number; minGapPx?: number },
   ) {}
+
+  // Hay lugar para un obstaculo nuevo? Exige que el mover mas a la
+  // derecha haya avanzado al menos minGapPx, asi nunca salen dos tan
+  // juntos que sea imposible esquivar.
+  private hasGroundRoom(): boolean {
+    const minGap = this.bounds.minGapPx ?? 0;
+    if (minGap <= 0 || this.movers.length === 0) return true;
+    const rightmost = Math.max(...this.movers.map((m) => m.node.x));
+    return rightmost <= this.bounds.W - minGap;
+  }
 
   // leo: { x, y } con y = pies de Leo. Devuelve hit=true en el frame
   // en que un obstaculo lo toca (la energia la maneja el juego).
@@ -114,15 +124,16 @@ export class GroundObstacles {
     let hit = false;
     const leoOnGround = leo.y >= groundY - LEO_ON_GROUND_Y;
 
-    // Troncos y puercoespines: cruzan el piso de derecha a izquierda
-    if (spawnRoll(rates.logsPerMin, dt)) {
+    // Troncos y puercoespines: cruzan el piso de derecha a izquierda.
+    // La separacion minima vale para AMBOS (no se pisan entre tipos).
+    if (this.hasGroundRoom() && spawnRoll(rates.logsPerMin, dt)) {
       const node = drawLog(this.PIXI);
       node.x = W + 50;
       node.y = groundY - 8;
       this.layer.addChild(node);
       this.movers.push({ node, vx: 2.4 + Math.random() * 0.8, walker: false, hit: false });
     }
-    if (spawnRoll(rates.porcupinesPerMin, dt)) {
+    if (this.hasGroundRoom() && spawnRoll(rates.porcupinesPerMin, dt)) {
       const node = drawPorcupine(this.PIXI);
       node.x = W + 50;
       node.y = groundY - 6;
