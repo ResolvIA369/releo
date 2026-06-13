@@ -47,7 +47,14 @@ const CATCH_X = 60; // rango horizontal de atrape
 const CATCH_Y = 48; // rango vertical de atrape (centro de Leo vs nube)
 const FADE_RATE = 0.04; // alpha/frame con que se desvanece la tanda anterior
 
-type Phase = "loading" | "running" | "finished";
+// Intro de Sofia al arrancar (mp3 generado con edge-tts es-AR-ElenaNeural;
+// este texto es el fallback hablado si el audio no carga)
+const INTRO_TEXT =
+  "¡Hola! Soy la Seño Sofía. Hoy Leo quiere volar entre las nubes. " +
+  "Escuchá la palabra, y tocá la pantalla para que Leo vuele hasta la nube correcta. " +
+  "¡Vos podés! ¡A volar!";
+
+type Phase = "loading" | "intro" | "running" | "finished";
 
 interface FlyingCloud {
   box: Container;
@@ -400,7 +407,7 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
         }
       });
 
-      setGamePhase("running");
+      setGamePhase("intro");
     })();
 
     return () => {
@@ -515,6 +522,19 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
     // se agacha mientras habla
     speakDucked(() => sofiaNameWord(target.text));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Intro de Sofia (saludo + que hay que hacer) — SOLO al arrancar;
+  // la primera tanda recien sale cuando termina. Durante el juego no
+  // hay ninguna pausa nueva: el flujo continuo queda igual.
+  useEffect(() => {
+    if (gamePhase !== "intro") return;
+    let alive = true;
+    (async () => {
+      await sofiaPlayAudio("reglas-leo-vuela", INTRO_TEXT, "encouraging");
+      if (alive && !cancelledRef.current) setGamePhase("running");
+    })();
+    return () => { alive = false; };
+  }, [gamePhase]);
 
   // First wave once Pixi is up
   useEffect(() => {
@@ -721,7 +741,9 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
         </div>
 
         <p style={{ fontSize: fontSizes.sm, color: colors.text.muted, margin: 0, textAlign: "center" }}>
-          Toca para que Leo vuele hasta la nube correcta — ◀ ▶ esquivan
+          {gamePhase === "intro"
+            ? "Escucha a Sofía..."
+            : "Toca para que Leo vuele hasta la nube correcta — ◀ ▶ esquivan"}
         </p>
 
         <FeedbackFlash type={feedbackType} />
