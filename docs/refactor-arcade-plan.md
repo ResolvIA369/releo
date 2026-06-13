@@ -31,7 +31,7 @@ Mecánica central intacta (Corre = elegir carril; Salta = saltar a atrapar).
 Error de palabra = solo tint, sin audio. La lectura es lo único que da puntos.
 Todo ajustable en un tuning por juego.
 
-- [ ] **B1** Leo Corre — `LEO_RUNNER_TUNING` + flujo continuo (carteles nunca
+- [x] **B1** Leo Corre — `LEO_RUNNER_TUNING` + flujo continuo (carteles nunca
       paran, pill fija, Sofía en paralelo, palabras repetibles), energía,
       niveles por tiempo (126s), premios por nivel, error mudo.
 - [ ] **B2** Leo Corre — música de selva (mismos 3 loops, crossfade por nivel,

@@ -1,21 +1,24 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { motion } from "framer-motion";
 import type { Application, Container, Sprite } from "pixi.js";
 import type { GameProps } from "../types";
 import type { DomanWord } from "@/shared/types/doman";
 import { useGameState } from "../hooks/useGameState";
 import { useGameKeys } from "../hooks/useGameKeys";
+import { useArcadeEnergy } from "../hooks/useArcadeEnergy";
+import { useArcadeLevel } from "../hooks/useArcadeLevel";
 import { useDemoAutoplay } from "../hooks/useDemoAutoplay";
 import { GameShell, usePause } from "./GameShell";
+import { ArcadeHud } from "./ArcadeHud";
 import { useRewards } from "@/shared/components/RewardsLayer";
 import { FeedbackFlash } from "@/shared/components/FeedbackFlash";
 import { GameCompleteScreen } from "@/shared/components/GameCompleteScreen";
 import { colors, spacing, radii, fontSizes, fonts } from "@/shared/styles/design-tokens";
 import { sofiaNameWord, sofiaPlayAudio, stopVoice } from "@/shared/services/sofiaVoice";
 import { domanCanvasText } from "../config/doman-canvas";
-import { buildLanes, rocksForPhase } from "../config/leo-runner";
+import { buildLanes, rocksForPhase, runnerTuningForPhase } from "../config/leo-runner";
+import { rewardForLevel, pickNextTarget } from "../config/arcade-tuning";
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -27,7 +30,6 @@ function shuffle<T>(arr: T[]): T[] {
 }
 
 const GAME_COLOR = "#ed8936";
-const WORDS_PER_GAME = 20;
 
 // Unico punto de cambio del sprite: Leo de espaldas, corriendo hacia
 // adentro de la pantalla (procesado por scripts/prepare-leo-sprites.py)
@@ -41,10 +43,11 @@ const LEO_Y = H - 72;
 const SIGN_W = 172;
 const SIGN_H = 56;
 const SIGN_SPAWN_Y = -70;
-// Travel speed in px/frame at 60fps; ramps up slightly per round
+// Travel speed in px/frame at 60fps; los niveles la multiplican
 const BASE_SPEED = 1.5;
+const FADE_RATE = 0.04; // alpha/frame de la tanda anterior al irse
 
-type Phase = "loading" | "announcing" | "running" | "feedback" | "finished";
+type Phase = "loading" | "running" | "finished";
 
 interface RoundData {
   signs: { box: Container; lane: number }[];
@@ -61,7 +64,7 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
   const { paused } = usePause();
 
   const [gamePhase, setGamePhase] = useState<Phase>("loading");
-  const [roundIdx, setRoundIdx] = useState(0);
+  const [waveIdx, setWaveIdx] = useState(0);
   const [targetWord, setTargetWord] = useState<DomanWord | null>(null);
   const [laneWords, setLaneWords] = useState<(DomanWord | null)[]>([null, null, null]);
   const [feedbackType, setFeedbackType] = useState<"correct" | "wrong" | null>(null);
@@ -79,12 +82,27 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
   const squashTRef = useRef(1); // 0→1 squash-and-stretch on a correct pass
   const baseScaleRef = useRef(0); // Leo sprite's natural scale
   const elapsedRef = useRef(0);
+  const gamePhaseRef = useRef<Phase>("loading");
   const roundRef = useRef<RoundData>({ signs: [], targetLane: 1, target: null, speed: BASE_SPEED, active: false, resolved: false });
+  const fadingRef = useRef<Container[]>([]); // carteles viejos desvaneciendose
   const resolveRef = useRef<() => void>(() => {});
+  const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cancelledRef = useRef(false);
 
-  const gameWords = useMemo(() => shuffle(words).slice(0, WORDS_PER_GAME), [words]);
-  const totalRounds = gameWords.length;
+  gamePhaseRef.current = gamePhase;
+
+  const wordsRef = useRef(words);
+  wordsRef.current = words;
+  const lastTargetIdRef = useRef<string | null>(null);
+
+  const tuning = useMemo(() => runnerTuningForPhase(phase), [phase]);
+  const tuningRef = useRef(tuning);
+  tuningRef.current = tuning;
+
+  const onEnergyOutRef = useRef<() => void>(() => {});
+  const energy = useArcadeEnergy(tuning);
+  const level = useArcadeLevel(tuning.levelDurationSec, tuning.levels.length);
+  const { levelRef } = level;
 
   // ─── Pixi init (dynamic import keeps pixi.js out of the main bundle) ──
 
@@ -116,7 +134,6 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
       // Road background: 3 lanes separated by scrolling dashed lines
       const road = new PIXI.Graphics();
       road.rect(0, 0, W, H).fill("#dcefe2");
-      // Grass edges
       road.rect(0, 0, 14, H).fill("#a8d5b0");
       road.rect(W - 14, 0, 14, H).fill("#a8d5b0");
       app.stage.addChild(road);
@@ -137,7 +154,7 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
       app.stage.addChild(dashLayer);
       dashLayerRef.current = dashLayer;
 
-      // Signs layer (word signs + obstacles come down this layer)
+      // Signs layer (word signs + rocks come down this layer)
       const signsLayer = new PIXI.Container();
       app.stage.addChild(signsLayer);
       signsLayerRef.current = signsLayer;
@@ -159,7 +176,6 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
         fallback.anchor.set(0.5, 1);
         leo.addChild(fallback);
       }
-      // Shadow under Leo
       const shadow = new PIXI.Graphics();
       shadow.ellipse(0, 0, 34, 9).fill({ color: 0x000000, alpha: 0.15 });
       leo.addChildAt(shadow, 0);
@@ -173,10 +189,23 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
         const dt = ticker.deltaTime;
         elapsedRef.current += dt;
         const round = roundRef.current;
+        const tun = tuningRef.current;
+
+        // Nivel por tiempo + drenaje de energia (el flujo nunca para)
+        if (round.active && gamePhaseRef.current === "running") {
+          level.tick(dt);
+          if (energy.drainTick(dt)) {
+            round.active = false;
+            round.resolved = true;
+            onEnergyOutRef.current();
+          }
+        }
+        const levelCfg = tun.levels[levelRef.current] ?? tun.levels[0];
+        const effSpeed = round.speed * levelCfg.speedMul;
 
         // Scroll the lane dashes to fake forward motion
         if (dashLayerRef.current) {
-          dashLayerRef.current.y = (dashLayerRef.current.y + round.speed * dt * 1.4) % PERIOD;
+          dashLayerRef.current.y = (dashLayerRef.current.y + effSpeed * dt * 1.4) % PERIOD;
         }
 
         // Leo: lerp toward his lane + running bob + jump arc
@@ -219,30 +248,44 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
           }
         }
 
-        // Move the signs down (parked while Sofia announces the word);
-        // resolve when they reach Leo, then let them slide past
+        // Los carteles bajan SIEMPRE (flujo continuo, sin estacionarse)
         if (round.active || round.resolved) {
           for (const { box } of round.signs) {
-            box.y += round.speed * dt;
+            box.y += effSpeed * dt;
           }
         }
+
+        // Tanda anterior: sigue bajando mientras se desvanece
+        if (fadingRef.current.length > 0) {
+          fadingRef.current = fadingRef.current.filter((box) => {
+            box.y += effSpeed * dt;
+            box.alpha -= FADE_RATE * dt;
+            if (box.alpha <= 0 || box.y > H + 80) {
+              box.destroy({ children: true });
+              return false;
+            }
+            return true;
+          });
+        }
+
+        // Resolver cuando los carteles llegan a Leo
         if (round.active && !round.resolved && round.signs.length > 0) {
           const firstY = round.signs[0].box.y;
           if (firstY >= LEO_Y - 52) {
             round.resolved = true;
-            round.active = false;
             resolveRef.current();
           }
         }
       });
 
-      setGamePhase("announcing");
+      setGamePhase("running");
     })();
 
     return () => {
       disposed = true;
       cancelledRef.current = true;
       stopVoice();
+      if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
       // Only destroy once appRef was set (init finished); before that
       // the async init path destroys the app itself when it sees
       // `disposed`, and destroying mid-init throws.
@@ -253,6 +296,7 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
         leoSpriteRef.current = null;
         signsLayerRef.current = null;
         dashLayerRef.current = null;
+        fadingRef.current = [];
       }
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -269,29 +313,36 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
     }
   }, [paused]);
 
-  // ─── Round setup ───────────────────────────────────────────────
+  // Feedback flash con limpieza propia (el flujo no se detiene)
+  const flashFeedback = useCallback((type: "correct" | "wrong") => {
+    setFeedbackType(type);
+    if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
+    feedbackTimerRef.current = setTimeout(() => {
+      if (!cancelledRef.current) setFeedbackType(null);
+    }, 700);
+  }, []);
 
-  const setupRound = useCallback(async (idx: number) => {
+  // ─── Wave setup — continuo: la tanda anterior se desvanece y la
+  // nueva entra ya; Sofia anuncia en paralelo, sin frenar nada ──────
+
+  const spawnWave = useCallback(async () => {
     const app = appRef.current;
     const signsLayer = signsLayerRef.current;
     if (!app || !signsLayer || cancelledRef.current) return;
 
-    if (idx >= totalRounds) {
-      setGamePhase("finished");
-      finish().then(() => onComplete?.(state));
-      return;
-    }
-
     const PIXI = await import("pixi.js");
     if (cancelledRef.current) return;
 
-    // Clear previous signs
-    signsLayer.removeChildren().forEach((c) => c.destroy({ children: true }));
+    // Carteles restantes de la tanda anterior → a desvanecerse
+    for (const { box } of roundRef.current.signs) {
+      if (!box.destroyed) fadingRef.current.push(box);
+    }
 
-    const target = gameWords[idx];
-    // Lane difficulty per world: Mundo 1 keeps one rock (2 readable
-    // lanes), higher worlds drop the rocks so all 3 lanes carry words.
-    const lanes = buildLanes(target, words, rocksForPhase(phase), shuffle);
+    // Palabras repetibles: objetivo al azar, sin repetir la ultima
+    const target = pickNextTarget(wordsRef.current, lastTargetIdRef.current);
+    lastTargetIdRef.current = target.id;
+    // Piedras por mundo: Mundo 1 deja 1 piedra (2 carteles), 2+ sin piedras
+    const lanes = buildLanes(target, wordsRef.current, rocksForPhase(phase), shuffle);
     const targetLane = lanes.findIndex((l) => l.word?.id === target.id);
 
     const signs: RoundData["signs"] = [];
@@ -338,40 +389,46 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
       signs,
       targetLane,
       target,
-      speed: BASE_SPEED * (1 + idx * 0.04),
-      active: false,
+      speed: BASE_SPEED,
+      active: true,
       resolved: false,
     };
 
     setTargetWord(target);
+    setWaveIdx((w) => w + 1);
+    // Setear el data-word-id de los botones de carril
     setLaneWords(lanes.map((l) => l.word));
-    setFeedbackType(null);
-    setGamePhase("announcing");
 
-    await sofiaNameWord(target.text);
-    if (cancelledRef.current) return;
-    roundRef.current.active = true;
-    setGamePhase("running");
-  }, [totalRounds, gameWords, words, phase, finish, onComplete, state]);
+    // Sofia anuncia en paralelo — el camino no se frena
+    stopVoice();
+    void sofiaNameWord(target.text);
+  }, [phase]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // First round once Pixi is up
+  // First wave once Pixi is up
   useEffect(() => {
-    if (gamePhase === "announcing" && roundIdx === 0 && roundRef.current.signs.length === 0) {
-      setupRound(0);
+    if (gamePhase === "running" && roundRef.current.signs.length === 0) {
+      spawnWave();
     }
   }, [gamePhase]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Sin energia → fin del juego
+  const finishGame = useCallback(() => {
+    if (cancelledRef.current) return;
+    stopVoice();
+    setGamePhase("finished");
+    finish().then(() => onComplete?.(state));
+  }, [finish, onComplete, state]);
+  onEnergyOutRef.current = finishGame;
+
   // ─── Resolve (called from the Pixi ticker when signs reach Leo) ──
 
-  const handleResolve = useCallback(async () => {
+  const handleResolve = useCallback(() => {
     const round = roundRef.current;
     const target = round.target;
     if (!target) return;
 
     const correct = leoLaneRef.current === round.targetLane;
     recordAttempt(correct, correct ? target.id : undefined);
-    setGamePhase("feedback");
-    setFeedbackType(correct ? "correct" : "wrong");
 
     if (correct) {
       // Coin flies from Leo's canvas position to the chest in the header
@@ -383,22 +440,21 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
       }
       jumpTRef.current = 0; // victory hop
       squashTRef.current = 0; // celebration squash-and-stretch
-      await sofiaPlayAudio("reaccion-muy-bien", "¡Muy bien!", "excited");
+      energy.adjust(tuningRef.current.energyGainCorrect);
+      flashFeedback("correct");
+      stopVoice();
+      void sofiaPlayAudio("reaccion-muy-bien", "¡Muy bien!", "excited");
     } else {
-      // Error: solo el tint de tropezon + repetir la palabra objetivo
-      // como refuerzo (sin audio de "esa no" / "intenta otra vez")
-      crashTRef.current = 0; // stumble
-      await sofiaNameWord(target.text);
+      // Error mudo: solo el tropezon visual + energia abajo. El
+      // objetivo sigue visible en la pill del HUD.
+      crashTRef.current = 0;
+      energy.adjust(-tuningRef.current.energyLossWrong);
+      flashFeedback("wrong");
     }
 
-    if (cancelledRef.current) return;
-    await new Promise((r) => setTimeout(r, 500));
-    if (cancelledRef.current) return;
-    setFeedbackType(null);
-    const next = roundIdx + 1;
-    setRoundIdx(next);
-    setupRound(next);
-  }, [recordAttempt, rewardCorrect, roundIdx, setupRound]);
+    // Siguiente tanda al toque — flujo continuo
+    spawnWave();
+  }, [recordAttempt, rewardCorrect, energy, flashFeedback, spawnWave]);
 
   resolveRef.current = handleResolve;
 
@@ -434,17 +490,31 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
 
   const handleReplay = useCallback(() => {
     reset();
+    energy.reset();
+    level.reset();
     leoLaneRef.current = 1;
-    setRoundIdx(0);
-    setupRound(0);
-  }, [reset, setupRound]);
+    lastTargetIdRef.current = null;
+    setGamePhase("running");
+    spawnWave();
+  }, [reset, energy, level, spawnWave]);
 
   // ═══ RENDER ══════════════════════════════════════════════════
 
   if (gamePhase === "finished") {
+    const reward = rewardForLevel(level.levelUi, tuning);
     return (
       <GameShell title="Leo Corre" icon="🦁" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})}>
-        <GameCompleteScreen title="Leo Corre" correct={state.correctAttempts} total={state.totalAttempts} color={GAME_COLOR} onReplay={handleReplay} onBack={onBack ?? (() => {})} />
+        <GameCompleteScreen
+          title="Leo Corre"
+          correct={state.correctAttempts}
+          total={state.totalAttempts}
+          color={GAME_COLOR}
+          bonusCoins={reward.bonusCoins}
+          starsOverride={reward.stars}
+          subtitle={`Llegaste al Nivel ${level.levelUi + 1}`}
+          onReplay={handleReplay}
+          onBack={onBack ?? (() => {})}
+        />
       </GameShell>
     );
   }
@@ -452,28 +522,16 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
   return (
     <GameShell title="Leo Corre" icon="🦁" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})}>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: spacing.md, paddingTop: spacing.sm }}>
-        {/* Round counter + target word */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", maxWidth: "min(640px, calc(100vw - 32px))" }}>
-          <span style={{ fontSize: fontSizes.sm, color: colors.text.placeholder }}>
-            {Math.min(roundIdx + 1, totalRounds)} / {totalRounds}
-          </span>
-          {targetWord && (
-            <motion.div
-              key={roundIdx}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              style={{
-                padding: `${spacing.xs}px ${spacing.lg}px`,
-                backgroundColor: `${GAME_COLOR}15`, border: `2px solid ${GAME_COLOR}`,
-                borderRadius: radii.pill, fontSize: fontSizes.xl,
-                fontWeight: "bold", fontFamily: fonts.display, color: GAME_COLOR,
-              }}
-            >
-              {targetWord.text}
-            </motion.div>
-          )}
-          <span style={{ width: 40 }} />
-        </div>
+        <ArcadeHud
+          color={GAME_COLOR}
+          targetPrefix="Tocá:"
+          level={level.levelUi}
+          correct={state.correctAttempts}
+          targetWord={targetWord}
+          waveKey={waveIdx}
+          energy={energy.energyUi}
+          energyMax={tuning.energyMax}
+        />
 
         {/* Pixi canvas + invisible lane tap zones */}
         <div style={{ position: "relative", width: "100%", maxWidth: "min(640px, calc(100vw - 32px))", borderRadius: radii.xl, overflow: "hidden", border: `2px solid ${colors.border.light}` }}>
@@ -503,7 +561,7 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
         </div>
 
         <p style={{ fontSize: fontSizes.sm, color: colors.text.muted, margin: 0, textAlign: "center" }}>
-          {gamePhase === "announcing" ? "Escucha a Sofía..." : "Toca el camino con la palabra correcta"}
+          Toca el camino con la palabra correcta
         </p>
 
         <FeedbackFlash type={feedbackType} />
