@@ -246,9 +246,12 @@ export class LaneObstacles {
   ) {}
 
   // speed: px/frame del camino este frame. Devuelve hit=true en el
-  // frame en que un obstaculo alcanza a Leo en su carril.
-  update(dt: number, rates: LaneRates, leoLane: number, speed: number): { hit: boolean } {
-    const { lanesX, H, leoY } = this.opts;
+  // frame en que un obstaculo alcanza a Leo en su carril. lanesX puede
+  // variar por nivel (Nivel 3 suma un carril); los obstaculos ya
+  // spawneados conservan su x, solo cambia donde aparecen los nuevos.
+  update(dt: number, rates: LaneRates, leoLane: number, speed: number, lanesXOverride?: number[]): { hit: boolean } {
+    const lanesX = lanesXOverride ?? this.opts.lanesX;
+    const { H, leoY } = this.opts;
     let hit = false;
 
     if (spawnRoll(rates.logsPerMin, dt)) {

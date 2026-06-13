@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildLanes, rocksForPhase, LEO_ROCKS_BY_PHASE, LEO_RUNNER_TUNING } from "../config/leo-runner";
+import { buildLanes, rocksForPhase, LEO_ROCKS_BY_PHASE, LEO_RUNNER_TUNING, lanesXForCount } from "../config/leo-runner";
 import { PHASE1_WORDS } from "@/shared/constants";
 import type { PhaseNumber } from "@/shared/types/doman";
 
@@ -28,7 +28,7 @@ describe("rocksForPhase", () => {
 
 describe("buildLanes", () => {
   it("con 1 piedra quedan 2 carriles con palabra (target incluido)", () => {
-    const lanes = buildLanes(target, pool, 1, identity);
+    const lanes = buildLanes(target, pool, 1, 3, identity);
     expect(lanes).toHaveLength(3);
     expect(lanes.filter((l) => l.word === null)).toHaveLength(1);
     expect(lanes.filter((l) => l.word !== null)).toHaveLength(2);
@@ -36,27 +36,27 @@ describe("buildLanes", () => {
   });
 
   it("sin piedras los 3 carriles tienen palabra y el target esta presente", () => {
-    const lanes = buildLanes(target, pool, 0, identity);
+    const lanes = buildLanes(target, pool, 0, 3, identity);
     expect(lanes).toHaveLength(3);
     expect(lanes.every((l) => l.word !== null)).toBe(true);
     expect(lanes.some((l) => l.word?.id === target.id)).toBe(true);
   });
 
   it("no repite el target como distractor", () => {
-    const lanes = buildLanes(target, pool, 0, identity);
+    const lanes = buildLanes(target, pool, 0, 3, identity);
     const ids = lanes.map((l) => l.word?.id);
     expect(ids.filter((id) => id === target.id)).toHaveLength(1);
   });
 
   it("clampa una configuracion de piedras invalida", () => {
-    const tooMany = buildLanes(target, pool, 3, identity);
+    const tooMany = buildLanes(target, pool, 3, 3, identity);
     expect(tooMany.filter((l) => l.word !== null).length).toBeGreaterThanOrEqual(2);
-    const negative = buildLanes(target, pool, -1, identity);
+    const negative = buildLanes(target, pool, -1, 3, identity);
     expect(negative.every((l) => l.word !== null)).toBe(true);
   });
 
   it("rellena con piedras si no alcanzan los distractores", () => {
-    const lanes = buildLanes(target, [target], 0, identity);
+    const lanes = buildLanes(target, [target], 0, 3, identity);
     expect(lanes.filter((l) => l.word !== null)).toHaveLength(1);
     expect(lanes.some((l) => l.word?.id === target.id)).toBe(true);
   });
@@ -87,5 +87,26 @@ describe("LEO_RUNNER_TUNING (modelo arcade)", () => {
       expect(levels[i].speedMul).toBeGreaterThan(levels[i - 1].speedMul);
       expect(levels[i].logsPerMin).toBeGreaterThan(levels[i - 1].logsPerMin);
     }
+  });
+});
+
+describe("carriles por nivel", () => {
+  it("Nivel 1 y 2 tienen 3 carriles, Nivel 3 suma un cuarto", () => {
+    expect(LEO_RUNNER_TUNING[1].lanesByLevel).toEqual([3, 3, 4]);
+  });
+
+  it("buildLanes arma la cantidad pedida con el target presente", () => {
+    const lanes4 = buildLanes(target, pool, 0, 4, identity);
+    expect(lanes4).toHaveLength(4);
+    expect(lanes4.filter((l) => l.word !== null).length).toBe(4);
+    expect(lanes4.some((l) => l.word?.id === target.id)).toBe(true);
+  });
+
+  it("lanesXForCount reparte parejo y dentro del ancho", () => {
+    const xs = lanesXForCount(4, 640);
+    expect(xs).toHaveLength(4);
+    for (let i = 1; i < xs.length; i++) expect(xs[i]).toBeGreaterThan(xs[i - 1]);
+    expect(xs[0]).toBeGreaterThan(0);
+    expect(xs[xs.length - 1]).toBeLessThan(640);
   });
 });

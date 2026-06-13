@@ -21,7 +21,7 @@ import { GameCompleteScreen } from "@/shared/components/GameCompleteScreen";
 import { colors, spacing, radii, fontSizes, fonts } from "@/shared/styles/design-tokens";
 import { sofiaNameWord, sofiaPlayAudio, stopVoice } from "@/shared/services/sofiaVoice";
 import { domanCanvasText } from "../config/doman-canvas";
-import { buildLanes, rocksForPhase, runnerTuningForPhase } from "../config/leo-runner";
+import { buildLanes, rocksForPhase, runnerTuningForPhase, lanesXForCount } from "../config/leo-runner";
 import { rewardForLevel, createWordBag } from "../config/arcade-tuning";
 
 function shuffle<T>(arr: T[]): T[] {
@@ -42,7 +42,7 @@ const LEO_SPRITE_URL = "/images/games/leo-corre-sprite.png";
 // Logical canvas size — CSS scales it to the container width
 const W = 640;
 const H = 420;
-const LANES_X = [W * 0.18, W * 0.5, W * 0.82];
+const DEFAULT_LANES_X = lanesXForCount(3, W);
 const LEO_Y = H - 72;
 const SIGN_W = 172;
 const SIGN_H = 56;
@@ -90,6 +90,7 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
   const invulnUntilRef = useRef(0); // fin de invulnerabilidad (seg de juego)
 
   const leoLaneRef = useRef(1);
+  const lanesXRef = useRef<number[]>(DEFAULT_LANES_X);
   const jumpTRef = useRef(1); // 0→1 jump progress; 1 = on the ground
   const crashTRef = useRef(1); // 0→1 stumble progress
   const squashTRef = useRef(1); // 0→1 squash-and-stretch on a correct pass
@@ -194,7 +195,7 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
       // Obstaculos del camino (troncos, pajaros que bajan, lluvia)
       const obstaclesLayer = new PIXI.Container();
       app.stage.addChild(obstaclesLayer);
-      obstaclesRef.current = new LaneObstacles(PIXI, obstaclesLayer, { lanesX: LANES_X, H, leoY: LEO_Y });
+      obstaclesRef.current = new LaneObstacles(PIXI, obstaclesLayer, { lanesX: DEFAULT_LANES_X, H, leoY: LEO_Y });
 
       // Leo — sprite if the texture loads, emoji fallback otherwise
       const leo = new PIXI.Container();
@@ -216,7 +217,7 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
       const shadow = new PIXI.Graphics();
       shadow.ellipse(0, 0, 34, 9).fill({ color: 0x000000, alpha: 0.15 });
       leo.addChildAt(shadow, 0);
-      leo.x = LANES_X[1];
+      leo.x = DEFAULT_LANES_X[1];
       leo.y = LEO_Y;
       app.stage.addChild(leo);
       leoRef.current = leo;
@@ -244,7 +245,7 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
         // de invulnerabilidad (las piedras de los carteles siguen
         // siendo parte de la decision de lectura, no de esto)
         if (round.active && gamePhaseRef.current === "running" && obstaclesRef.current) {
-          const frame = obstaclesRef.current.update(dt, levelCfg, leoLaneRef.current, effSpeed);
+          const frame = obstaclesRef.current.update(dt, levelCfg, leoLaneRef.current, effSpeed, lanesXRef.current);
           if (frame.hit && level.playSecRef.current >= invulnUntilRef.current) {
             invulnUntilRef.current = level.playSecRef.current + tun.obstacleInvulnSec;
             energy.adjust(-tun.energyLossPerObstacle);
@@ -260,7 +261,7 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
         // Leo: lerp toward his lane + running bob + jump arc
         const leoC = leoRef.current;
         if (leoC) {
-          const targetX = LANES_X[leoLaneRef.current];
+          const targetX = lanesXRef.current[leoLaneRef.current] ?? lanesXRef.current[0];
           leoC.x += (targetX - leoC.x) * Math.min(1, 0.22 * dt);
 
           let offsetY = Math.sin(elapsedRef.current * 0.25) * 3; // bob
@@ -393,7 +394,10 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
     // Palabras repetibles: objetivo al azar, sin repetir la ultima
     const target = bagRef.current!.next();
     // Piedras por mundo: Mundo 1 deja 1 piedra (2 carteles), 2+ sin piedras
-    const lanes = buildLanes(target, wordsRef.current, rocksForPhase(phase), shuffle);
+    const laneCount = tuningRef.current.lanesByLevel[levelRef.current] ?? 3;
+    lanesXRef.current = lanesXForCount(laneCount, W);
+    if (leoLaneRef.current > laneCount - 1) leoLaneRef.current = laneCount - 1;
+    const lanes = buildLanes(target, wordsRef.current, rocksForPhase(phase), laneCount, shuffle);
     const targetLane = lanes.findIndex((l) => l.word?.id === target.id);
 
     const signs: RoundData["signs"] = [];
@@ -430,7 +434,7 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
         box.addChild(label);
       }
 
-      box.x = LANES_X[lane];
+      box.x = lanesXRef.current[lane];
       box.y = SIGN_SPAWN_Y;
       signsLayer.addChild(box);
       signs.push({ box, lane });
@@ -494,7 +498,7 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
       if (canvas) {
         const rect = canvas.getBoundingClientRect();
         const scale = rect.width / W;
-        rewardCorrect(rect.left + LANES_X[round.targetLane] * scale, rect.top + LEO_Y * scale);
+        rewardCorrect(rect.left + lanesXRef.current[round.targetLane] * scale, rect.top + LEO_Y * scale);
       }
       jumpTRef.current = 0; // victory hop
       squashTRef.current = 0; // celebration squash-and-stretch
@@ -532,7 +536,7 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
   // Keyboard: ↑/↓ (y ←/→ como alias — los carriles son columnas)
   // mueven a Leo un carril; el toque en los carriles queda igual
   const moveLane = useCallback((delta: -1 | 1) => {
-    handleLaneTap(Math.min(2, Math.max(0, leoLaneRef.current + delta)));
+    handleLaneTap(Math.min(lanesXRef.current.length - 1, Math.max(0, leoLaneRef.current + delta)));
   }, [handleLaneTap]);
 
   useGameKeys(gamePhase === "running" && !paused, {
@@ -608,7 +612,7 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
               Cargando a Leo... 🦁
             </div>
           )}
-          {[0, 1, 2].map((lane) => (
+          {laneWords.map((_, lane) => (
             <button
               key={lane}
               data-lane={lane}
@@ -617,7 +621,7 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
               onClick={() => handleLaneTap(lane)}
               style={{
                 position: "absolute", top: 0, bottom: 0,
-                left: `${(lane * 100) / 3}%`, width: `${100 / 3}%`,
+                left: `${(lane * 100) / laneWords.length}%`, width: `${100 / laneWords.length}%`,
                 background: "transparent", border: "none", padding: 0,
                 cursor: gamePhase === "running" ? "pointer" : "default",
               }}

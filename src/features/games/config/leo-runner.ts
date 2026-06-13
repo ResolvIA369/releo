@@ -13,13 +13,20 @@ export const LEO_ROCKS_BY_PHASE: Record<PhaseNumber, number> = {
   5: 0,
 };
 
-const LANE_COUNT = 3;
+const DEFAULT_LANE_COUNT = 3;
 
 // Siempre tiene que quedar al menos el cartel del target + 1 alternativa,
 // si no el carril correcto vuelve a ser obvio.
 export function rocksForPhase(phase: PhaseNumber): number {
   const rocks = LEO_ROCKS_BY_PHASE[phase] ?? 0;
-  return Math.min(Math.max(rocks, 0), LANE_COUNT - 2);
+  return Math.min(Math.max(rocks, 0), DEFAULT_LANE_COUNT - 2);
+}
+
+// Posiciones X de N carriles, repartidas parejo sobre el camino.
+export function lanesXForCount(count: number, width: number): number[] {
+  const margin = width * 0.12;
+  const usable = width - margin * 2;
+  return Array.from({ length: count }, (_, i) => margin + ((i + 0.5) * usable) / count);
 }
 
 export interface LeoLane {
@@ -35,21 +42,24 @@ function defaultShuffle<T>(arr: T[]): T[] {
   return a;
 }
 
-// Arma los 3 carriles de una ronda: el target, los distractores que
-// entren segun la cantidad de piedras, y las piedras como carriles vacios.
+// Arma los carriles de una ronda: el target, los distractores que
+// entren segun la cantidad de piedras, y las piedras como carriles
+// vacios. laneCount define cuantos carriles (3 por defecto; 4 en los
+// niveles altos).
 export function buildLanes(
   target: DomanWord,
   distractorPool: DomanWord[],
   rocks: number,
+  laneCount: number = DEFAULT_LANE_COUNT,
   shuffleFn: <T>(arr: T[]) => T[] = defaultShuffle,
 ): LeoLane[] {
-  const rockCount = Math.min(Math.max(rocks, 0), LANE_COUNT - 2);
+  const rockCount = Math.min(Math.max(rocks, 0), laneCount - 2);
   const distractors = shuffleFn(distractorPool.filter((w) => w.id !== target.id))
-    .slice(0, LANE_COUNT - 1 - rockCount);
+    .slice(0, laneCount - 1 - rockCount);
   const lanes: LeoLane[] = [
     { word: target },
     ...distractors.map((word) => ({ word })),
-    ...Array.from({ length: LANE_COUNT - 1 - distractors.length }, () => ({ word: null })),
+    ...Array.from({ length: laneCount - 1 - distractors.length }, () => ({ word: null })),
   ];
   return shuffleFn(lanes);
 }
@@ -69,6 +79,8 @@ export interface LeoRunnerLevel {
 
 export interface LeoRunnerTuning extends ArcadeTuningBase {
   levels: LeoRunnerLevel[];
+  // Cantidad de carriles por nivel (Nivel 3 suma un cuarto carril).
+  lanesByLevel: number[];
 }
 
 const RUNNER_LEVELS: LeoRunnerLevel[] = [
@@ -85,6 +97,7 @@ const RUNNER_BASE = {
   wordsPerLevel: 10,
   levels: RUNNER_LEVELS,
   levelCoinBonus: [0, 10, 25],
+  lanesByLevel: [3, 3, 4],
   musicTracks: ARCADE_MUSIC_TRACKS,
   musicVolumeDb: -22, musicDuckDb: -34,
 };

@@ -27,7 +27,7 @@ cada uno. Todo lo nuevo configurable en los TUNING. Push al final.
       puedan esquivar.
 - [x] **6** Leo Salta: movimiento horizontal (←/→ + botones ◀▶, como Leo Vuela)
       además del salto.
-- [ ] **7** Leo Corre: 4º carril en Nivel 3 (`lanesByLevel: [3,3,4]`,
+- [x] **7** Leo Corre: 4º carril en Nivel 3 (`lanesByLevel: [3,3,4]`,
       configurable).
 - [ ] **8** Tren: que el "¡Muy bien!" suene completo — la tanda siguiente espera
       a que termine la felicitación en vez de cortarla.
