@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import type { GameProps } from "../types";
 import type { DomanWord } from "@/shared/types/doman";
@@ -16,6 +16,9 @@ import { colors, spacing, radii, shadows, fontSizes, fonts } from "@/shared/styl
 import { fitWordFontSize } from "@/shared/utils/fitText";
 import { tapBounce } from "@/shared/styles/animations";
 import { sofiaNameWord, sofiaPlayAudio } from "@/shared/services/sofiaVoice";
+import { ArcadeMusic } from "./arcade-music";
+import { ARCADE_MUSIC_TRACKS } from "../config/arcade-tuning";
+import { domanCanvasText } from "../config/doman-canvas";
 import { PHASE1_WORDS, PHASE2_WORDS, PHASE3_WORDS, PHASE4_WORDS, PHASE5_WORDS } from "@/shared/constants";
 
 function shuffle<T>(arr: T[]): T[] {
@@ -37,6 +40,19 @@ export const CategoryGame: React.FC<GameProps> = ({ words, phase = 1, onComplete
   const { state, recordAttempt, finish, reset } = useGameState("category-sort", { phase });
   const { rewardCorrect } = useRewards();
   const { paused } = usePause();
+
+  // Musica de selva (loop suave); arranca tras el primer gesto
+  const musicRef = useRef<ArcadeMusic | null>(null);
+  if (!musicRef.current) musicRef.current = new ArcadeMusic(-22, -34, ARCADE_MUSIC_TRACKS);
+  useEffect(() => () => { musicRef.current?.dispose(); musicRef.current = null; }, []);
+  useEffect(() => {
+    if (paused) musicRef.current?.pause();
+    else musicRef.current?.resume();
+  }, [paused]);
+  const speakDucked = useCallback(async (speak: () => Promise<unknown>) => {
+    musicRef.current?.duck(true);
+    try { await speak(); } finally { musicRef.current?.duck(false); }
+  }, []);
 
   const [gamePhase, setGamePhase] = useState<Phase>("intro");
   const [roundIdx, setRoundIdx] = useState(0);
@@ -69,7 +85,7 @@ export const CategoryGame: React.FC<GameProps> = ({ words, phase = 1, onComplete
   useEffect(() => {
     if (gamePhase !== "announcing" || !currentWord || finished || paused) return;
     let cancelled = false;
-    sofiaNameWord(currentWord.text).then(() => {
+    speakDucked(() => sofiaNameWord(currentWord.text)).then(() => {
       if (!cancelled) setTimeout(() => { if (!cancelled) setGamePhase("playing"); }, 300);
     });
     return () => { cancelled = true; };
@@ -94,6 +110,7 @@ export const CategoryGame: React.FC<GameProps> = ({ words, phase = 1, onComplete
   const handleCategoryTap = useCallback(
     async (category: string, e: React.MouseEvent) => {
       if (feedbackType || !currentWord || gamePhase !== "playing") return;
+      void musicRef.current?.ensureStarted(0);
 
       const correct = currentWord.categoryDisplay === category;
       recordAttempt(correct, correct ? currentWord.id : undefined);
@@ -106,10 +123,10 @@ export const CategoryGame: React.FC<GameProps> = ({ words, phase = 1, onComplete
         rewardCorrect(cx, cy);
         setScore((s) => ({ ...s, [category]: (s[category] ?? 0) + 1 }));
         setFeedbackType("correct");
-        await sofiaNameWord(currentWord.text);
+        await speakDucked(() => sofiaNameWord(currentWord.text));
       } else {
         setFeedbackType("wrong");
-        await sofiaPlayAudio("animo-04", "¡Busca bien!", "encouraging");
+        await speakDucked(() => sofiaPlayAudio("animo-04", "¡Busca bien!", "encouraging"));
       }
 
       await new Promise((r) => setTimeout(r, 400));
@@ -118,7 +135,7 @@ export const CategoryGame: React.FC<GameProps> = ({ words, phase = 1, onComplete
       setRoundIdx((i) => i + 1);
       setGamePhase("announcing");
     },
-    [currentWord, feedbackType, gamePhase, recordAttempt]
+    [currentWord, feedbackType, gamePhase, recordAttempt, speakDucked]
   );
 
   const handleReplay = useCallback(() => {
@@ -184,7 +201,7 @@ export const CategoryGame: React.FC<GameProps> = ({ words, phase = 1, onComplete
               textAlign: "center",
             }}
           >
-            <span style={{ fontSize: fitWordFontSize(currentWord.text, fontSizes["4xl"]), fontWeight: "bold", fontFamily: fonts.display, color: GAME_COLOR, whiteSpace: "nowrap" }}>
+            <span style={{ fontSize: fitWordFontSize(currentWord.text, fontSizes["4xl"]), fontWeight: "bold", fontFamily: fonts.display, color: domanCanvasText(currentWord).fill, whiteSpace: "nowrap" }}>
               {currentWord.text}
             </span>
           </motion.div>
@@ -229,7 +246,7 @@ export const CategoryGame: React.FC<GameProps> = ({ words, phase = 1, onComplete
               >
                 <span>{cat}</span>
                 {catScore > 0 && (
-                  <span style={{ fontSize: fontSizes.sm, color: colors.success, fontWeight: "bold" }}>
+                  <span style={{ fontSize: fontSizes.sm, color: "#22543d", fontWeight: "bold" }}>
                     {catScore} ✓
                   </span>
                 )}
