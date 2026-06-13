@@ -65,3 +65,14 @@ supabase/.branches
 supabase/.temp
 *.Identifier
 *Zone.Identifier
+
+# TypeScript / Next.js generated (auto-regenerados; no editar)
+next-env.d.ts
+*.tsbuildinfo
+
+# Playwright (reportes y resultados generados)
+/playwright-report/
+/test-results/
+
+# QA report generado por tests/games (afterAll)
+tests/QA_REPORT.md
