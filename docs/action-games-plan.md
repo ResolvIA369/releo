@@ -55,7 +55,7 @@ tiempo, premios, música de selva + ducking, intro de Sofía, error mudo.
       Intro: «¡Hola! Soy la Seño Sofía. Los peces nadan con palabras. Escuchá
       cuál pescar, y tocá el pez correcto. ¡Vos podés! ¡A pescar!»
 
-- [ ] **4** Burbujas Mágicas (`daily-bits`): `BUBBLES_TUNING`, flujo continuo,
+- [x] **4** Burbujas Mágicas (`daily-bits`): `BUBBLES_TUNING`, flujo continuo,
       energía, niveles que aceleran/agregan burbujas, premios, música + ducking,
       intro, error mudo. Mecánica intacta: reventar la burbuja correcta. Sin
       obstáculos.
