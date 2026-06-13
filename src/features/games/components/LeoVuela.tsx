@@ -6,6 +6,9 @@ import type { GameProps } from "../types";
 import type { DomanWord } from "@/shared/types/doman";
 import { useGameState } from "../hooks/useGameState";
 import { useGameKeys } from "../hooks/useGameKeys";
+import { useArcadeEnergy } from "../hooks/useArcadeEnergy";
+import { useArcadeLevel } from "../hooks/useArcadeLevel";
+import { useSofiaIntro } from "../hooks/useSofiaIntro";
 import { GameShell, usePause } from "./GameShell";
 import { useRewards } from "@/shared/components/RewardsLayer";
 import { FeedbackFlash } from "@/shared/components/FeedbackFlash";
@@ -13,7 +16,7 @@ import { GameCompleteScreen } from "@/shared/components/GameCompleteScreen";
 import { colors, spacing, radii, fontSizes, fonts } from "@/shared/styles/design-tokens";
 import { sofiaNameWord, sofiaPlayAudio, stopVoice } from "@/shared/services/sofiaVoice";
 import { domanCanvasText } from "../config/doman-canvas";
-import { physicsForPhase, stepFlight, buildCloudRound, tuningForPhase, clampEnergy, levelForElapsed, rewardForLevel, pickNextTarget } from "../config/leo-vuela";
+import { physicsForPhase, stepFlight, buildCloudRound, tuningForPhase, rewardForLevel, pickNextTarget } from "../config/leo-vuela";
 import { LeoVuelaObstacles } from "./leo-vuela-obstacles";
 import { ArcadeHud, MoveButtons } from "./ArcadeHud";
 import { LeoVuelaMusic } from "./leo-vuela-music";
@@ -119,15 +122,13 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
   const tuningRef = useRef(tuning);
   tuningRef.current = tuning;
 
-  const energyRef = useRef(tuning.energyStart);
-  const [energyUi, setEnergyUi] = useState(tuning.energyStart);
-  const energySyncRef = useRef(0);
   const onEnergyOutRef = useRef<() => void>(() => {});
+  const energy = useArcadeEnergy(tuning);
+  const { energyRef } = energy;
+  const level = useArcadeLevel(tuning.levelDurationSec, tuning.levels.length);
+  const { playSecRef, levelRef, levelUi } = level;
 
   const birdInvulnUntilRef = useRef(0); // fin de la invulnerabilidad (en seg de juego)
-  const playSecRef = useRef(0); // tiempo jugado, para el nivel
-  const levelRef = useRef(0);
-  const [levelUi, setLevelUi] = useState(0);
 
   // Musica de percusion: instancia liviana, el audio recien se crea
   // tras el primer gesto (ensureStarted)
@@ -232,35 +233,16 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
         // Nivel por tiempo jugado: mas velocidad y nubes mas juntas
         const tun = tuningRef.current;
         if (round.active && gamePhaseRef.current === "running") {
-          playSecRef.current += dt / 60;
-          const lvl = levelForElapsed(playSecRef.current, tun.levelDurationSec, tun.levels.length);
-          if (lvl !== levelRef.current) {
-            levelRef.current = lvl;
-            setLevelUi(lvl);
-            musicRef.current?.setLevel(lvl);
-          }
-        }
-        const levelCfg = tun.levels[levelRef.current] ?? tun.levels[0];
-        const effSpeed = round.speed * levelCfg.speedMul;
-
-        // Drenaje pasivo de energia mientras se juega; en 0 se termina
-        if (round.active && gamePhaseRef.current === "running") {
-          energyRef.current = clampEnergy(
-            energyRef.current - (tuningRef.current.energyDrainPerSec * dt) / 60,
-            tuningRef.current.energyMax,
-          );
-          if (energyRef.current <= 0) {
+          if (level.tick(dt)) musicRef.current?.setLevel(levelRef.current);
+          // Drenaje pasivo de energia; en 0 se termina
+          if (energy.drainTick(dt)) {
             round.active = false;
             round.resolved = true;
             onEnergyOutRef.current();
           }
-          // Sincronizar la barra ~6 veces por segundo
-          energySyncRef.current += dt;
-          if (energySyncRef.current >= 10) {
-            energySyncRef.current = 0;
-            setEnergyUi(Math.round(energyRef.current));
-          }
         }
+        const levelCfg = tun.levels[levelRef.current] ?? tun.levels[0];
+        const effSpeed = round.speed * levelCfg.speedMul;
 
         // Clouds: drift left + gentle bob — NUNCA se frenan
         round.clouds.forEach((fc, i) => {
@@ -301,11 +283,7 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
           // invulnerabilidad para que una rafaga no drene de golpe
           if (frame.birdHit && playSecRef.current >= birdInvulnUntilRef.current) {
             birdInvulnUntilRef.current = playSecRef.current + tun.birdHitInvulnSec;
-            energyRef.current = clampEnergy(
-              energyRef.current - tun.energyLossPerBird,
-              tun.energyMax,
-            );
-            setEnergyUi(Math.round(energyRef.current));
+            energy.adjust(-tun.energyLossPerBird);
           }
           gravityMul = frame.gravityMul;
         }
@@ -523,18 +501,11 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
     speakDucked(() => sofiaNameWord(target.text));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Intro de Sofia (saludo + que hay que hacer) — SOLO al arrancar;
-  // la primera tanda recien sale cuando termina. Durante el juego no
-  // hay ninguna pausa nueva: el flujo continuo queda igual.
-  useEffect(() => {
-    if (gamePhase !== "intro") return;
-    let alive = true;
-    (async () => {
-      await sofiaPlayAudio("reglas-leo-vuela", INTRO_TEXT, "encouraging");
-      if (alive && !cancelledRef.current) setGamePhase("running");
-    })();
-    return () => { alive = false; };
-  }, [gamePhase]);
+  // Intro de Sofia — SOLO al arrancar; la primera tanda recien sale
+  // cuando termina. Cero pausas nuevas durante el juego.
+  useSofiaIntro(gamePhase === "intro", "reglas-leo-vuela", INTRO_TEXT, () => {
+    if (!cancelledRef.current) setGamePhase("running");
+  });
 
   // First wave once Pixi is up
   useEffect(() => {
@@ -559,10 +530,7 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
   }, [finish, onComplete, state]);
   onEnergyOutRef.current = finishGame;
 
-  const adjustEnergy = useCallback((delta: number) => {
-    energyRef.current = clampEnergy(energyRef.current + delta, tuningRef.current.energyMax);
-    setEnergyUi(Math.round(energyRef.current));
-  }, []);
+  const adjustEnergy = energy.adjust;
 
   // ─── Catch / escape (called from the Pixi ticker) ────────────────
 
@@ -668,12 +636,9 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
     leoXRef.current = LEO_BASE_X;
     moveDirRef.current = 0;
     vyRef.current = 0;
-    energyRef.current = tuningRef.current.energyStart;
-    setEnergyUi(tuningRef.current.energyStart);
-    playSecRef.current = 0;
+    energy.reset();
+    level.reset();
     birdInvulnUntilRef.current = 0;
-    levelRef.current = 0;
-    setLevelUi(0);
     obstaclesRef.current?.reset();
     lastTargetIdRef.current = null;
     setRoundIdx(0);
@@ -681,7 +646,7 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
     musicRef.current?.setLevel(0);
     musicRef.current?.resume();
     spawnWave();
-  }, [reset, spawnWave]);
+  }, [reset, spawnWave, energy, level]);
 
   // ═══ RENDER ══════════════════════════════════════════════════
 
@@ -714,7 +679,7 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
           correct={state.correctAttempts}
           targetWord={targetWord}
           waveKey={roundIdx}
-          energy={energyUi}
+          energy={energy.energyUi}
           energyMax={tuning.energyMax}
         />
 

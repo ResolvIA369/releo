@@ -16,7 +16,7 @@ Si algo queda pendiente, se anota al pie y se frena.
 - [x] **A3** `components/ArcadeHud.tsx`: HUD genérico (badge nivel + aciertos +
       pill objetivo con prefijo configurable + barra de energía) parametrizado
       por color; Leo Vuela lo usa.
-- [ ] **A4** Hooks `useArcadeEnergy` (ref + UI + drenaje + game over),
+- [x] **A4** Hooks `useArcadeEnergy` (ref + UI + drenaje + game over),
       `useArcadeLevel` (tiempo jugado → nivel) y `useSofiaIntro` (intro que
       bloquea el arranque). Leo Vuela migra a los hooks, tests verdes.
 - [ ] **A5** `components/arcade-obstacles.ts`: base compartida (`spawnRoll`,
