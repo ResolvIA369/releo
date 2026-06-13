@@ -10,7 +10,7 @@ Si algo queda pendiente, se anota al pie y se frena.
       premios, música) + helpers (`clampEnergy`, `levelForElapsed`,
       `rewardForLevel`, `pickNextTarget`). `leo-vuela.ts` re-exporta para que
       sus imports y tests sigan igual.
-- [ ] **A2** `components/arcade-music.ts`: la clase de loops con crossfade
+- [x] **A2** `components/arcade-music.ts`: la clase de loops con crossfade
       (ex `LeoVuelaMusic`) renombrada `ArcadeMusic`, genérica;
       `leo-vuela-music.ts` queda como re-export.
 - [ ] **A3** `components/ArcadeHud.tsx`: HUD genérico (badge nivel + aciertos +
