@@ -1,19 +1,23 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { motion } from "framer-motion";
 import type { Application, Container, Sprite } from "pixi.js";
 import type { GameProps } from "../types";
 import type { DomanWord } from "@/shared/types/doman";
 import { useGameState } from "../hooks/useGameState";
 import { useGameKeys } from "../hooks/useGameKeys";
+import { useArcadeEnergy } from "../hooks/useArcadeEnergy";
+import { useArcadeLevel } from "../hooks/useArcadeLevel";
 import { GameShell, usePause } from "./GameShell";
+import { ArcadeHud } from "./ArcadeHud";
 import { useRewards } from "@/shared/components/RewardsLayer";
 import { FeedbackFlash } from "@/shared/components/FeedbackFlash";
 import { GameCompleteScreen } from "@/shared/components/GameCompleteScreen";
 import { colors, spacing, radii, fontSizes, fonts } from "@/shared/styles/design-tokens";
 import { sofiaNameWord, sofiaPlayAudio, stopVoice } from "@/shared/services/sofiaVoice";
 import { domanCanvasText } from "../config/doman-canvas";
+import { saltaTuningForPhase } from "../config/salta-palabra";
+import { rewardForLevel, pickNextTarget } from "../config/arcade-tuning";
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -25,7 +29,6 @@ function shuffle<T>(arr: T[]): T[] {
 }
 
 const GAME_COLOR = "#38b2ac";
-const WORDS_PER_GAME = 20;
 
 // Unico punto de cambio del sprite: Leo de perfil mirando a la derecha,
 // hacia las palabras que entran (procesado por scripts/prepare-leo-sprites.py)
@@ -43,10 +46,11 @@ const ANTICIPATION = 0.14; // first slice of the jump is a crouch
 // Frames until the apex, counting the crouch (demo uses it to time jumps)
 const APEX_FRAMES = JUMP_FRAMES * (ANTICIPATION + (1 - ANTICIPATION) * 0.5);
 const CATCH_X = 72; // horizontal catch range at the apex
-const WORD_GAP = 270; // spacing between floating words
-const BASE_SPEED = 2.1; // px per frame at 60fps
+const WORD_GAP = 270; // spacing between floating words (los niveles lo achican)
+const BASE_SPEED = 2.1; // px per frame at 60fps (los niveles la multiplican)
+const FADE_RATE = 0.04; // alpha/frame de la tanda anterior al irse
 
-type Phase = "loading" | "announcing" | "running" | "feedback" | "finished";
+type Phase = "loading" | "running" | "finished";
 
 interface FloatingWord {
   box: Container;
@@ -68,7 +72,7 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
   const { paused } = usePause();
 
   const [gamePhase, setGamePhase] = useState<Phase>("loading");
-  const [roundIdx, setRoundIdx] = useState(0);
+  const [waveIdx, setWaveIdx] = useState(0);
   const [targetWord, setTargetWord] = useState<DomanWord | null>(null);
   const [feedbackType, setFeedbackType] = useState<"correct" | "wrong" | null>(null);
 
@@ -86,17 +90,29 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
   const gamePhaseRef = useRef<Phase>("loading");
   const isDemoRef = useRef(isDemo);
   const roundRef = useRef<RoundData>({ words: [], target: null, speed: BASE_SPEED, active: false, resolved: false });
+  const fadingRef = useRef<Container[]>([]); // palabras viejas desvaneciendose
   const onCatchRef = useRef<(fw: FloatingWord) => void>(() => {});
   const onEscapeRef = useRef<() => void>(() => {});
+  const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cancelledRef = useRef(false);
 
   gamePhaseRef.current = gamePhase;
   isDemoRef.current = isDemo;
 
-  const gameWords = useMemo(() => shuffle(words).slice(0, WORDS_PER_GAME), [words]);
-  const totalRounds = gameWords.length;
+  const wordsRef = useRef(words);
+  wordsRef.current = words;
+  const lastTargetIdRef = useRef<string | null>(null);
 
-  // ─── Pixi init (same lifecycle pattern as LeoRunner) ─────────────
+  const tuning = useMemo(() => saltaTuningForPhase(phase), [phase]);
+  const tuningRef = useRef(tuning);
+  tuningRef.current = tuning;
+
+  const onEnergyOutRef = useRef<() => void>(() => {});
+  const energy = useArcadeEnergy(tuning);
+  const level = useArcadeLevel(tuning.levelDurationSec, tuning.levels.length);
+  const { levelRef } = level;
+
+  // ─── Pixi init (same lifecycle pattern as the other arcade games) ──
 
   useEffect(() => {
     // `disposed` is local to each effect run: under StrictMode the
@@ -169,13 +185,39 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
         const dt = ticker.deltaTime;
         elapsedRef.current += dt;
         const round = roundRef.current;
+        const tun = tuningRef.current;
 
-        // Floating words: drift left + gentle bob (parked while Sofia talks)
+        // Nivel por tiempo + drenaje de energia (el flujo nunca para)
+        if (round.active && gamePhaseRef.current === "running") {
+          level.tick(dt);
+          if (energy.drainTick(dt)) {
+            round.active = false;
+            round.resolved = true;
+            onEnergyOutRef.current();
+          }
+        }
+        const levelCfg = tun.levels[levelRef.current] ?? tun.levels[0];
+        const effSpeed = round.speed * levelCfg.speedMul;
+
+        // Floating words: drift left + gentle bob — NUNCA se frenan
         round.words.forEach((fw, i) => {
           if (fw.caught) return;
-          if (round.active) fw.box.x -= round.speed * dt;
+          if (round.active) fw.box.x -= effSpeed * dt;
           fw.box.y = FLY_Y + Math.sin(elapsedRef.current * 0.07 + i * 2) * 7;
         });
+
+        // Tanda anterior: sigue volando mientras se desvanece
+        if (fadingRef.current.length > 0) {
+          fadingRef.current = fadingRef.current.filter((box) => {
+            box.x -= effSpeed * dt;
+            box.alpha -= FADE_RATE * dt;
+            if (box.alpha <= 0 || box.x < -150) {
+              box.destroy({ children: true });
+              return false;
+            }
+            return true;
+          });
+        }
 
         // Leo: idle bob on the ground, parabola while jumping
         const leoC = leoRef.current;
@@ -262,20 +304,21 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
         if (isDemoRef.current && round.active && !round.resolved && jumpTRef.current >= 1) {
           const targetFw = round.words.find((fw) => fw.word.id === round.target?.id && !fw.caught);
           if (targetFw) {
-            const lead = round.speed * APEX_FRAMES; // px traveled until apex
+            const lead = effSpeed * APEX_FRAMES; // px traveled until apex
             const dist = targetFw.box.x - LEO_X;
             if (dist > 0 && dist <= lead + 10) jumpTRef.current = 0;
           }
         }
       });
 
-      setGamePhase("announcing");
+      setGamePhase("running");
     })();
 
     return () => {
       disposed = true;
       cancelledRef.current = true;
       stopVoice();
+      if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
       // Only destroy once appRef was set (init finished); before that
       // the async init path destroys the app itself when it sees
       // `disposed`, and destroying mid-init throws.
@@ -285,6 +328,7 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
         leoRef.current = null;
         leoSpriteRef.current = null;
         wordsLayerRef.current = null;
+        fadingRef.current = [];
       }
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -301,28 +345,38 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
     }
   }, [paused]);
 
-  // ─── Round setup ───────────────────────────────────────────────
+  // Feedback flash con limpieza propia (el flujo no se detiene)
+  const flashFeedback = useCallback((type: "correct" | "wrong") => {
+    setFeedbackType(type);
+    if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
+    feedbackTimerRef.current = setTimeout(() => {
+      if (!cancelledRef.current) setFeedbackType(null);
+    }, 700);
+  }, []);
 
-  const setupRound = useCallback(async (idx: number) => {
+  // ─── Wave setup — continuo: la tanda anterior se desvanece y la
+  // nueva entra ya; Sofia anuncia en paralelo, sin frenar nada ──────
+
+  const spawnWave = useCallback(async () => {
     const app = appRef.current;
     const wordsLayer = wordsLayerRef.current;
     if (!app || !wordsLayer || cancelledRef.current) return;
 
-    if (idx >= totalRounds) {
-      setGamePhase("finished");
-      finish().then(() => onComplete?.(state));
-      return;
-    }
-
     const PIXI = await import("pixi.js");
     if (cancelledRef.current) return;
 
-    wordsLayer.removeChildren().forEach((c) => c.destroy({ children: true }));
+    // Palabras restantes de la tanda anterior → a desvanecerse
+    for (const fw of roundRef.current.words) {
+      if (!fw.caught && !fw.box.destroyed) fadingRef.current.push(fw.box);
+    }
 
-    const target = gameWords[idx];
-    const distractors = shuffle(words.filter((w) => w.id !== target.id)).slice(0, 2);
+    // Palabras repetibles: objetivo al azar, sin repetir la ultima
+    const target = pickNextTarget(wordsRef.current, lastTargetIdRef.current);
+    lastTargetIdRef.current = target.id;
+    const distractors = shuffle(wordsRef.current.filter((w) => w.id !== target.id)).slice(0, 2);
     const roundWords = shuffle([target, ...distractors]);
 
+    const levelGapMul = tuningRef.current.levels[levelRef.current]?.gapMul ?? 1;
     const floating: FloatingWord[] = roundWords.map((word, i) => {
       const box = new PIXI.Container();
 
@@ -350,7 +404,7 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
 
       box.addChild(pill);
       box.addChild(label);
-      box.x = W + 80 + i * WORD_GAP;
+      box.x = W + 80 + i * WORD_GAP * levelGapMul;
       box.y = FLY_Y;
       wordsLayer.addChild(box);
       return { box, word, caught: false };
@@ -359,42 +413,38 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
     roundRef.current = {
       words: floating,
       target,
-      speed: BASE_SPEED * (1 + idx * 0.04),
-      active: false,
+      speed: BASE_SPEED,
+      active: true,
       resolved: false,
     };
 
     setTargetWord(target);
-    setFeedbackType(null);
-    setGamePhase("announcing");
+    setWaveIdx((w) => w + 1);
 
-    await sofiaNameWord(target.text);
-    if (cancelledRef.current) return;
-    roundRef.current.active = true;
-    setGamePhase("running");
-  }, [totalRounds, gameWords, words, finish, onComplete, state]);
+    // Sofia anuncia en paralelo — el juego no se frena
+    stopVoice();
+    void sofiaNameWord(target.text);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // First round once Pixi is up
+  // First wave once Pixi is up
   useEffect(() => {
-    if (gamePhase === "announcing" && roundIdx === 0 && roundRef.current.words.length === 0) {
-      setupRound(0);
+    if (gamePhase === "running" && roundRef.current.words.length === 0) {
+      spawnWave();
     }
   }, [gamePhase]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const nextRound = useCallback(async (delayMs: number) => {
-    await new Promise((r) => setTimeout(r, delayMs));
+  // Sin energia → fin del juego
+  const finishGame = useCallback(() => {
     if (cancelledRef.current) return;
-    setFeedbackType(null);
-    setRoundIdx((prev) => {
-      const next = prev + 1;
-      setupRound(next);
-      return next;
-    });
-  }, [setupRound]);
+    stopVoice();
+    setGamePhase("finished");
+    finish().then(() => onComplete?.(state));
+  }, [finish, onComplete, state]);
+  onEnergyOutRef.current = finishGame;
 
   // ─── Catch / escape (called from the Pixi ticker) ────────────────
 
-  const handleCatch = useCallback(async (fw: FloatingWord) => {
+  const handleCatch = useCallback((fw: FloatingWord) => {
     const round = roundRef.current;
     const target = round.target;
     if (!target) return;
@@ -402,10 +452,9 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
 
     if (correct) {
       round.resolved = true;
-      round.active = false;
       recordAttempt(true, target.id);
-      setGamePhase("feedback");
-      setFeedbackType("correct");
+      energy.adjust(tuningRef.current.energyGainCorrect);
+      flashFeedback("correct");
       const canvas = appRef.current?.canvas;
       if (canvas) {
         const rect = canvas.getBoundingClientRect();
@@ -413,42 +462,34 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
         rewardCorrect(rect.left + LEO_X * scale, rect.top + FLY_Y * scale);
       }
       squashTRef.current = 0; // celebration squash-and-stretch
-      await sofiaPlayAudio("reaccion-muy-bien", "¡Muy bien!", "excited");
-      if (cancelledRef.current) return;
-      nextRound(500);
+      stopVoice();
+      void sofiaPlayAudio("reaccion-muy-bien", "¡Muy bien!", "excited");
+      spawnWave();
     } else {
-      // Soft stumble: the round keeps going, the target can still come.
-      // Solo tint + repetir la palabra objetivo (sin audio de "esa no")
+      // Error mudo: solo tint + energia abajo; la ronda sigue si el
+      // objetivo todavia esta en pantalla
       recordAttempt(false);
-      round.active = false; // park the words while Sofia talks
+      energy.adjust(-tuningRef.current.energyLossWrong);
       crashTRef.current = 0;
-      setGamePhase("feedback");
-      setFeedbackType("wrong");
-      await sofiaNameWord(target.text);
-      if (cancelledRef.current) return;
-      setFeedbackType(null);
-      // The target may already be gone (it was behind the caught one)
+      flashFeedback("wrong");
       const targetFw = round.words.find((f) => f.word.id === target.id);
-      if (targetFw && !targetFw.caught && targetFw.box.x > -100) {
-        round.active = true;
-        setGamePhase("running");
-      } else if (!round.resolved) {
+      if (!targetFw || targetFw.caught || targetFw.box.x <= -100) {
         round.resolved = true;
-        nextRound(300);
+        spawnWave();
       }
     }
-  }, [recordAttempt, rewardCorrect, nextRound]);
+  }, [recordAttempt, rewardCorrect, energy, flashFeedback, spawnWave]);
 
-  const handleEscape = useCallback(async () => {
+  const handleEscape = useCallback(() => {
     const round = roundRef.current;
     if (!round.target) return;
     recordAttempt(false);
-    setGamePhase("feedback");
-    setFeedbackType("wrong");
-    await sofiaPlayAudio("reaccion-se-escapo", "¡Se escapó!", "gentle");
-    if (cancelledRef.current) return;
-    nextRound(400);
-  }, [recordAttempt, nextRound]);
+    energy.adjust(-tuningRef.current.energyLossEscape);
+    flashFeedback("wrong");
+    stopVoice();
+    void sofiaPlayAudio("reaccion-se-escapo", "¡Se escapó!", "gentle");
+    spawnWave();
+  }, [recordAttempt, energy, flashFeedback, spawnWave]);
 
   onCatchRef.current = handleCatch;
   onEscapeRef.current = handleEscape;
@@ -471,16 +512,30 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
 
   const handleReplay = useCallback(() => {
     reset();
-    setRoundIdx(0);
-    setupRound(0);
-  }, [reset, setupRound]);
+    energy.reset();
+    level.reset();
+    lastTargetIdRef.current = null;
+    setGamePhase("running");
+    spawnWave();
+  }, [reset, energy, level, spawnWave]);
 
   // ═══ RENDER ══════════════════════════════════════════════════
 
   if (gamePhase === "finished") {
+    const reward = rewardForLevel(level.levelUi, tuning);
     return (
       <GameShell title="Salta la Palabra" icon="🦘" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})}>
-        <GameCompleteScreen title="Salta la Palabra" correct={state.correctAttempts} total={state.totalAttempts} color={GAME_COLOR} onReplay={handleReplay} onBack={onBack ?? (() => {})} />
+        <GameCompleteScreen
+          title="Salta la Palabra"
+          correct={state.correctAttempts}
+          total={state.totalAttempts}
+          color={GAME_COLOR}
+          bonusCoins={reward.bonusCoins}
+          starsOverride={reward.stars}
+          subtitle={`Llegaste al Nivel ${level.levelUi + 1}`}
+          onReplay={handleReplay}
+          onBack={onBack ?? (() => {})}
+        />
       </GameShell>
     );
   }
@@ -488,28 +543,16 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
   return (
     <GameShell title="Salta la Palabra" icon="🦘" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})}>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: spacing.md, paddingTop: spacing.sm }}>
-        {/* Round counter + target word */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", maxWidth: "min(640px, calc(100vw - 32px))" }}>
-          <span style={{ fontSize: fontSizes.sm, color: colors.text.placeholder }}>
-            {Math.min(roundIdx + 1, totalRounds)} / {totalRounds}
-          </span>
-          {targetWord && (
-            <motion.div
-              key={roundIdx}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              style={{
-                padding: `${spacing.xs}px ${spacing.lg}px`,
-                backgroundColor: `${GAME_COLOR}15`, border: `2px solid ${GAME_COLOR}`,
-                borderRadius: radii.pill, fontSize: fontSizes.xl,
-                fontWeight: "bold", fontFamily: fonts.display, color: GAME_COLOR,
-              }}
-            >
-              ¡Saltá a <span style={{ color: domanCanvasText(targetWord).fill }}>{targetWord.text}</span>!
-            </motion.div>
-          )}
-          <span style={{ width: 40 }} />
-        </div>
+        <ArcadeHud
+          color={GAME_COLOR}
+          targetPrefix="Saltá a:"
+          level={level.levelUi}
+          correct={state.correctAttempts}
+          targetWord={targetWord}
+          waveKey={waveIdx}
+          energy={energy.energyUi}
+          energyMax={tuning.energyMax}
+        />
 
         {/* Pixi canvas + full-surface jump tap zone */}
         <div style={{ position: "relative", width: "100%", maxWidth: "min(640px, calc(100vw - 32px))", borderRadius: radii.xl, overflow: "hidden", border: `2px solid ${colors.border.light}` }}>
@@ -535,7 +578,7 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
         </div>
 
         <p style={{ fontSize: fontSizes.sm, color: colors.text.muted, margin: 0, textAlign: "center" }}>
-          {gamePhase === "announcing" ? "Escucha a Sofía..." : "Toca para que Leo salte y atrape la palabra"}
+          Toca para que Leo salte y atrape la palabra
         </p>
 
         <FeedbackFlash type={feedbackType} />

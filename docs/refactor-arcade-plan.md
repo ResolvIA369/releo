@@ -44,7 +44,7 @@ Todo ajustable en un tuning por juego.
       piedras existentes (las piedras siguen siendo parte de la decisión de
       lectura; los obstáculos nuevos aparecen entre tandas y restan energía
       con invulnerabilidad breve).
-- [ ] **B4** Salta la Palabra — `SALTA_TUNING` + flujo continuo, energía,
+- [x] **B4** Salta la Palabra — `SALTA_TUNING` + flujo continuo, energía,
       niveles, premios, error mudo.
 - [ ] **B5** Salta la Palabra — música de selva + intro de Sofía (edge-tts
       es-AR-ElenaNeural). Texto: «¡Hola! Soy la Seño Sofía. Leo va a saltar
