@@ -4,32 +4,16 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { GAME_REGISTRY } from "@/features/games/config/game-registry";
-import { WordPath } from "@/features/games/components/WordPath";
 import { AnimatedButton } from "@/shared/components/AnimatedButton";
 import { DailyProgress } from "@/shared/components/DailyProgress";
 import { staggerContainer, staggerItem, fadeInDown } from "@/shared/styles/animations";
 import { colors, spacing, fonts, fontSizes, radii, shadows } from "@/shared/styles/design-tokens";
 
-type Mode = "menu" | "games" | "words";
+type Mode = "menu" | "games";
 
 export default function DashboardPage() {
   const router = useRouter();
   const [mode, setMode] = useState<Mode>("menu");
-
-  // ─── Word Path mode ─────────────────────────────────────────
-  if (mode === "words") {
-    return (
-      <div style={{ minHeight: "100vh", backgroundColor: colors.bg.primary, fontFamily: fonts.body, padding: spacing.lg }}>
-        <button
-          onClick={() => setMode("menu")}
-          style={{ background: "none", border: "none", cursor: "pointer", fontSize: fontSizes.sm, color: colors.text.muted, marginBottom: spacing.md }}
-        >
-          ← Volver
-        </button>
-        <WordPath onBack={() => setMode("menu")} />
-      </div>
-    );
-  }
 
   // ─── Games list mode ────────────────────────────────────────
   if (mode === "games") {
@@ -159,37 +143,6 @@ export default function DashboardPage() {
             </div>
             <div style={{ fontSize: fontSizes.sm, color: colors.text.muted, marginTop: 2 }}>
               Elige un juego y luego las palabras
-            </div>
-          </div>
-        </motion.button>
-
-        {/* 3. Por Palabras */}
-        <motion.button variants={staggerItem}
-          whileHover={{ y: -4, boxShadow: shadows.glow("#667eea") }}
-          whileTap={{ scale: 0.98 }}
-          onClick={() => setMode("words")}
-          style={{
-            display: "flex", alignItems: "center", gap: spacing.lg,
-            padding: spacing.xl, backgroundColor: colors.bg.card,
-            border: `2px solid ${colors.border.light}`, borderRadius: radii.xl,
-            cursor: "pointer", textAlign: "left", boxShadow: shadows.sm,
-          }}>
-          <div style={{
-            width: 64, height: 64, borderRadius: radii.lg, flexShrink: 0,
-            background: "linear-gradient(135deg, #667eea, #764ba2)",
-            display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32,
-          }}>📖</div>
-          <div>
-            <div style={{
-              display: "inline-block",
-              fontSize: fontSizes.xl, fontFamily: fonts.display, fontWeight: "bold",
-              color: "#ffffff", backgroundColor: "rgba(0,0,0,0.5)",
-              padding: "4px 8px", borderRadius: 4,
-            }}>
-              Por Palabras
-            </div>
-            <div style={{ fontSize: fontSizes.sm, color: colors.text.muted, marginTop: 2 }}>
-              Elegí palabras y practicá con 5 juegos seguidos
             </div>
           </div>
         </motion.button>
