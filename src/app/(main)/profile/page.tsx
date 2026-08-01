@@ -175,7 +175,7 @@ export default function ProfilePage() {
           <h3 style={{ fontSize: fontSizes.md, fontFamily: fonts.display, color: colors.text.primary, margin: `0 0 ${spacing.sm}px` }}>Mundos</h3>
           <div style={{ display: "flex", flexDirection: "column", gap: spacing.sm }}>
             {worlds.map((w) => (
-              <div key={w.config.id} style={{ display: "flex", alignItems: "center", gap: spacing.sm, opacity: w.status === "locked" ? 0.4 : 1 }}>
+              <div key={w.config.id} style={{ display: "flex", alignItems: "center", gap: spacing.sm }}>
                 <img src={w.config.image} alt="" style={{ width: 36, height: 36, borderRadius: 8, objectFit: "cover" }} />
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: fontSizes.sm, fontWeight: "bold", color: w.config.color }}>{w.config.name}</div>

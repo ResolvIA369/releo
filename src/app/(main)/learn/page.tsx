@@ -120,9 +120,6 @@ function LearnContent() {
           >
             {sessions.map((session) => {
               const isCompleted = completedSet.has(session.id);
-              // TODO: restore lock logic after testing
-              const isLocked = false;
-
               const thumb = `/thumbnails/thumbnail-sesion-${String(session.id).padStart(2, "0")}.png`;
 
               return (
@@ -130,7 +127,7 @@ function LearnContent() {
                   key={session.id}
                   variants={staggerItem}
                   whileHover={{ y: -2, boxShadow: shadows.glow(world.color) }}
-                  onClick={() => !isLocked && setSelectedSession(session)}
+                  onClick={() => setSelectedSession(session)}
                   style={{
                     position: "relative",
                     overflow: "hidden",
@@ -139,8 +136,7 @@ function LearnContent() {
                     backgroundColor: colors.bg.card,
                     border: isCompleted ? `3px solid #22C55E` : `2px solid ${colors.border.light}`,
                     borderRadius: radii.lg,
-                    cursor: isLocked ? "not-allowed" : "pointer",
-                    opacity: 1,
+                    cursor: "pointer",
                     textAlign: "left",
                     boxShadow: shadows.sm,
                     transition: "border-color 0.2s",
@@ -154,7 +150,6 @@ function LearnContent() {
                       backgroundImage: `url(${thumb})`,
                       backgroundSize: "cover",
                       backgroundPosition: "center",
-                      filter: isLocked ? "grayscale(100%)" : "none",
                       zIndex: 0,
                     }}
                   />
@@ -163,14 +158,14 @@ function LearnContent() {
                     aria-hidden
                     style={{
                       position: "absolute", inset: 0,
-                      backgroundColor: isLocked ? "rgba(0,0,0,0.6)" : "rgba(0,0,0,0.35)",
+                      backgroundColor: "rgba(0,0,0,0.35)",
                       zIndex: 1,
                     }}
                   />
 
                   {/* Status icon */}
                   <span style={{ position: "relative", zIndex: 2, fontSize: 24, flexShrink: 0 }}>
-                    {isLocked ? "🔒" : isCompleted ? "✅" : "📖"}
+                    {isCompleted ? "✅" : "📖"}
                   </span>
 
                   <div style={{ position: "relative", zIndex: 2, flex: 1, minWidth: 0 }}>
@@ -221,8 +216,6 @@ function LearnContent() {
           style={{ display: "flex", flexDirection: "column", gap: spacing.md }}
         >
           {WORLDS.map((world) => {
-            // TODO: restore unlock logic after testing
-            const isUnlocked = true;
             const worldSessions = getWorldSessions(world.id);
             const completed = worldSessions.filter((s) => completedSet.has(s.id)).length;
 
@@ -230,34 +223,24 @@ function LearnContent() {
               <motion.button
                 key={world.id}
                 variants={staggerItem}
-                whileHover={isUnlocked ? { y: -3, boxShadow: shadows.glow(world.color) } : {}}
-                onClick={() => isUnlocked && setSelectedWorld(world.id)}
-                disabled={!isUnlocked}
+                whileHover={{ y: -3, boxShadow: shadows.glow(world.color) }}
+                onClick={() => setSelectedWorld(world.id)}
                 style={{
                   display: "flex", alignItems: "center", gap: spacing.lg,
                   padding: spacing.lg,
                   backgroundColor: colors.bg.card,
                   border: `2px solid ${progress.currentWorldId === world.id ? world.color : colors.border.light}`,
                   borderRadius: radii.xl,
-                  cursor: isUnlocked ? "pointer" : "not-allowed",
-                  opacity: isUnlocked ? 1 : 0.4,
+                  cursor: "pointer",
                   textAlign: "left",
                   boxShadow: progress.currentWorldId === world.id ? shadows.glow(world.color) : shadows.sm,
                 }}
               >
-                {isUnlocked ? (
-                  <img src={world.image} alt={world.name} style={{
-                    width: 70, height: 70, borderRadius: radii.lg, flexShrink: 0, objectFit: "cover",
-                  }} />
-                ) : (
-                  <div style={{
-                    width: 70, height: 70, borderRadius: radii.lg, flexShrink: 0,
-                    backgroundColor: colors.bg.secondary,
-                    display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28,
-                  }}>🔒</div>
-                )}
+                <img src={world.image} alt={world.name} style={{
+                  width: 70, height: 70, borderRadius: radii.lg, flexShrink: 0, objectFit: "cover",
+                }} />
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: fontSizes.lg, fontFamily: fonts.display, fontWeight: "bold", color: isUnlocked ? world.color : colors.text.muted }}>
+                  <div style={{ fontSize: fontSizes.lg, fontFamily: fonts.display, fontWeight: "bold", color: world.color }}>
                     {world.name}
                   </div>
                   <div style={{ fontSize: fontSizes.xs, color: colors.text.placeholder, marginTop: 2 }}>

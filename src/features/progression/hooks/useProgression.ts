@@ -3,24 +3,14 @@
 import { useMemo } from "react";
 import type { PlayerProgress, WorldWithStatus, WorldStatus, ProgressionInfo } from "../types";
 import { WORLDS } from "../config/worlds";
-import { meetsRequirements, getNextMilestone } from "../config/unlock-requirements";
 import { ALL_WORDS } from "@/shared/constants";
 
+// Todos los mundos están abiertos: el estado solo describe en qué anda el
+// chico, no restringe a dónde puede entrar.
 function getWorldStatus(worldId: string, progress: PlayerProgress): WorldStatus {
   if (progress.currentWorldId === worldId) return "current";
-
-  const world = WORLDS.find((w) => w.id === worldId);
-  if (!world) return "locked";
-
-  if (!world.unlockRequirements.previousWorldId) {
-    return progress.worldsUnlocked.includes(worldId) ? "completed" : "locked";
-  }
-
-  if (progress.worldsUnlocked.includes(worldId)) {
-    return "completed";
-  }
-
-  return "locked";
+  if (progress.worldsUnlocked.includes(worldId)) return "completed";
+  return "available";
 }
 
 function getWorldWordsProgress(worldId: string, progress: PlayerProgress) {
@@ -72,13 +62,6 @@ export function useProgression(progress: PlayerProgress): ProgressionInfo {
     const currentWorld = worlds.find((w) => w.status === "current");
     const overallProgress = Math.round((progress.wordsMastered.length / ALL_WORDS.length) * 100);
 
-    const currentIdx = WORLDS.findIndex((w) => w.id === progress.currentWorldId);
-    const nextWorld = WORLDS[currentIdx + 1];
-    const canUnlockNext = nextWorld ? meetsRequirements(nextWorld.unlockRequirements, progress) : false;
-    const nextMilestone = nextWorld
-      ? getNextMilestone(nextWorld.unlockRequirements, progress)
-      : "¡Has completado todos los mundos!";
-
-    return { worlds, currentWorld, overallProgress, canUnlockNext, nextMilestone };
+    return { worlds, currentWorld, overallProgress };
   }, [progress]);
 }

@@ -12,7 +12,6 @@ export const WORLDS: WorldConfig[] = [
     categories: ["familia", "colores", "animales", "comida", "casa", "cuerpo"],
     availableGames: ["leo-runner", "salta-palabra", "leo-vuela", "word-flash", "word-image-match", "memory-cards"],
     totalWords: 50,
-    unlockRequirements: { minWordsMastered: 0, minGamesCompleted: 0, minStreakDays: 0, previousWorldId: null },
   },
   {
     id: "world_2",
@@ -25,7 +24,6 @@ export const WORLDS: WorldConfig[] = [
     categories: ["colores", "tamaños_y_formas", "opuestos", "emociones", "naturaleza"],
     availableGames: ["leo-runner", "salta-palabra", "word-train", "category-sort"],
     totalWords: 50,
-    unlockRequirements: { minWordsMastered: 35, minGamesCompleted: 3, minStreakDays: 5, previousWorldId: "world_1" },
   },
   {
     id: "world_3",
@@ -38,7 +36,6 @@ export const WORLDS: WorldConfig[] = [
     categories: ["verbos_cotidianos", "verbos_de_accion", "ropa", "escuela", "lugares"],
     availableGames: ["leo-runner", "salta-palabra", "phrase-builder", "word-rain"],
     totalWords: 50,
-    unlockRequirements: { minWordsMastered: 70, minGamesCompleted: 5, minStreakDays: 10, previousWorldId: "world_2" },
   },
   {
     id: "world_4",
@@ -51,7 +48,6 @@ export const WORLDS: WorldConfig[] = [
     categories: ["articulos_y_conectores", "preposiciones", "pronombres", "tiempo", "numeros"],
     availableGames: ["leo-runner", "salta-palabra", "word-fishing"],
     totalWords: 50,
-    unlockRequirements: { minWordsMastered: 120, minGamesCompleted: 7, minStreakDays: 15, previousWorldId: "world_3" },
   },
   {
     id: "world_5",
@@ -64,6 +60,5 @@ export const WORLDS: WorldConfig[] = [
     categories: ["verbos_avanzados", "adverbios"],
     availableGames: ["daily-bits"],
     totalWords: 20,
-    unlockRequirements: { minWordsMastered: 170, minGamesCompleted: 9, minStreakDays: 20, previousWorldId: "world_4" },
   },
 ];

@@ -12,14 +12,6 @@ export interface WorldConfig {
   categories: WordCategory[];
   availableGames: GameId[];
   totalWords: number;
-  unlockRequirements: UnlockRequirement;
-}
-
-export interface UnlockRequirement {
-  minWordsMastered: number;
-  minGamesCompleted: number;
-  minStreakDays: number;
-  previousWorldId: string | null;
 }
 
 export interface PlayerProgress {
@@ -43,7 +35,9 @@ export interface GameCompletion {
   lastPlayed: string;
 }
 
-export type WorldStatus = "locked" | "current" | "completed";
+// Los mundos no se bloquean: están todos abiertos desde el principio.
+// "available" = todavía no empezado, pero accesible.
+export type WorldStatus = "available" | "current" | "completed";
 
 export interface WorldWithStatus {
   config: WorldConfig;
@@ -58,6 +52,4 @@ export interface ProgressionInfo {
   worlds: WorldWithStatus[];
   currentWorld: WorldWithStatus | undefined;
   overallProgress: number;
-  canUnlockNext: boolean;
-  nextMilestone: string;
 }

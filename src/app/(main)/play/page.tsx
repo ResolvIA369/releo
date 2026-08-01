@@ -67,49 +67,35 @@ export default function PlayPage() {
         {WORLDS.map((world, worldIdx) => {
           const counts = getWorldSessionCount(world.id);
           const isCompleted = counts.completed === counts.total;
-
-          // World is locked if previous world not completed (except world 1)
-          // TODO: restore lock logic after testing
-          const isLocked = false;
-
-          const isCurrent = !isLocked && !isCompleted;
+          const isCurrent = !isCompleted;
           const progressPct = counts.total > 0 ? Math.round((counts.completed / counts.total) * 100) : 0;
 
           return (
             <motion.div
               key={world.id}
               variants={staggerItem}
-              whileHover={isLocked ? {} : { y: -4, boxShadow: shadows.glow(world.color) }}
-              onClick={() => !isLocked && setSelectedWorldId(world.id)}
+              whileHover={{ y: -4, boxShadow: shadows.glow(world.color) }}
+              onClick={() => setSelectedWorldId(world.id)}
               style={{
                 display: "flex", alignItems: "center", gap: spacing.lg,
                 padding: spacing.lg, backgroundColor: colors.bg.card,
                 borderRadius: radii.xl,
                 border: `2px solid ${isCurrent ? world.color : colors.border.light}`,
                 boxShadow: isCurrent ? shadows.glow(world.color) : shadows.sm,
-                opacity: isLocked ? 0.5 : 1,
-                cursor: isLocked ? "not-allowed" : "pointer",
+                cursor: "pointer",
                 transition: "border-color 0.2s",
               }}>
               {/* World image */}
-              {isLocked ? (
-                <div style={{
-                  width: 80, height: 80, borderRadius: radii.lg, flexShrink: 0,
-                  backgroundColor: colors.bg.secondary,
-                  display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32,
-                }}>🔒</div>
-              ) : (
-                <img src={world.image} alt={world.name} style={{
-                  width: 80, height: 80, borderRadius: radii.lg, flexShrink: 0, objectFit: "cover",
-                }} />
-              )}
+              <img src={world.image} alt={world.name} style={{
+                width: 80, height: 80, borderRadius: radii.lg, flexShrink: 0, objectFit: "cover",
+              }} />
 
               {/* Info */}
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: spacing.sm }}>
                   <h2 style={{
                     fontSize: fontSizes.lg, fontFamily: fonts.display, fontWeight: "bold",
-                    color: isLocked ? colors.text.muted : world.color, margin: 0,
+                    color: world.color, margin: 0,
                   }}>
                     {world.name}
                   </h2>
@@ -117,31 +103,21 @@ export default function PlayPage() {
                 </div>
 
                 {/* Progress bar */}
-                {!isLocked && (
-                  <>
-                    <div style={{
-                      marginTop: spacing.sm, height: 6,
-                      backgroundColor: colors.bg.secondary, borderRadius: radii.pill, overflow: "hidden",
-                    }}>
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${progressPct}%` }}
-                        transition={{ duration: 0.8, delay: 0.3 }}
-                        style={{ height: "100%", backgroundColor: world.color, borderRadius: radii.pill }}
-                      />
-                    </div>
-                    <div style={{ display: "flex", gap: spacing.md, marginTop: spacing.xs, fontSize: fontSizes.xs, color: colors.text.placeholder }}>
-                      <span>{counts.completed}/{counts.total} sesiones</span>
-                      <span>{world.totalWords} palabras</span>
-                    </div>
-                  </>
-                )}
-
-                {isLocked && (
-                  <p style={{ fontSize: fontSizes.xs, color: colors.text.muted, margin: `${spacing.xs}px 0 0` }}>
-                    Completa el mundo anterior
-                  </p>
-                )}
+                <div style={{
+                  marginTop: spacing.sm, height: 6,
+                  backgroundColor: colors.bg.secondary, borderRadius: radii.pill, overflow: "hidden",
+                }}>
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${progressPct}%` }}
+                    transition={{ duration: 0.8, delay: 0.3 }}
+                    style={{ height: "100%", backgroundColor: world.color, borderRadius: radii.pill }}
+                  />
+                </div>
+                <div style={{ display: "flex", gap: spacing.md, marginTop: spacing.xs, fontSize: fontSizes.xs, color: colors.text.placeholder }}>
+                  <span>{counts.completed}/{counts.total} sesiones</span>
+                  <span>{world.totalWords} palabras</span>
+                </div>
               </div>
 
               {/* Phase badge */}
