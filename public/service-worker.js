@@ -7,7 +7,7 @@
 // tapping "Actualizar" in the UI banner). Only then does the new
 // SW take over and the page reloads with the fresh code.
 
-const CACHE_NAME = "releo-v4";
+const CACHE_NAME = "releo-v5";
 
 const SHELL_URLS = [
   "/dashboard",
@@ -20,7 +20,19 @@ const SHELL_URLS = [
 // ─── Install: cache app shell, but do NOT skipWaiting ────────────
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(SHELL_URLS))
+    caches.open(CACHE_NAME).then((cache) =>
+      // addAll() es atómico: si UNA sola URL falla (un redirect, un 404),
+      // la instalación entera del SW se cae en silencio y el usuario nunca
+      // vuelve a ver el banner de "Actualizar". Se cachea una por una y se
+      // tolera el fallo individual.
+      Promise.all(
+        SHELL_URLS.map((url) =>
+          cache.add(url).catch(() => {
+            /* esta URL no se pudo cachear; el resto del shell sigue */
+          })
+        )
+      )
+    )
   );
   // Intentionally no self.skipWaiting() — the user controls activation.
 });

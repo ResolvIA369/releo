@@ -7,6 +7,9 @@ import { WakeLock } from '@/shared/components/WakeLock'
 import './globals.css'
 
 export const metadata: Metadata = {
+  // Sin esto, Next resuelve las imágenes de OG contra http://localhost:3000
+  // y el preview del link se rompe al compartir la app por WhatsApp.
+  metadataBase: new URL('https://releo.resolvia.online'),
   title: 'REleo — Lee y Diviértete',
   description: 'Aplicación educativa basada en el método Doman para enseñar a leer a niños pequeños. Con Leo el león y la Seño Sofía.',
   manifest: '/manifest.webmanifest',
@@ -46,15 +49,8 @@ export default function RootLayout({
     <html lang="es">
       <head>
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
-        {/* Preload character images so Leo and Sofia appear without
-            delay the first time a game shows them. */}
-        <link rel="preload" as="image" href="/images/Leo/motivando.png" />
-        <link rel="preload" as="image" href="/images/Leo/felicitando.png" />
-        <link rel="preload" as="image" href="/images/Leo/animate.png" />
-        <link rel="preload" as="image" href="/images/Leo/esfuerzate.png" />
-        <link rel="preload" as="image" href="/images/sofia/sofia-default.png" />
-        <link rel="preload" as="image" href="/images/sofia/sofia-clapping.png" />
-        <link rel="preload" as="image" href="/images/sofia/sofia-motivating.png" />
+        {/* El preload de Leo y Sofía vive en (main)/layout.tsx: solo hace falta
+            dentro de la app, no en la landing pública. */}
       </head>
       <body>
         <ErrorBoundary>

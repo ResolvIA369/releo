@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { preload } from "react-dom";
 import { usePathname } from "next/navigation";
 import { ProfileGuard } from "@/features/onboarding/components/ProfileGuard";
 import { useAppStore } from "@/shared/store/useAppStore";
@@ -108,11 +109,25 @@ function AppHeader() {
   );
 }
 
+// Leo y Sofía aparecen apenas arranca un juego, así que conviene tenerlos
+// bajados de antemano — pero solo dentro de la app, no en la landing pública.
+const CHARACTER_IMAGES = [
+  "/images/Leo/motivando.png",
+  "/images/Leo/felicitando.png",
+  "/images/Leo/animate.png",
+  "/images/Leo/esfuerzate.png",
+  "/images/sofia/sofia-default.png",
+  "/images/sofia/sofia-clapping.png",
+  "/images/sofia/sofia-motivating.png",
+];
+
 export default function MainLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  CHARACTER_IMAGES.forEach((href) => preload(href, { as: "image" }));
+
   return (
     <ProfileGuard>
       <div style={{ minHeight: "100vh" }}>
