@@ -113,7 +113,7 @@ export const FarewellDisplay: React.FC<FarewellDisplayProps> = ({
           textAlign: "center",
         }}
       >
-        "{affirmation}"
+        &ldquo;{affirmation}&rdquo;
       </motion.p>
     </motion.div>
   );

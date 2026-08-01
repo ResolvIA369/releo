@@ -1214,7 +1214,7 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
       {/* Transcript */}
       {mic.transcript && showMic && (
         <div style={{ position: "absolute", bottom: 80, left: "50%", transform: "translateX(-50%)", zIndex: 15, fontSize: fontSizes.sm, color: colors.success, fontStyle: "italic" }}>
-          "{mic.transcript}"
+          &ldquo;{mic.transcript}&rdquo;
         </div>
       )}
 
