@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useAppStore } from "@/shared/store/useAppStore";
+import { colors, spacing, fonts, fontSizes, radii, shadows } from "@/shared/styles/design-tokens";
 
 interface ProfileSetupProps {
   onComplete: () => void;
@@ -29,22 +30,51 @@ export function ProfileSetup({ onComplete }: ProfileSetupProps) {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-surface p-spacing-4">
+    <div
+      style={{
+        display: "flex",
+        minHeight: "100vh",
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: colors.bg.primary,
+        fontFamily: fonts.body,
+        padding: spacing.md,
+      }}
+    >
       <form
         onSubmit={handleSubmit}
-        className="flex w-full max-w-sm flex-col gap-spacing-6 rounded-xl bg-background p-spacing-8 shadow-lg"
+        style={{
+          display: "flex",
+          width: "100%",
+          maxWidth: 400,
+          flexDirection: "column",
+          gap: spacing.lg,
+          borderRadius: radii.xl,
+          backgroundColor: colors.bg.card,
+          border: `1px solid ${colors.border.light}`,
+          padding: spacing.xl,
+          boxShadow: shadows.lg,
+        }}
       >
-        <div className="flex flex-col items-center gap-spacing-2">
-          <h1 className="font-display text-3xl font-extrabold text-primary">
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: spacing.xs }}>
+          <h1
+            style={{
+              fontFamily: fonts.display,
+              fontSize: fontSizes["3xl"],
+              fontWeight: "bold",
+              color: colors.brand.primary,
+              margin: 0,
+            }}
+          >
             ¡Hola!
           </h1>
-          <p className="text-center text-text-muted">
+          <p style={{ textAlign: "center", color: colors.text.muted, margin: 0 }}>
             ¿Cómo se llama el pequeño lector?
           </p>
         </div>
 
-        <div className="flex flex-col gap-spacing-2">
-          <label htmlFor="child-name" className="text-sm font-medium text-text-base">
+        <div style={{ display: "flex", flexDirection: "column", gap: spacing.xs }}>
+          <label htmlFor="child-name" style={{ fontSize: fontSizes.sm, fontWeight: "bold", color: colors.text.primary }}>
             Nombre
           </label>
           <input
@@ -55,17 +85,38 @@ export function ProfileSetup({ onComplete }: ProfileSetupProps) {
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Ej: Sofía"
-            className="rounded-lg border border-border bg-background px-spacing-4 py-spacing-3 text-lg text-text-base placeholder:text-text-muted/50 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+            style={{
+              borderRadius: radii.md,
+              border: `2px solid ${colors.border.light}`,
+              backgroundColor: colors.bg.card,
+              color: colors.text.primary,
+              padding: `${spacing.sm}px ${spacing.md}px`,
+              fontSize: fontSizes.lg,
+              fontFamily: fonts.body,
+              outline: "none",
+            }}
+            onFocus={(e) => (e.currentTarget.style.borderColor = colors.border.focus)}
+            onBlur={(e) => (e.currentTarget.style.borderColor = colors.border.light)}
           />
-          {error && (
-            <p className="text-sm text-error">{error}</p>
-          )}
+          {error && <p style={{ fontSize: fontSizes.sm, color: colors.error, margin: 0 }}>{error}</p>}
         </div>
 
         <button
           type="submit"
           disabled={saving}
-          className="rounded-lg bg-primary px-spacing-6 py-spacing-3 text-lg font-bold text-on-primary transition-colors hover:bg-primary-dark disabled:opacity-50"
+          style={{
+            borderRadius: radii.md,
+            border: "none",
+            backgroundColor: colors.brand.primary,
+            color: colors.text.inverse,
+            padding: `${spacing.md}px ${spacing.lg}px`,
+            fontSize: fontSizes.lg,
+            fontFamily: fonts.display,
+            fontWeight: "bold",
+            cursor: saving ? "default" : "pointer",
+            opacity: saving ? 0.5 : 1,
+            boxShadow: shadows.button,
+          }}
         >
           {saving ? "Guardando..." : "¡Empezar a aprender!"}
         </button>
