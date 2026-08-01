@@ -119,15 +119,22 @@ para que la landing pública no pague ese costo.
 
 ---
 
+## Progresión: qué bloquea y qué no
+
+- **Los mundos NO se bloquean.** Están todos abiertos desde el principio. El
+  sistema de `unlockRequirements` (palabras dominadas, rachas) se dio de baja: no
+  buscar `unlock-requirements.ts`, ya no existe. `WorldStatus` es
+  `available | current | completed` y solo describe, no restringe.
+- **Las sesiones SÍ se bloquean en secuencia.** `SessionNodeList.tsx` exige haber
+  completado la sesión anterior para abrir la siguiente. Es a propósito: es el
+  orden del método Doman. Está vivo y funcionando.
+
 ## Deuda conocida
 
-- **Los locks de progresión están desactivados**: `isLocked = false` hardcodeado en
-  `src/app/(main)/play/page.tsx` y `src/app/(main)/learn/page.tsx` (3 lugares, con
-  `// TODO: restore lock logic after testing`). La lógica de
-  `features/progression/config/unlock-requirements.ts` existe y **tiene tests que
-  pasan**, pero la UI no la usa. Decidir: reactivar o borrar.
-- **`npm run lint` reporta ~47 errores y ~109 warnings preexistentes**, casi todos
-  de las reglas nuevas de `react-hooks` (`refs`, `set-state-in-effect`) y
-  `no-unused-vars`. Nada rompe en runtime; es limpieza pendiente.
+- **`npm run lint` da 0 errores y ~152 warnings.** Las 5 reglas del React Compiler
+  (`react-hooks/refs`, `purity`, `immutability`, `preserve-manual-memoization`,
+  `set-state-in-effect`) están bajadas a `warn` a propósito — ver el comentario en
+  `eslint.config.mjs`. No son bugs. Si se activa el React Compiler (mejora real de
+  performance en los juegos), volver a subirlas a `error` y encararlas.
 - El service worker **solo cachea navegaciones**: imágenes, audio y video no
   entran al caché, así que "usala sin internet" todavía no es del todo cierto.
