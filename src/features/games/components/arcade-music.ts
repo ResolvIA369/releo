@@ -5,6 +5,8 @@
 // siempre clara, y se agacha mas mientras Sofia habla (ducking). El
 // audio recien arranca tras un gesto del usuario (politica del browser).
 
+import { recAudio } from "@/shared/utils/recorder";
+
 const CROSSFADE_SEC = 1.4;
 const DUCK_RAMP_SEC = 0.12;
 
@@ -77,8 +79,12 @@ export class ArcadeMusic {
   private playTrack(level: number, initialGain: number): ActiveTrack | null {
     const ctx = this.ctx;
     const master = this.master;
-    const buffer = this.buffers[Math.min(level, this.buffers.length - 1)];
+    const idx = Math.min(level, this.buffers.length - 1);
+    const buffer = this.buffers[idx];
     if (!ctx || !master || !buffer) return null;
+    // La música va por Web Audio, no por <audio>, así que no la ve el hook de
+    // recAudio en sofiaVoice: hay que anotarla acá o el video sale sin fondo.
+    recAudio(this.tracks[idx], "musica");
     const source = ctx.createBufferSource();
     source.buffer = buffer;
     source.loop = true;
