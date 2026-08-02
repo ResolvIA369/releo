@@ -1,5 +1,7 @@
 "use client";
 
+import { recAudio } from "@/shared/utils/recorder";
+
 import { useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { colors, radii } from "@/shared/styles/design-tokens";
@@ -66,6 +68,7 @@ export function TimeBar({
         tickAudioRef.current.volume = 0.3;
       }
       tickAudioRef.current.currentTime = 0;
+      recAudio("/audio/tick.wav", "sfx");
       tickAudioRef.current.play().catch(() => {});
     } catch {}
   }, [remaining, paused]);

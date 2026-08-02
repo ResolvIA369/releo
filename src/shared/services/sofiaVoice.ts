@@ -13,6 +13,8 @@
 // where an MP3 (Elena) and a TTS fallback (system man voice) would
 // previously fire in parallel.
 
+import { recAudio } from "@/shared/utils/recorder";
+
 let _currentToken = 0;
 // Single shared audio element. Reusing one element (instead of
 // creating a new <audio> on every call) means stopping the previous
@@ -72,6 +74,8 @@ function playMP3(filename: string): Promise<boolean> {
     const url = `/audio/sofia/${filename}.mp3`;
     const audio = getSharedAudio();
     if (!audio) { wrap(false); return; }
+
+    recAudio(url, "voz");
 
     audio.volume = 1;
     audio.src = url;

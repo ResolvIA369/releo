@@ -1,5 +1,7 @@
 "use client";
 
+import { recAudio } from "@/shared/utils/recorder";
+
 // ─── Rewards Layer ───────────────────────────────────────────────
 // A floating overlay that animates coins flying around the screen
 // (correct-answer drops, end-of-game cascades into a chest).
@@ -66,6 +68,7 @@ export function RewardsProvider({ children }: { children: React.ReactNode }) {
         coinSoundRef.current.volume = 0.5;
       }
       coinSoundRef.current.currentTime = 0;
+      recAudio("/audio/coin.wav", "sfx");
       coinSoundRef.current.play().catch(() => {});
     } catch {}
   }, []);
