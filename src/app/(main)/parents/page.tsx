@@ -12,6 +12,7 @@ import { generateProgressReport } from "@/shared/services/generateReport";
 import { ALL_WORDS } from "@/shared/constants";
 import { colors, spacing, fonts, fontSizes, radii, shadows } from "@/shared/styles/design-tokens";
 import { fadeInUp } from "@/shared/styles/animations";
+import { CuentaLocal } from "@/features/dashboard/components/CuentaLocal";
 
 export default function ParentsPage() {
   const profile = useAppStore((s) => s.profile);
@@ -120,6 +121,13 @@ export default function ParentsPage() {
             <div style={{ fontSize: fontSizes.xs, color: readerLevel.color, fontWeight: "bold" }}>{readerLevel.title}</div>
           </div>
         </div>
+
+        <CuentaLocal
+          nombreDelPeque={profile?.childName ?? null}
+          creadoEn={profile?.createdAt ?? null}
+          palabras={wordsMastered}
+          sesiones={sessions.length}
+        />
 
         {/* Actions */}
         <div style={{ display: "flex", gap: spacing.sm, flexWrap: "wrap" }}>

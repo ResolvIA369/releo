@@ -8,14 +8,16 @@ import type {
   ReviewCard,
 } from "../types";
 
-const DB_NAME = "doman-app";
-const DB_VERSION = 3;
-const SESSIONS_STORE = "sessions";
-const PROFILES_STORE = "profiles";
-const PROGRESS_STORE = "progress";
-const REVIEW_STORE = "review_cards";
-const ACTIVE_PROFILE_KEY = "active";
-const PROGRESS_KEY = "current";
+// Exportados para que backup.ts pueda leer y escribir los mismos almacenes
+// sin duplicar los nombres: si acá cambia uno, el respaldo lo sigue solo.
+export const DB_NAME = "doman-app";
+export const DB_VERSION = 3;
+export const SESSIONS_STORE = "sessions";
+export const PROFILES_STORE = "profiles";
+export const PROGRESS_STORE = "progress";
+export const REVIEW_STORE = "review_cards";
+export const ACTIVE_PROFILE_KEY = "active";
+export const PROGRESS_KEY = "current";
 
 const DEFAULT_PROGRESS: PlayerProgress = {
   currentWorldId: "world_1",
