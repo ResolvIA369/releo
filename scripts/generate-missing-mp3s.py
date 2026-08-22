@@ -18,11 +18,11 @@ OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "..", "public", "audio", "s
 PHRASES = {
     # ─── Game reactions (short) ───────────────────────────────────────
     "reaccion-muy-bien": "¡Muy bien!",
-    "reaccion-intenta-otra-vez": "¡Intenta otra vez!",
+    "reaccion-intenta-otra-vez": "¡Intentá otra vez!",
     "reaccion-se-acabo-tiempo": "¡Se acabó el tiempo!",
     "reaccion-se-escapo": "¡Se escapó!",
-    "reaccion-ese-no": "¡Ese no! Fíjate bien",
-    "reaccion-busca-bien": "¡Busca bien!",
+    "reaccion-ese-no": "¡Ese no! Fijate bien",
+    "reaccion-busca-bien": "¡Buscá bien!",
     "reaccion-que-linda-historia": "¡Qué linda historia!",
     "reaccion-esa-no": "¡Esa no!",
     "reaccion-si": "¡Sí!",

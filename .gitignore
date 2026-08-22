@@ -76,3 +76,4 @@ next-env.d.ts
 
 # QA report generado por tests/games (afterAll)
 tests/QA_REPORT.md
+__pycache__/

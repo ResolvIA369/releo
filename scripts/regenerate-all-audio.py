@@ -59,11 +59,11 @@ def load_words():
 PHRASES = {
     # ─── Short reactions ──────────────────────────────────────────
     "reaccion-muy-bien": "¡Muy bien!",
-    "reaccion-intenta-otra-vez": "¡Intenta otra vez!",
+    "reaccion-intenta-otra-vez": "¡Intentá otra vez!",
     "reaccion-se-acabo-tiempo": "¡Se acabó el tiempo!",
     "reaccion-se-escapo": "¡Se escapó!",
-    "reaccion-ese-no": "¡Ese no! Fíjate bien",
-    "reaccion-busca-bien": "¡Busca bien!",
+    "reaccion-ese-no": "¡Ese no! Fijate bien",
+    "reaccion-busca-bien": "¡Buscá bien!",
     "reaccion-que-linda-historia": "¡Qué linda historia!",
     "reaccion-esa-no": "¡Esa no!",
     "reaccion-si": "¡Sí!",
@@ -114,7 +114,7 @@ PHRASES = {
     "celebra-10": "¡Qué bien lo hiciste! Me encanta cómo aprendés",
 
     # ─── Animo (encouragement after mistake) ──────────────────────
-    "animo-01": "¡Intenta otra vez!",
+    "animo-01": "¡Intentá otra vez!",
     "animo-02": "¡Casi! Probá una vez más, vos podés",
     "animo-03": "No te preocupes, aprender es intentar muchas veces",
     "animo-04": "¡Buscá bien!",
@@ -191,7 +191,7 @@ PHRASES = {
     "afirmacion-08": "Mi familia está orgullosa de mí",
     "afirmacion-09": "Soy capaz de aprender cosas nuevas",
     "afirmacion-10": "Cada día aprendo algo nuevo",
-    "afirmacion-principal": "Repetí conmigo: yo puedo, yo creo en mí, yo soy inteligente",
+    "afirmacion-principal": "Yo puedo, yo creo en mí, yo soy inteligente",
     "afirmacion-auto-01": "Yo soy importante",
     "afirmacion-auto-02": "Yo amo quien soy",
     "afirmacion-auto-03": "Soy valioso",
@@ -239,7 +239,7 @@ PHRASES = {
     "chau-chau": "¡Chau chau! Nos vemos en la próxima clase",
     "repeat-conmigo": "Repetí conmigo:",
     "review-intro": "¡Esperá, no te vayas todavía! Antes de terminar, vamos a ver si te acordás de los amigos que conocimos ayer. ¿Te acordás de ellos?",
-    "round2-intro": "¡Guau! Ya casi las tenés todas grabadas en tu cabecita. Ahora preparate, porque en la siguiente parte te toca a vos decirme qué dicen las palabras.",
+    "round2-intro": "Ahora preparate, porque en la siguiente parte te toca a vos decirme qué dicen las palabras.",
     "round3-intro": "¡Ahora escuchá esta historia muy linda con las palabras que aprendiste!",
     "round1-between1": "¡Excelente esfuerzo! Tu cerebro está brillando y absorbiendo todo. Vamos a verlas una vez más, ¡concentrate!",
     "round1-between2": "¡Lo hacés cada vez mejor! Sos un campeón. Vamos por la última tanda de esta ronda, ¡vos podés!",
