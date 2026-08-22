@@ -36,7 +36,7 @@ export const EMOJI_MAP: Record<string, string> = {
   // ─── Phase 2: Parejas de Palabras ────────────────────────────────
   // Colores
   rojo: "🔴", azul: "🔵", verde: "🟢", amarillo: "🟡", blanco: "🤍",
-  negro: "⚫", rosa: "🩷", violeta: "🟣", marrón: "🟤",
+  negro: "⚫", rosa: "🩷", violeta: "🟣", marrón: "🟤", gris: "🩶",
   // Tamaños y Formas
   // Tamaños — alto/bajo comparados con puerta como referencia
   grande: "🐘", pequeño: "🐜", largo: "🦒", corto: "✂️", alto: "🧍🚪",
@@ -58,7 +58,7 @@ export const EMOJI_MAP: Record<string, string> = {
   salta: "🤾", lee: "📖", escribe: "✍️", canta: "🎤", baila: "💃",
   // Verbos de Acción
   abre: "🔓", cierra: "🔒", sube: "🧗", baja: "🪜", toca: "👆",
-  lava: "🧼", limpia: "🧹", pinta: "🎨", dibuja: "✏️",
+  lava: "🧼", riega: "🌱💦", limpia: "🧹", pinta: "🎨", dibuja: "✏️",
   // Ropa
   camisa: "👔", pantalón: "👖", zapato: "👞", gorra: "🧢", pollera: "🥻",
   media: "🧦", vestido: "👗", abrigo: "🧥", bufanda: "🧣", piyama: "😴",

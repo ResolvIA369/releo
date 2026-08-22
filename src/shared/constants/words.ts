@@ -107,13 +107,15 @@ export const PHASE1_WORDS: DomanWord[] = buildWords(
     { text: "tío", category: "familia", categoryDisplay: "Familia" },
     { text: "tía", category: "familia", categoryDisplay: "Familia" },
     { text: "primo", category: "familia", categoryDisplay: "Familia" },
-    // Sesión 3: Colores
-    { text: "rojo", category: "colores", categoryDisplay: "Colores" },
-    { text: "azul", category: "colores", categoryDisplay: "Colores" },
-    { text: "verde", category: "colores", categoryDisplay: "Colores" },
-    { text: "amarillo", category: "colores", categoryDisplay: "Colores" },
-    { text: "blanco", category: "colores", categoryDisplay: "Colores" },
-    // Sesión 4: Animales
+    // Sesión 3: Animales 1
+    // Los colores viven en la Fase 2 (sesiones 11-12), no acá:
+    // repetirlos en Fase 1 daba dos sesiones idénticas (3 y 11).
+    { text: "pez", category: "animales", categoryDisplay: "Animales" },
+    { text: "pato", category: "animales", categoryDisplay: "Animales" },
+    { text: "conejo", category: "animales", categoryDisplay: "Animales" },
+    { text: "ratón", category: "animales", categoryDisplay: "Animales" },
+    { text: "oso", category: "animales", categoryDisplay: "Animales" },
+    // Sesión 4: Animales 2
     { text: "perro", category: "animales", categoryDisplay: "Animales" },
     { text: "gato", category: "animales", categoryDisplay: "Animales" },
     { text: "caballo", category: "animales", categoryDisplay: "Animales" },
@@ -173,7 +175,8 @@ export const PHASE2_WORDS: DomanWord[] = buildWords(
     { text: "blanco", category: "colores", categoryDisplay: "Colores" },
     { text: "negro", category: "colores", categoryDisplay: "Colores" },
     { text: "rosa", category: "colores", categoryDisplay: "Colores" },
-    { text: "naranja", category: "colores", categoryDisplay: "Colores" },
+    // "gris" y no "naranja": naranja ya se enseña como fruta en la sesión 5.
+    { text: "gris", category: "colores", categoryDisplay: "Colores" },
     { text: "violeta", category: "colores", categoryDisplay: "Colores" },
     { text: "marrón", category: "colores", categoryDisplay: "Colores" },
     // tamaños y formas (10)
@@ -248,7 +251,8 @@ export const PHASE3_WORDS: DomanWord[] = buildWords(
     { text: "baja", category: "verbos_de_accion", categoryDisplay: "Verbos de Acción" },
     { text: "toca", category: "verbos_de_accion", categoryDisplay: "Verbos de Acción" },
     { text: "lava", category: "verbos_de_accion", categoryDisplay: "Verbos de Acción" },
-    { text: "cocina", category: "verbos_de_accion", categoryDisplay: "Verbos de Acción" },
+    // "riega" y no "cocina": cocina ya se enseña como sustantivo en la sesión 6.
+    { text: "riega", category: "verbos_de_accion", categoryDisplay: "Verbos de Acción" },
     { text: "limpia", category: "verbos_de_accion", categoryDisplay: "Verbos de Acción" },
     { text: "pinta", category: "verbos_de_accion", categoryDisplay: "Verbos de Acción" },
     { text: "dibuja", category: "verbos_de_accion", categoryDisplay: "Verbos de Acción" },

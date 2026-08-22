@@ -9,7 +9,7 @@ export const PHASES: PhaseConfig[] = [
       "Reconocimiento visual de palabras significativas y diferenciación entre vocablos similares",
     durationWeeks: 4,
     wordsPerCategory: 10,
-    categories: ["familia", "colores", "animales", "comida", "casa", "cuerpo"],
+    categories: ["familia", "animales", "comida", "casa", "cuerpo"],
     fontSizePx: 48,
     fontSizeCm: 12.5,
     fontColor: "red",

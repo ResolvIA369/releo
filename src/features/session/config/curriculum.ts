@@ -92,7 +92,7 @@ const CONTEXT_SENTENCES: Record<number, string> = {
   // World 1 — Isla de las Palabras (Phase 1, red) — Nuevo curriculum
   1:  "Mamá y papá quieren al bebé. Abuela y abuelo también.",
   2:  "Hermano y hermana juegan. Tío, tía y primo los miran.",
-  3:  "Rojo, azul, verde, amarillo y blanco son colores bonitos.",
+  3:  "El pez nada y el pato flota. El conejo, el ratón y el oso juegan.",
   4:  "El perro y el gato corren. El caballo, la vaca y el pájaro los miran.",
   5:  "Manzana, banana, uva, pera y naranja son frutas ricas.",
   6:  "La ventana, la cocina y el baño. El piso y el techo de la casa.",
@@ -102,7 +102,7 @@ const CONTEXT_SENTENCES: Record<number, string> = {
   10: "En mi casa hay una mesa, una silla, una cama y una puerta.",
   // World 2 — Bahía de los Pares (Phase 2, black)
   11: "El rojo, azul, verde, amarillo y blanco son colores bonitos.",
-  12: "El negro, rosa, naranja, violeta y marrón también son lindos.",
+  12: "El negro, rosa, gris, violeta y marrón también son lindos.",
   13: "Algo grande y algo pequeño. Algo largo, algo corto y algo redondo.",
   14: "El cuadrado y el triángulo son delgados. El grueso y el mediano también.",
   15: "Arriba y abajo. Dentro y fuera. Todo es un opuesto.",
@@ -151,12 +151,12 @@ const STORIES: Record<number, { story5: string; previousStory?: string }> = {
     previousStory: "Hoy mamá y papá preparan una torta deliciosa. El bebé juega con sus juguetes en el suelo, mientras la abuela y el abuelo nos cuentan historias divertidas.",
   },
   3: {
-    story5: "En el jardín hay una flor de color rojo y un cielo muy azul. El pasto es verde y el sol amarillo brilla sobre una nube de color blanco. ¡Qué lindo es ver colores!",
+    story5: "En la laguna un pez nada muy rápido y un pato flota entre las plantas. Cerca del agua, un conejo mueve las orejas y un ratón chiquito busca semillas. Desde el bosque llega un oso grande y peludo a tomar agua. ¡Qué lindos son los animales!",
     previousStory: "Mi hermano y mi hermana juegan en el parque con mi primo. De repente, llegan mi tío y mi tía con globos de colores. ¡Qué divertido es jugar todos juntos!",
   },
   4: {
     story5: "En el campo, un perro corre tras un gato. El caballo salta la cerca mientras la vaca come pasto y un pájaro canta desde lo alto de un árbol. ¡Qué lindos son los animales!",
-    previousStory: "En el jardín hay una flor de color rojo y un cielo muy azul. El pasto es verde y el sol amarillo brilla sobre una nube de color blanco.",
+    previousStory: "En la laguna un pez nada y un pato flota. Un conejo mueve las orejas y un ratón busca semillas. Del bosque llega un oso a tomar agua.",
   },
   5: {
     story5: "En la cocina hay una manzana roja y una banana dulce. Preparamos un jugo de uva y cortamos una pera jugosa junto a una naranja llena de sol. ¡Qué rico es comer frutas!",
@@ -190,20 +190,20 @@ const STORIES: Record<number, { story5: string; previousStory?: string }> = {
     previousStory: "La casa es el lugar más lindo. Hay una mesa grande, una silla, una cama cómoda y una puerta que mamá cierra antes de dormir.",
   },
   12: {
-    story5: "La mariposa tiene alas de color negro y rosa. La flor es color naranja como el atardecer. El caracol es violeta y camina sobre la tierra marrón del jardín. ¡La naturaleza tiene colores hermosos!",
+    story5: "La mariposa tiene alas de color negro y rosa. La nube es gris antes de la lluvia. El caracol es violeta y camina sobre la tierra marrón del jardín. ¡La naturaleza tiene colores hermosos!",
     previousStory: "En la caja de crayones hay uno rojo, uno azul, uno verde, uno amarillo y uno blanco. ¡Con todos se pinta el mundo!",
   },
   13: {
     story5: "En el zoológico hay un elefante muy grande y un ratón muy pequeño. La jirafa tiene un cuello largo y el pingüino tiene patas cortas. Hasta hay un alto sombrero de copa en la tienda de regalos. ¡Qué divertido es comparar!",
-    previousStory: "La mariposa tiene alas negro y rosa. La flor es naranja. El caracol es violeta y camina sobre tierra marrón.",
+    previousStory: "La mariposa tiene un ala de color negro y la otra de color rosa. La nube es gris. El caracol es violeta y camina sobre la tierra marrón.",
   },
   14: {
     story5: "El payaso es bajo y usa zapatos muy grandes. El bailarín es gordo y baila con mucha gracia. La gimnasta es flaca y muy ágil. La pelota es redonda y la caja es cuadrada. ¡Cada forma es especial!",
-    previousStory: "En el zoológico hay un elefante grande y un ratón pequeño. La jirafa tiene cuello largo y el pingüino patas cortas.",
+    previousStory: "En el zoológico hay un elefante grande y un ratón pequeño. La jirafa tiene el cuello largo y el pingüino el pico corto. El árbol del mono es muy alto.",
   },
   15: {
     story5: "El gatito sube arriba del árbol y luego baja abajo con cuidado. Se mete dentro de una caja y después sale fuera a explorar. Siempre se queda cerca de mamá gata. ¡Qué aventurero es el gatito!",
-    previousStory: "El payaso es bajo y usa zapatos grandes. El bailarín es gordo. La gimnasta es flaca. La pelota es redonda y la caja cuadrada.",
+    previousStory: "El osito es gordo y el gatito es flaco. El banquito es bajo. El plato es redondo y el regalo es cuadrado.",
   },
   16: {
     story5: "El conejo corre muy rápido por el campo. La tortuga camina lento pero nunca se detiene. La sopa está caliente y el helado está frío. A veces cerca y a veces lejos, pero siempre llegan a donde quieren. ¡Lo importante es seguir adelante!",
@@ -211,7 +211,7 @@ const STORIES: Record<number, { story5: string; previousStory?: string }> = {
   },
   17: {
     story5: "Hoy el sol brilla y me siento muy feliz. Ayer estuve un poco triste porque perdí mi juguete. A veces me pongo enojado, y otras veces asustado cuando hay truenos. Pero ahora estoy cansado de tanto jugar. ¡Mañana será otro gran día!",
-    previousStory: "El conejo corre rápido. La tortuga camina lento. La sopa está caliente y el helado frío.",
+    previousStory: "El conejo corre rápido y llega lejos. La tortuga camina lento. La sopa está caliente y el helado está frío.",
   },
   18: {
     story5: "Mi amigo siempre está contento y es muy tranquilo. A veces nos quedamos sorprendidos cuando vemos un arcoíris. Él es valiente cuando hay que cruzar el puente alto y siempre es amable con todos. ¡Tener un buen amigo es lo mejor!",
@@ -241,12 +241,12 @@ const STORIES: Record<number, { story5: string; previousStory?: string }> = {
     previousStory: "La niña salta la cuerda. Lee un cuento. Escribe su nombre. Canta y baila con gracia.",
   },
   24: {
-    story5: "Mamá lava los platos después de comer. Abuela cocina una sopa deliciosa. Hermana limpia su cuarto con mucho orden. El niño pinta un cuadro con muchos colores y luego dibuja a toda la familia. ¡Todos ayudan en casa!",
+    story5: "Mamá lava los platos después de comer. Abuela riega las plantas del jardín. Hermana limpia su cuarto con mucho orden. El niño pinta un cuadro con muchos colores y luego dibuja a toda la familia. ¡Todos ayudan en casa!",
     previousStory: "Mamá abre la puerta. Cierra la ventana. El gato sube a la mesa. Papá baja las escaleras. Hermana toca el piano.",
   },
   25: {
     story5: "La camisa azul y el pantalón gris están listos para la escuela. Los zapatos brillan porque papá los limpió. La gorra roja protege del sol. Hermana se pone su pollera verde favorita. ¡Todos se ven muy lindos!",
-    previousStory: "Mamá lava los platos. Abuela cocina sopa. Hermana limpia su cuarto. El niño pinta y dibuja.",
+    previousStory: "Mamá lava los platos. Abuela riega las plantas. Hermana limpia su cuarto. El niño pinta y dibuja.",
   },
   26: {
     story5: "La media tiene rayas de colores. El vestido de mamá es muy elegante. El abrigo de papá es grande y calientito. La bufanda de la abuela huele a flores. El piyama del bebé tiene estrellas. ¡Cada prenda es especial!",
@@ -285,11 +285,11 @@ const STORIES: Record<number, { story5: string; previousStory?: string }> = {
   },
   34: {
     story5: "Sin zapatos corremos por el pasto. Entre los árboles jugamos a las escondidas. El gato está sobre la mesa mirando todo. El perro está bajo la silla descansando. Caminamos hacia el parque todos juntos. ¡Cada palabra nos guía!",
-    previousStory: "El gato duerme en la cama. El regalo es de mamá. Caminamos por el parque. Las flores son para abuela. Jugamos con amigos.",
+    previousStory: "El gato duerme en la cama. El regalo es de mamá. Caminamos por el parque. Las flores son para la abuela. El libro está sobre la mesa.",
   },
   35: {
     story5: "Yo tengo un perro que se llama Luna. Tú tienes un gato muy juguetón. Él dibuja muy bonito en la escuela. Ella canta canciones con su mamá. Nosotros jugamos juntos en el recreo. ¡Todos somos amigos!",
-    previousStory: "Sin zapatos corremos. Entre árboles jugamos. El gato sobre la mesa. El perro bajo la silla. Caminamos hacia el parque.",
+    previousStory: "Jugamos entre los árboles. Corremos sin zapatos desde la casa hasta la plaza. Después caminamos hacia el río.",
   },
   36: {
     story5: "Mi mochila es azul con estrellas. Tu casa tiene un jardín muy lindo. Su perro es grande y muy cariñoso. Este libro tiene muchos dibujos. Ese árbol es el más alto del parque. ¡Cada cosa tiene su dueño!",
@@ -309,7 +309,7 @@ const STORIES: Record<number, { story5: string; previousStory?: string }> = {
   },
   40: {
     story5: "Seis pájaros cantan en la ventana. Siete estrellas brillan de noche. Ocho crayones pintan un arcoíris. Nueve hormiguitas marchan en fila. Y diez globos vuelan por el cielo. ¡Ya sé contar hasta diez!",
-    previousStory: "Tengo un dedo. Mis dos ojos ven. Con tres saltos llego. Cuatro gatitos duermen. Cinco dedos en la mano.",
+    previousStory: "Levanto uno y después dos. Doy tres saltos. Veo cuatro gatitos. Tengo cinco dedos en la mano.",
   },
 
   // ─── World 5 — El Libro Mágico (Phase 5) ───────────────────────────
