@@ -10,43 +10,12 @@ import { EMOJI_MAP } from "@/shared/constants/emoji-map";
 import { SofiaAvatar } from "@/shared/components/SofiaAvatar";
 import { colors, spacing, fonts, fontSizes, radii, shadows } from "@/shared/styles/design-tokens";
 import { staggerContainer, staggerItem } from "@/shared/styles/animations";
+import { buildBlocks, type WordBlock } from "../config/blocks";
 
 const WORDS_BY_PHASE: DomanWord[][] = [PHASE1_WORDS, PHASE2_WORDS, PHASE3_WORDS, PHASE4_WORDS, PHASE5_WORDS];
 
-interface WordBlock {
-  label: string;
-  words: DomanWord[];
-  category: string;
-}
 
-function buildBlocks(phaseWords: DomanWord[]): WordBlock[] {
-  // Split 50 words into 3 blocks: 16 + 17 + 17
-  // For phase 5 (20 words): single block of 20
-  const total = phaseWords.length;
-  if (total <= 20) {
-    return [{
-      label: "1",
-      words: phaseWords,
-      category: phaseWords[0]?.categoryDisplay ?? "",
-    }];
-  }
 
-  const firstSize = Math.floor(total / 3);       // 16 for 50
-  const secondSize = Math.ceil((total - firstSize) / 2); // 17
-  const thirdSize = total - firstSize - secondSize;      // 17
-
-  const chunks = [
-    phaseWords.slice(0, firstSize),
-    phaseWords.slice(firstSize, firstSize + secondSize),
-    phaseWords.slice(firstSize + secondSize),
-  ];
-
-  return chunks.map((chunk, i) => ({
-    label: `${i + 1}`,
-    words: chunk,
-    category: chunk[0]?.categoryDisplay ?? "",
-  }));
-}
 
 interface GameSetupProps {
   gameIcon: string;

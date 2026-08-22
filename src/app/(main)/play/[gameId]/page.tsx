@@ -31,6 +31,7 @@ import { ErrorBoundary } from "@/shared/components/ErrorBoundary";
 import type { GameId, GameProps, GameSessionState } from "@/features/games/types";
 import type { FC } from "react";
 import { colors, fonts, fontSizes, spacing, radii } from "@/shared/styles/design-tokens";
+import { buildBlocks, PALABRAS_POR_BLOQUE } from "@/features/games/config/blocks";
 
 const GAME_COMPONENTS: Partial<Record<GameId, FC<GameProps>>> = {
   "word-flash": WordFlash,
@@ -48,7 +49,7 @@ const GAME_COMPONENTS: Partial<Record<GameId, FC<GameProps>>> = {
 };
 
 // Games that need more words for variety (categories, fishing, rain)
-// All games now use 20 words per block
+// Los bloques son de 25 palabras = 5 clases (ver features/games/config/blocks)
 
 function GamePageInner() {
   const params = useParams<{ gameId: string }>();
@@ -84,7 +85,6 @@ function GamePageInner() {
   const activePhase = selectedWords ? selectedPhase : (preloadedSession?.phase ?? 1);
   const sessionId = preloadedSession?.id ?? 0;
 
-  // wordsPerBlock is no longer used — blocks are built as 16+17+17
 
   // Compute the list of N-word blocks for the current world. IMPORTANT:
   // useMemo must be called unconditionally before any early return, or
@@ -93,19 +93,12 @@ function GamePageInner() {
     () => [PHASE1_WORDS, PHASE2_WORDS, PHASE3_WORDS, PHASE4_WORDS, PHASE5_WORDS],
     [],
   );
+  // La división vive en features/games/config/blocks. Acá había una tercera
+  // copia (GameSetup y /demo tenían las otras dos) y las tres tenían que
+  // cambiar juntas o el mismo bloque daba palabras distintas según la pantalla.
   const blocksForCurrentWorld: DomanWordType[][] = useMemo(() => {
     if (selectedWorldIdx === null) return [];
-    const phaseWords = PHASE_WORD_LISTS[selectedWorldIdx] ?? [];
-    const total = phaseWords.length;
-    if (total <= 20) return [phaseWords];
-    // Split 50 → 16 + 17 + 17
-    const first = Math.floor(total / 3);
-    const second = Math.ceil((total - first) / 2);
-    return [
-      phaseWords.slice(0, first),
-      phaseWords.slice(first, first + second),
-      phaseWords.slice(first + second),
-    ];
+    return buildBlocks(PHASE_WORD_LISTS[selectedWorldIdx] ?? []).map((b) => b.words);
   }, [selectedWorldIdx, PHASE_WORD_LISTS]);
 
   const hasNextBlock = selectedWorldIdx !== null && selectedBlockIdx + 1 < blocksForCurrentWorld.length;
@@ -143,7 +136,7 @@ function GamePageInner() {
           gameIcon={meta.icon}
           gameName={meta.name}
           gameColor={meta.color}
-          wordsPerBlock={20}
+          wordsPerBlock={PALABRAS_POR_BLOQUE}
           initialWorldIdx={forceBlockSelection ? selectedWorldIdx : null}
           onSelect={(words, phase, worldId, worldIdx, blockIdx) => {
             setSelectedWords(words);

@@ -31,6 +31,7 @@ import type { GameProps } from "@/features/games/types";
 import { colors, spacing, fonts, fontSizes, radii, shadows } from "@/shared/styles/design-tokens";
 import { staggerContainer, staggerItem, fadeInUp } from "@/shared/styles/animations";
 import { AnimatedButton } from "@/shared/components/AnimatedButton";
+import { buildBlocks, cantidadDeBloques } from "@/features/games/config/blocks";
 
 const GAME_COMPONENTS: Partial<Record<GameId, FC<GameProps>>> = {
   "word-image-match": WordImageMatch,
@@ -92,19 +93,10 @@ function DemoContent() {
     const allWords = PHASE_WORDS[Math.min(phaseIdx, 4)] ?? PHASE1_WORDS;
     const worldId = WORLDS[Math.min(phaseIdx, 4)]?.id;
 
-    // Split into 16+17+17 blocks (same as GameSetup)
-    const total = allWords.length;
-    let blockWords = allWords;
-    if (total > 20) {
-      const first = Math.floor(total / 3);
-      const second = Math.ceil((total - first) / 2);
-      const blocks = [
-        allWords.slice(0, first),
-        allWords.slice(first, first + second),
-        allWords.slice(first + second),
-      ];
-      blockWords = blocks[Math.min(blockIdx, blocks.length - 1)];
-    }
+    // Los bloques salen de features/games/config/blocks: acá había una copia
+    // de la división y se desincronizó con GameSetup al cambiarla.
+    const bloques = buildBlocks(allWords);
+    const blockWords = bloques[Math.min(blockIdx, bloques.length - 1)]?.words ?? allWords;
 
     return (
       <RewardsProvider>
@@ -269,7 +261,7 @@ function DemoSelector() {
                 </div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                   {WORLDS.map((world, wIdx) => (
-                    [0, 1, 2].map((block) => (
+                    Array.from({ length: cantidadDeBloques(PHASE_WORDS[wIdx]?.length ?? 0) }, (_, block) => (
                       <button
                         key={`${world.id}-${block}`}
                         onClick={() => startGame(game.id, wIdx + 1, block)}
@@ -294,7 +286,7 @@ function DemoSelector() {
             ))}
           </div>
           <p style={{ fontSize: fontSizes.xs, color: colors.text.muted, marginTop: spacing.xs, textAlign: "center" }}>
-            Cada mundo tiene 3 bloques (🏝️1 🏝️2 🏝️3 = 16+17+17 palabras)
+            Cada bloque son 25 palabras = 5 clases de flash (el mundo 5, 20 = 4 clases)
           </p>
         </Section>
 
