@@ -126,7 +126,7 @@ export const CategoryGame: React.FC<GameProps> = ({ words, phase = 1, onComplete
         await speakDucked(() => sofiaNameWord(currentWord.text));
       } else {
         setFeedbackType("wrong");
-        await speakDucked(() => sofiaPlayAudio("animo-04", "¡Busca bien!", "encouraging"));
+        await speakDucked(() => sofiaPlayAudio("animo-04", "¡Buscá bien!", "encouraging"));
       }
 
       await new Promise((r) => setTimeout(r, 400));

@@ -128,7 +128,7 @@ export const WordImageMatch: React.FC<GameProps> = ({ words, phase = 1, onComple
         setTimerKey((k) => k + 1);
         setGamePhase("playing");
       } else {
-        await sofiaEncourages("¡Intenta otra vez!");
+        await sofiaEncourages("¡Intentá otra vez!");
         await new Promise((r) => setTimeout(r, 300));
         setFeedbackType(null);
         setSelectedId(null);

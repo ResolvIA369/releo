@@ -198,7 +198,7 @@ export default function ProfilePage() {
             color={readerLevel.color}
             size="md"
             onClick={async () => {
-              const text = `\uD83C\uDF89 \u00A1${childName} aprendi\u00F3 ${wordsMastered} palabras con Doman App! Nivel: ${readerLevel.title} ${readerLevel.emoji}`;
+              const text = `\uD83C\uDF89 \u00A1${childName} aprendi\u00F3 ${wordsMastered} palabras con REleo! Nivel: ${readerLevel.title} ${readerLevel.emoji}`;
               if (typeof navigator !== "undefined" && navigator.share) {
                 try {
                   await navigator.share({ text });

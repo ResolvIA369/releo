@@ -11,18 +11,18 @@ export const metadata: Metadata = {
   // y el preview del link se rompe al compartir la app por WhatsApp.
   metadataBase: new URL('https://releo.resolvia.online'),
   title: 'REleo — Lee y Diviértete',
-  description: 'Aplicación educativa basada en el método Doman para enseñar a leer a niños pequeños. Con Leo el león y la Seño Sofía.',
+  description: 'Aplicación educativa inspirada en el método de lectura global que popularizó Glenn Doman, para enseñar a leer a niños pequeños. Con Leo el león y la Seño Sofía.',
   manifest: '/manifest.webmanifest',
   openGraph: {
     title: 'REleo — Lee y Diviértete',
-    description: 'Aprende a leer jugando con Leo el león y la Seño Sofía. Método Doman para niños.',
+    description: 'Aprende a leer jugando con Leo el león y la Seño Sofía. Lectura temprana para chicos.',
     images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'REleo - Lee y Diviértete' }],
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
     title: 'REleo — Lee y Diviértete',
-    description: 'Aprende a leer jugando con Leo el león y la Seño Sofía. Método Doman para niños.',
+    description: 'Aprende a leer jugando con Leo el león y la Seño Sofía. Lectura temprana para chicos.',
     images: ['/og-image.png'],
   },
   appleWebApp: {

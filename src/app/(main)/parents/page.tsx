@@ -164,7 +164,7 @@ export default function ParentsPage() {
               fontSize: fontSizes.sm, cursor: "pointer",
             }}
           >
-            📖 Método Doman
+            📖 El método
           </button>
         </div>
 
@@ -266,7 +266,7 @@ export default function ParentsPage() {
           <ul style={{ fontSize: fontSizes.sm, color: colors.text.muted, lineHeight: 1.8, paddingLeft: spacing.lg, margin: 0 }}>
             {progress.streakDays < 3 && <li>Intenta practicar todos los días para mantener una racha</li>}
             {avgAccuracy < 70 && avgAccuracy > 0 && <li>La precisión está por debajo del 70%. Repasa las palabras de fases anteriores</li>}
-            {sessionsThisWeek < 5 && <li>El método Doman recomienda al menos 3 sesiones diarias de pocos minutos</li>}
+            {sessionsThisWeek < 5 && <li>El método recomienda al menos 3 sesiones diarias de pocos minutos</li>}
             {wordsMastered < 20 && <li>Enfócate en las palabras de la Fase 1 antes de avanzar</li>}
             {wordsMastered >= 50 && <li>¡Excelente! {childName} ya domina {wordsMastered} palabras. Puede avanzar al siguiente mundo</li>}
             <li>Las sesiones cortas y frecuentes son más efectivas que sesiones largas esporádicas</li>

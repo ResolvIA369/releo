@@ -194,7 +194,7 @@ function DemoSelector() {
             justifyContent: "center",
             gap: spacing.sm,
           }}>
-            <span>🎬</span> Grabar Sesiones Doman
+            <span>🎬</span> Grabar sesiones
           </h1>
           <p style={{ fontSize: fontSizes.md, color: colors.text.muted, marginTop: spacing.sm }}>
             {TOTAL_SESSIONS} sesiones disponibles — 5 mundos

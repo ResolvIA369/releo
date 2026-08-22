@@ -29,7 +29,7 @@ export default function CardsPage() {
     win.document.write(`
       <html>
       <head>
-        <title>Tarjetas Doman - ${phase.name}</title>
+        <title>Tarjetas de palabras - ${phase.name}</title>
         <style>
           @page { size: landscape; margin: 1cm; }
           body { margin: 0; font-family: Arial, sans-serif; }
@@ -67,7 +67,7 @@ export default function CardsPage() {
         </style>
       </head>
       <body>
-        <div class="phase-title">${phase.name} — Tarjetas Doman</div>
+        <div class="phase-title">${phase.name} — Tarjetas de palabras</div>
         <div class="instructions">Recortar por las líneas. Mostrar cada tarjeta durante 1-2 segundos diciendo la palabra en voz alta.</div>
         <div class="card-grid">
           ${phase.words.map((w: DomanWord) => `<div class="card"><span class="card-text">${w.text}</span></div>`).join("")}
@@ -86,7 +86,7 @@ export default function CardsPage() {
           🖨️ Tarjetas para Imprimir
         </h1>
         <p style={{ fontSize: fontSizes.sm, color: colors.text.muted, textAlign: "center", margin: `0 0 ${spacing.lg}px` }}>
-          Imprime las tarjetas del método Doman para practicar sin pantalla
+          Imprime las tarjetas de palabras para practicar sin pantalla
         </p>
 
         {/* Phase selector */}

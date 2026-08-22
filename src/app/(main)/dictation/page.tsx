@@ -65,7 +65,7 @@ export default function DictationPage() {
         }, 1500);
       } else {
         setPhase("wrong");
-        sofiaPlayAudio("animo-01", "¡Intenta otra vez!", "encouraging");
+        sofiaPlayAudio("animo-01", "¡Intentá otra vez!", "encouraging");
         setTimeout(() => { setTyped(""); setPhase("typing"); }, 1500);
       }
     }

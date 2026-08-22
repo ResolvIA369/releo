@@ -105,12 +105,12 @@ function playMP3(filename: string): Promise<boolean> {
 const PHRASE_TO_MP3: Record<string, string> = {
   // Short reactions
   "¡Muy bien!": "reaccion-muy-bien",
-  "¡Intenta otra vez!": "reaccion-intenta-otra-vez",
+  "¡Intentá otra vez!": "reaccion-intenta-otra-vez",
   "¡Se acabó el tiempo!": "reaccion-se-acabo-tiempo",
   "¡Se escapó!": "reaccion-se-escapo",
   "¡Se escapo!": "reaccion-se-escapo",
-  "¡Ese no! Fíjate bien": "reaccion-ese-no",
-  "¡Busca bien!": "reaccion-busca-bien",
+  "¡Ese no! Fijate bien": "reaccion-ese-no",
+  "¡Buscá bien!": "reaccion-busca-bien",
   "¡Qué linda historia!": "reaccion-que-linda-historia",
   "¡Esa no!": "reaccion-esa-no",
   "¡Sí!": "reaccion-si",

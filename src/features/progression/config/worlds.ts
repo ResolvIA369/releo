@@ -9,7 +9,7 @@ export const WORLDS: WorldConfig[] = [
     color: "#48bb78",
     icon: "🏝️",
     image: "/images/worlds/isla.png",
-    categories: ["familia", "colores", "animales", "comida", "casa", "cuerpo"],
+    categories: ["familia", "animales", "comida", "casa", "cuerpo"],
     availableGames: ["leo-runner", "salta-palabra", "leo-vuela", "word-flash", "word-image-match", "memory-cards"],
     totalWords: 50,
   },

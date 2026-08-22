@@ -9,9 +9,9 @@ import { colors, spacing, fonts, fontSizes, radii, shadows } from "@/shared/styl
 
 const SLIDES = [
   {
-    title: "¿Qué es el Método Doman?",
+    title: "¿Qué es la lectura global?",
     emoji: "📖",
-    text: "El método Glenn Doman enseña a leer a niños desde los 0-6 años mediante la exposición repetida a palabras escritas en tarjetas grandes. El cerebro del niño reconoce patrones visuales de palabras completas, no letras individuales.",
+    text: "La lectura global, el método que popularizó Glenn Doman, enseña a leer a niños desde los 0-6 años mediante la exposición repetida a palabras escritas en tarjetas grandes. El cerebro del niño reconoce patrones visuales de palabras completas, no letras individuales.",
     color: "#667eea",
   },
   {
@@ -29,7 +29,7 @@ const SLIDES = [
   {
     title: "¿Qué hace esta app?",
     emoji: "📱",
-    text: "Doman App digitaliza el método con la Seño Sofía como tutora virtual. Incluye 10 juegos interactivos, 220 palabras, voz real, historias y un sistema de progresión que motiva al niño a seguir aprendiendo.",
+    text: "REleo digitaliza el método con la Seño Sofía como tutora virtual. Incluye 10 juegos interactivos, 220 palabras, voz real, historias y un sistema de progresión que motiva al niño a seguir aprendiendo.",
     color: "#e53e3e",
   },
   {

@@ -221,7 +221,7 @@ export const MemoryCards: React.FC<GameProps> = ({ words, phase = 1, onComplete,
       } else {
         // Wrong piece
         setFeedbackType("wrong");
-        await sofiaEncourages("¡Ese no! Fíjate bien");
+        await sofiaEncourages("¡Ese no! Fijate bien");
         await new Promise((r) => setTimeout(r, 300));
         setFeedbackType(null);
       }
