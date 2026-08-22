@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import type { DomanWord, PhaseNumber } from "@/shared/types/doman";
 import { WORLDS } from "@/features/progression/config/worlds";
@@ -117,9 +118,16 @@ export const GameSetup: React.FC<GameSetupProps> = ({
                 overflow: "hidden",
               }}
             >
-              <img
+              {/* next/image y no <img>: el archivo original es de 1200x654 y
+                  acá se muestra a 80x80. Sin esto el navegador se baja ~300 KB
+                  por cada mundo (1,4 MB para los cinco) para pintar cinco
+                  miniaturas. Next sirve la versión chica en WebP. */}
+              <Image
                 src={w.image}
                 alt={w.name}
+                width={80}
+                height={80}
+                sizes="80px"
                 style={{
                   width: 80, height: 80, borderRadius: radii.lg, flexShrink: 0,
                   objectFit: "cover",

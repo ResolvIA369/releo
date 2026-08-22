@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import { Reveal } from "./components/Reveal";
 
@@ -34,7 +35,7 @@ const FASES = [
 ];
 
 const FEATURES = [
-  { icon: "🃏", titulo: "Sesiones de lectura", desc: "Bits de palabras al estilo Doman: pocos segundos, varias veces al día, siempre alegres y sin presión." },
+  { icon: "🃏", titulo: "Sesiones de lectura", desc: "Bits de palabras:  pocos segundos, varias veces al día, siempre alegres y sin presión." },
   { icon: "🎮", titulo: "Juegos y arcade", desc: "Mini-juegos donde leer es jugar. Refuerzan cada palabra aprendida con movimiento y diversión." },
   { icon: "🗣️", titulo: "Dictado y voz", desc: "Leo y la Seño Sofía pronuncian cada palabra con voz clara. El niño escucha, repite y reconoce." },
   { icon: "👫", titulo: "Multijugador", desc: "Jugar a leer en familia o con amigos. Aprender juntos motiva mucho más que aprender solo." },
@@ -313,8 +314,7 @@ export function Landing() {
               <div style={{ background: "#fbfaff", borderRadius: 26, padding: 28, height: "100%", border: "1px solid #f0f0fb", textAlign: "center" }}>
                 <div style={{ position: "relative", width: 180, height: 180, margin: "0 auto 16px" }}>
                   <div style={{ position: "absolute", inset: 0, background: `${c.color}33`, borderRadius: "50%", filter: "blur(8px)" }} />
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={c.img} alt={c.nombre} style={{ position: "relative", width: "100%", height: "100%", objectFit: "contain" }} />
+                  <Image src={c.img} alt={c.nombre} width={180} height={180} sizes="180px" style={{ position: "relative", width: "100%", height: "100%", objectFit: "contain" }} />
                 </div>
                 <div style={{ display: "inline-block", background: `${c.color}22`, color: INK, fontWeight: 700, fontSize: 13, padding: "4px 12px", borderRadius: 9999, marginBottom: 8 }}>{c.rol}</div>
                 <h3 style={{ fontSize: 24, fontWeight: 800, margin: "0 0 8px" }}>{c.nombre}</h3>
@@ -332,8 +332,7 @@ export function Landing() {
           {MUNDOS.map((m, i) => (
             <Reveal key={m.nombre} delay={i * 0.08}>
               <div style={{ borderRadius: 20, overflow: "hidden", boxShadow: "0 10px 28px rgba(0,0,0,0.10)", position: "relative", aspectRatio: "1 / 1", background: "#fff" }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={m.img} alt={m.nombre} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                <Image src={m.img} alt={m.nombre} fill sizes="(max-width: 768px) 90vw, 360px" style={{ objectFit: "cover" }} />
                 <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.55), transparent 55%)" }} />
                 <div style={{ position: "absolute", bottom: 14, left: 14, right: 14, color: "#fff", fontWeight: 800, fontSize: 16, textShadow: "0 1px 4px rgba(0,0,0,0.4)" }}>{m.nombre}</div>
               </div>

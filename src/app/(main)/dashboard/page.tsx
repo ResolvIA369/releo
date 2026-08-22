@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { GAME_REGISTRY } from "@/features/games/config/game-registry";
@@ -14,6 +14,25 @@ type Mode = "menu" | "games";
 export default function DashboardPage() {
   const router = useRouter();
   const [mode, setMode] = useState<Mode>("menu");
+  // Qué juego se acaba de tocar, para pintarlo al instante mientras carga.
+  const [yendoA, setYendoA] = useState<string | null>(null);
+
+  // Al abrir la lista de juegos, pedimos las rutas por adelantado mientras el
+  // peque mira las tarjetas. Cuando toca "Jugar", buena parte ya está bajada.
+  useEffect(() => {
+    if (mode !== "games") return;
+    for (const juego of GAME_REGISTRY) {
+      if (juego.id !== "word-flash") router.prefetch(`/play/${juego.id}`);
+    }
+  }, [mode, router]);
+
+  function irAJugar(gameId: string) {
+    setYendoA(gameId);
+    // El router arranca a trabajar apenas se lo llama y bloquea el hilo un
+    // instante. Si lo llamamos acá mismo, React todavía no pintó "Cargando…"
+    // y el botón se queda mudo ~400 ms. Con el rAF pintamos primero.
+    requestAnimationFrame(() => router.push(`/play/${gameId}`));
+  }
 
   // ─── Games list mode ────────────────────────────────────────
   if (mode === "games") {
@@ -60,9 +79,13 @@ export default function DashboardPage() {
               <p style={{ fontSize: fontSizes.xs, color: colors.text.muted, margin: 0, flex: 1 }}>
                 {game.description}
               </p>
-              <AnimatedButton color={game.color} size="sm"
-                onClick={() => router.push(`/play/${game.id}`)}>
-                Jugar
+              <AnimatedButton
+                color={game.color}
+                size="sm"
+                disabled={yendoA !== null}
+                onClick={() => irAJugar(game.id)}
+              >
+                {yendoA === game.id ? "Cargando…" : "Jugar"}
               </AnimatedButton>
             </motion.div>
           ))}
@@ -88,7 +111,7 @@ export default function DashboardPage() {
       key: "flash",
       icon: "⚡",
       title: "Flash de Palabras",
-      description: "Sesiones Doman con la Seño Sofia",
+      description: "Sesiones de lectura con la Seño Sofia",
       color: "#e53e3e",
       gradient: "linear-gradient(135deg, #e53e3e, #fc8181)",
       onClick: () => router.push("/learn"),
@@ -107,7 +130,7 @@ export default function DashboardPage() {
     {
       key: "doman",
       icon: "📚",
-      title: "Método Doman",
+      title: "El método",
       description: "Conocé cómo funciona este método de lectura",
       color: "#9f7aea",
       gradient: "linear-gradient(135deg, #9f7aea, #b794f4)",
