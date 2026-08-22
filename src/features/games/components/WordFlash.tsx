@@ -22,8 +22,10 @@ import { useRewards } from "@/shared/components/RewardsLayer";
 import { TimeBar } from "@/shared/components/TimeBar";
 import { AnimatedButton } from "@/shared/components/AnimatedButton";
 import { useAppStore } from "@/shared/store/useAppStore";
-import { SofiaAvatar } from "@/shared/components/SofiaAvatar";
+import { SofiaAvatar, type SofiaMood } from "@/shared/components/SofiaAvatar";
+import { recAudio } from "@/shared/utils/recorder";
 import { CelebrationGif } from "@/shared/components/CelebrationGif";
+import { LeoCompanion } from "@/shared/components/LeoCompanion";
 import { DEFAULT_SESSION_SCRIPT, fillScript } from "@/features/session/config/session-scripts";
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -179,6 +181,9 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
   // Farewell
   const [displayWord, setDisplayWord] = useState("");
   const [affirmationText, setAffirmationText] = useState("");
+  // Cuento de repaso: reusa las 5 palabras de la sesión anterior. Estaba
+  // escrito en curriculum.ts desde siempre y ningún componente lo usaba.
+  const [repasoTexto, setRepasoTexto] = useState("");
 
   const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const cancelledRef = useRef(false);
@@ -382,12 +387,62 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
       return () => clearTimeout(t);
     }
     if (ph === "greeting_video") {
-      const t = setTimeout(() => setPh("greeting"), 8000);
+      // El video dura 8,01 s. Con un timeout de 8000 ms se desmontaba el
+      // <video> justo antes de que terminara —y si tardaba en cargar, antes
+      // de que arrancara: la petición quedaba en ERR_ABORTED y la sesión
+      // empezaba con 8 segundos de silencio.
+      // Ahora manda onEnded; esto es sólo una red de seguridad por si el
+      // video no carga en absoluto (onError ya adelanta al instante).
+      const t = setTimeout(() => setPh("greeting"), 15000);
       return () => clearTimeout(t);
     }
   }, [isDemo, ph]);
 
-  // ─── Main state machine ────────────────────────────────────────
+  /**
+ * Pose de Sofía según el momento de la sesión.
+ *
+ * Las 4 imágenes ya existían (SofiaAvatar las soporta) pero WordFlash nunca
+ * pasaba `mood`, así que la Seño felicitaba con la misma cara neutra con la
+ * que presentaba una palabra. Esto sólo afecta a las pantallas donde Sofía
+ * habla — NUNCA a la pantalla de la palabra, que va limpia por método.
+ */
+/**
+ * Acorde suave al cerrar una ronda. Marca "terminaste una etapa" sin sumar
+ * ruido: va 8 dB por debajo de la voz y sólo suena entre rondas, nunca
+ * durante el flash de la palabra.
+ * Se anota con recAudio para que las grabaciones de video lo reconstruyan.
+ */
+let _acorde: HTMLAudioElement | null = null;
+function sonarCierreDeRonda() {
+  if (typeof window === "undefined") return;
+  try {
+    if (!_acorde) {
+      _acorde = new Audio("/audio/ronda-completa.mp3");
+      _acorde.volume = 0.6;
+    }
+    _acorde.currentTime = 0;
+    recAudio("/audio/ronda-completa.mp3", "sfx");
+    void _acorde.play().catch(() => {});
+  } catch { /* sin audio: la sesión sigue igual */ }
+}
+
+function moodDeSofia(fase: string): SofiaMood {
+  switch (fase) {
+    case "affirmation":
+    case "farewell":
+      return "clapping";      // celebra y despide
+    case "greeting":
+    case "repeat_intro":
+      return "motivating";    // arenga: ahora te toca a vos
+    case "story_intro":
+    case "review_intro":
+      return "cards";         // presenta material
+    default:
+      return "default";
+  }
+}
+
+// ─── Main state machine ────────────────────────────────────────
 
   useEffect(() => {
     if (ph === "ready" || ph === "paused" || ph === "complete") return;
@@ -459,6 +514,7 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
         }
 
         case "pres_sofia": {
+          sonarCierreDeRonda();
           const phrase = fillScript(SC.round1.betweenTandas[pass], { name: "" });
           const mp3Names = ["round1-between1", "round1-between2", "round1-between3"];
           setIsSpeaking(true);
@@ -530,6 +586,7 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
         }
 
         case "repeat_sofia": {
+          sonarCierreDeRonda();
           const phrases = [
             "¡Lo estás haciendo increíble! ¡Tu voz suena hermosa!",
             "¡Casi terminamos! ¡Una más y listo!",
@@ -554,6 +611,7 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
         }
 
         case "celebration": {
+          sonarCierreDeRonda();
           await delay(4000); // confetti + stars — enough time for the
           // animation to fully play and the child to enjoy it
           if (c()) return;
@@ -645,6 +703,29 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
           if (c()) return;
           await delay(1000);
           if (c()) return;
+
+          // Cuento de repaso. La app ya tenía grabada la frase que lo anuncia
+          // ("Ahora escuchá otra historia…") pero el cuento nunca llegaba.
+          const repaso = sessionData?.previousStory;
+          if (repaso && sessionData) {
+            setIsSpeaking(true);
+            await sofiaPlayAudio("sesion-historia-review",
+              "Ahora escuchá otra historia que tiene todas las palabras que sabés.", "gentle");
+            if (c()) { setIsSpeaking(false); return; }
+            setRepasoTexto(repaso);
+            await delay(400);
+            // Se leía DOS veces (la segunda ya con las palabras resaltadas).
+            // César lo sacó el 2-ago-2026: escuchado de corrido suena a
+            // repetición, no a refuerzo. Queda una sola lectura.
+            setIsSpeaking(true);
+            await sofiaPlayAudio(`repaso-${sessionData.id}`, repaso, "gentle");
+            setIsSpeaking(false);
+            if (c()) { setRepasoTexto(""); return; }
+            await delay(1200);
+            setRepasoTexto("");
+            if (c()) return;
+          }
+
           setPh("farewell");
           break;
         }
@@ -787,8 +868,12 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
 
   return (
     <div style={{ position: "fixed", inset: 0, backgroundColor: "#FFFFFF", overflow: "hidden" }}>
-      {/* Top bar */}
-      <div style={{ position: "absolute", top: 0, left: 0, right: 0, display: "flex", alignItems: "center", justifyContent: "space-between", padding: `${spacing.sm}px ${spacing.md}px`, zIndex: 20 }}>
+      {/* Top bar.
+          data-chrome marca lo que es interfaz de la app y no contenido del
+          método: salir, pausar, el contador de ronda. En la app se ve normal;
+          el grabador de video lo oculta con CSS (scripts/releo-record.mjs),
+          porque en un video de YouTube una ✕ de cerrar no significa nada. */}
+      <div data-chrome="1" style={{ position: "absolute", top: 0, left: 0, right: 0, display: "flex", alignItems: "center", justifyContent: "space-between", padding: `${spacing.sm}px ${spacing.md}px`, zIndex: 20 }}>
         <div style={{ display: "flex", gap: spacing.sm }}>
           {onBack && <button onClick={onBack} style={closeBtn}>✕</button>}
           <button onClick={handlePause} style={closeBtn}>⏸</button>
@@ -930,7 +1015,7 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
           alignItems: "center", justifyContent: "center",
           gap: spacing.lg, padding: spacing.lg,
         }}>
-          <SofiaAvatar size={220} speaking={isSpeaking} />
+          <SofiaAvatar size={220} speaking={isSpeaking} mood="clapping" />
           <AudioWaves active={isSpeaking} color={worldColor} />
           <div style={{
             display: "flex", flexWrap: "wrap", gap: spacing.sm,
@@ -1023,8 +1108,22 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
         <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: spacing.lg, gap: spacing.md, backgroundColor: "#FFFFFF" }}>
           <video
             src="/videos/Hola soy la seño sofia.mp4"
-            autoPlay
             playsInline
+            // Pesa 5,9 MB y compite con todo lo que carga la app al arrancar.
+            // Sin preload llegaba tarde y el usuario veía una tarjeta muda.
+            preload="auto"
+            // SIN autoPlay a propósito: arrancaba antes de tener buffer y se
+            // entrecortaba. En la app se notaba como un tirón; en el video
+            // grabado, como la boca desfasada de lo que decía (la imagen se
+            // frenaba y el audio seguía). Con canplaythrough arranca recién
+            // cuando puede reproducirse de corrido.
+            onCanPlayThrough={(e) => {
+              const v = e.currentTarget;
+              if (v.paused) void v.play().catch(() => setPh("greeting"));
+            }}
+            // Los <video> no pasan por playMP3, así que hay que anotarlos acá
+            // o el video grabado sale sin la voz de Sofía en la presentación.
+            onPlay={() => recAudio("/videos/Hola soy la seño sofia.mp4", "voz")}
             onCanPlay={(e) => { (e.target as HTMLVideoElement).style.opacity = "1"; }}
             onEnded={() => setPh("greeting")}
             onError={() => setPh("greeting")}
@@ -1037,7 +1136,7 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
               transition: "opacity 0.15s",
             }}
           />
-          <button
+          <button data-chrome="1"
             onClick={() => setPh("greeting")}
             style={{
               padding: `${spacing.sm}px ${spacing.lg}px`,
@@ -1056,12 +1155,59 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
         </div>
       )}
 
+      {/* Cuento de repaso — Sofía narra y el texto se lee abajo, grande.
+          El texto va en HTML y no dentro de ninguna imagen: así el chico o el
+          adulto pueden seguirlo con la vista mientras ella lee. */}
+      {repasoTexto && (
+        <div style={{
+          position: "absolute", inset: 0, display: "flex", flexDirection: "column",
+          alignItems: "center", justifyContent: "center", gap: spacing.lg,
+          padding: spacing.xl, backgroundColor: "#FFFFFF",
+        }}>
+          <SofiaAvatar size={200} speaking={isSpeaking} mood="cards" />
+          <AudioWaves active={isSpeaking} color={worldColor} />
+          <motion.p
+            initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+            style={{
+              fontSize: fontSizes.xl, fontFamily: fonts.display,
+              color: colors.text.muted, textAlign: "center", lineHeight: 1.6,
+              maxWidth: 940, margin: 0,
+            }}
+          >
+            {/* Las palabras que el chico ya aprendió van MÁS GRANDES y en el
+                rojo Doman: el resto del cuento es contexto, ellas son lo que
+                tiene que reconocer de un vistazo. */}
+            {repasoTexto.split(/\s+/).map((token, i) => {
+              const limpio = token.replace(/[.,!?;:¡¿"«»]/g, "").toLowerCase();
+              const esAprendida = previousWords.some((w) => w.toLowerCase() === limpio);
+              return (
+                <span
+                  key={i}
+                  style={{
+                    display: "inline-block",
+                    marginRight: 10,
+                    fontSize: esAprendida ? "1.75em" : "1em",
+                    fontWeight: esAprendida ? 700 : 400,
+                    color: esAprendida ? colors.doman.wordRed : colors.text.muted,
+                    lineHeight: esAprendida ? 1.1 : 1.6,
+                  }}
+                >
+                  {token}
+                </span>
+              );
+            })}
+          </motion.p>
+        </div>
+      )}
+
       {/* Sofia speaking overlay (greeting, story intro, review intro, farewell, affirmation) */}
+      {/* La pose sale de moodDeSofia(ph): antes quedaba siempre en "default",
+          así que felicitaba con la misma cara con la que presentaba. */}
       {(ph === "greeting" || ph === "story_intro" || ph === "review_intro" || ph === "repeat_intro" || ph === "farewell" || ph === "affirmation") && (
         <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, backgroundColor: "#FFFFFF" }}>
           <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
             style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16, padding: "24px 32px", borderRadius: 24, backgroundColor: `${worldColor}08`, maxWidth: 420 }}>
-            <SofiaAvatar size={280} speaking={isSpeaking} />
+            <SofiaAvatar size={280} speaking={isSpeaking} mood={moodDeSofia(ph)} />
             <AudioWaves active={isSpeaking} color={worldColor} />
           </motion.div>
           {/* Show affirmation text below Sofia */}
@@ -1080,6 +1226,7 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
           <video
             key={videoUrl}
             src={videoUrl}
+            onPlay={() => videoUrl && recAudio(videoUrl, "voz")}
             autoPlay
             playsInline
             onEnded={() => setPh("repeat_sofia")}
@@ -1095,7 +1242,7 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
               transition: "opacity 0.15s",
             }}
           />
-          <button
+          <button data-chrome="1"
             onClick={() => setPh("repeat_sofia")}
             style={{
               padding: `${spacing.sm}px ${spacing.lg}px`,
@@ -1122,12 +1269,16 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
             <CelebrationGif size={200} />
             <AudioWaves active={isSpeaking} color={worldColor} />
           </motion.div>
+          {/* Leo sólo aparece ENTRE rondas, nunca junto a la palabra: durante
+              el flash la pantalla va limpia porque así lo pide el método. */}
+          <LeoCompanion mood="celebrating" size="md" position="right" />
         </div>
       )}
 
       {/* Celebration overlay */}
       {ph === "celebration" && (
         <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: spacing.lg, backgroundColor: "#FFFFFF" }}>
+          <LeoCompanion mood="celebrating" size="md" position="right" />
           <CelebrationGif size={160} />
           <div style={{ display: "flex", flexWrap: "wrap", gap: spacing.sm, justifyContent: "center" }}>
             {sessionWords.map((w, i) => (
@@ -1156,6 +1307,7 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
         <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: spacing.lg, gap: spacing.md, backgroundColor: "#FFFFFF" }}>
           <video
             src="/videos/Leo_y_Sofia_en_Proxima_Clase.mp4"
+            onPlay={() => recAudio("/videos/Leo_y_Sofia_en_Proxima_Clase.mp4", "voz")}
             autoPlay
             playsInline
             onCanPlay={(e) => { (e.target as HTMLVideoElement).style.opacity = "1"; }}
@@ -1185,7 +1337,7 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
               transition: "opacity 0.15s",
             }}
           />
-          <button
+          <button data-chrome="1"
             onClick={async () => {
               await session.endSession();
               onComplete?.({
