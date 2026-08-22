@@ -142,42 +142,46 @@ function LearnContent() {
                     transition: "border-color 0.2s",
                   }}
                 >
-                  {/* Thumbnail background */}
+                  {/*
+                    La miniatura va AL COSTADO, no de fondo.
+                    Antes se estiraba como `cover` sobre toda la fila, con un
+                    velo de 0.35 y el texto blanco encima. Pero esa imagen no es
+                    una textura: es la miniatura de YouTube de la clase, que YA
+                    trae su título, las cinco palabras en tarjetas rojas, a
+                    Sofía y el logo. Recortada a la franja de una fila quedaban
+                    las palabras partidas al medio y, encima, esas MISMAS cinco
+                    palabras escritas otra vez en blanco. Dos textos peleando,
+                    ninguno legible — y es la pantalla donde un padre elige qué
+                    hacer ese día.
+                  */}
                   <div
                     aria-hidden
                     style={{
-                      position: "absolute", inset: 0,
+                      flexShrink: 0,
+                      width: 128,
+                      height: 72,
+                      borderRadius: radii.md,
                       backgroundImage: `url(${thumb})`,
                       backgroundSize: "cover",
                       backgroundPosition: "center",
-                      zIndex: 0,
-                    }}
-                  />
-                  {/* Dark overlay so text/status stay legible over the image */}
-                  <div
-                    aria-hidden
-                    style={{
-                      position: "absolute", inset: 0,
-                      backgroundColor: "rgba(0,0,0,0.35)",
-                      zIndex: 1,
+                      border: `1px solid ${colors.border.light}`,
                     }}
                   />
 
                   {/* Status icon */}
-                  <span style={{ position: "relative", zIndex: 2, fontSize: 24, flexShrink: 0 }}>
+                  <span style={{ fontSize: 24, flexShrink: 0 }}>
                     {isCompleted ? "✅" : "📖"}
                   </span>
 
-                  <div style={{ position: "relative", zIndex: 2, flex: 1, minWidth: 0 }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{
                       fontSize: fontSizes.md, fontWeight: "bold",
                       fontFamily: fonts.display,
-                      color: "#ffffff",
-                      textShadow: "0 1px 3px rgba(0,0,0,0.6)",
+                      color: colors.text.primary,
                     }}>
                       {session.words.map((w) => w.text).join(", ")}
                     </div>
-                    <div style={{ fontSize: fontSizes.xs, color: "rgba(255,255,255,0.92)", marginTop: 2, display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap", textShadow: "0 1px 2px rgba(0,0,0,0.6)" }}>
+                    <div style={{ fontSize: fontSizes.xs, color: colors.text.muted, marginTop: 2, display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap" }}>
                       <span>Sesión {session.id} —</span>
                       {session.words.map((w) =>
                         WORD_IMAGE_MAP[w.text]

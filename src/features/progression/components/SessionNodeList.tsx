@@ -165,10 +165,26 @@ export const SessionNodeList: React.FC<SessionNodeListProps> = ({
               </motion.div>
 
               {/* Node content */}
+              {/*
+                La miniatura va AL COSTADO, no de fondo.
+                Antes se usaba como `background-size: cover` de toda la tarjeta,
+                con un velo oscuro encima y el texto blanco arriba de todo. El
+                problema es que esa imagen no es una textura: es la miniatura de
+                YouTube de la clase, que YA trae su propio título, las cinco
+                palabras en tarjetas rojas, a Sofía y el logo. Recortada a la
+                franja de una fila quedaban las palabras cortadas por la mitad y
+                el nombre de la sesión encima de ellas — el mismo dato escrito
+                dos veces, superpuesto, y ninguno legible.
+                Como thumb de 16:9 la imagen se ve entera y el texto vuelve a
+                tener fondo propio.
+              */}
               <div style={{
                 position: "relative",
                 overflow: "hidden",
                 flex: 1,
+                display: "flex",
+                alignItems: "center",
+                gap: spacing.md,
                 padding: `${spacing.sm}px ${spacing.md}px`,
                 backgroundColor: colors.bg.card,
                 borderRadius: radii.lg,
@@ -178,29 +194,25 @@ export const SessionNodeList: React.FC<SessionNodeListProps> = ({
                 boxShadow: isCurrent ? shadows.glow(world.color) : shadows.sm,
                 transition: "border-color 0.2s",
               }}>
-                {/* Thumbnail background */}
                 <div aria-hidden style={{
-                  position: "absolute", inset: 0,
+                  flex: "0 0 auto",
+                  width: 112,
+                  height: 63,
+                  borderRadius: radii.sm,
                   backgroundImage: `url(/thumbnails/thumbnail-sesion-${String(session.id).padStart(2, "0")}.png)`,
                   backgroundSize: "cover",
                   backgroundPosition: "center",
-                  filter: isLocked ? "grayscale(100%)" : "none",
-                  zIndex: 0,
-                }} />
-                {/* Dark overlay so text/status stay legible over the image */}
-                <div aria-hidden style={{
-                  position: "absolute", inset: 0,
-                  backgroundColor: isLocked ? "rgba(0,0,0,0.6)" : "rgba(0,0,0,0.35)",
-                  zIndex: 1,
+                  filter: isLocked ? "grayscale(100%) opacity(0.5)" : "none",
+                  border: `1px solid ${colors.border.light}`,
                 }} />
 
-                <div style={{ position: "relative", zIndex: 2, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: spacing.sm }}>
                   <span style={{
                     fontSize: fontSizes.md,
                     fontWeight: "bold",
                     fontFamily: fonts.display,
-                    color: "#ffffff",
-                    textShadow: "0 1px 3px rgba(0,0,0,0.6)",
+                    color: colors.text.primary,
                   }}>
                     {session.id - sessionIds[0] + 1}. {name}
                   </span>
@@ -220,21 +232,21 @@ export const SessionNodeList: React.FC<SessionNodeListProps> = ({
 
                 {/* Word chips */}
                 {!isLocked && (
-                  <div style={{ position: "relative", zIndex: 2, display: "flex", flexWrap: "wrap", gap: 4, marginTop: spacing.xs }}>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: spacing.xs }}>
                     {session.words.map((w) => (
                       <span key={w.id} style={{
                         fontSize: fontSizes.xs,
                         padding: `1px ${spacing.xs}px`,
-                        backgroundColor: "rgba(0,0,0,0.4)",
-                        color: "#ffffff",
+                        backgroundColor: colors.bg.secondary,
+                        color: colors.text.secondary,
                         borderRadius: radii.sm,
-                        textShadow: "0 1px 2px rgba(0,0,0,0.5)",
                       }}>
                         {w.text}
                       </span>
                     ))}
                   </div>
                 )}
+                </div>
               </div>
             </motion.div>
           );
