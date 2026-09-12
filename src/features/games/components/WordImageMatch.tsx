@@ -67,13 +67,11 @@ export const WordImageMatch: React.FC<GameProps> = ({ words, phase = 1, onComple
     finish().then(() => onComplete?.(state));
   }, [finished, gamePhase]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Sofia names the target word as soon as it appears so the child
-  // knows which image to look for. Runs once per word while playing.
-  useEffect(() => {
-    if (gamePhase !== "playing" || !currentWord) return;
-    void music.speakDucked(() => sofiaNameWord(currentWord.text));
-  }, [gamePhase, currentWord]);
-
+  // Deliberately NO audio here. The word is shown as text (below) and
+  // the child must read it to pick the matching image — announcing it
+  // by voice before the choice would let the game be won by ear alone,
+  // defeating the whole point of a reading-recognition check. Sofia
+  // only confirms the word AFTER a correct answer, in handleSelect.
   // Options
   const options = useMemo(() => {
     if (!currentWord) return [];

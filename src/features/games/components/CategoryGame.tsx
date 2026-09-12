@@ -32,7 +32,7 @@ function shuffle<T>(arr: T[]): T[] {
 
 const GAME_COLOR = "#667eea";
 
-type Phase = "intro" | "announcing" | "playing" | "feedback" | "finished";
+type Phase = "intro" | "playing" | "feedback" | "finished";
 
 const WORDS_BY_PHASE = [PHASE1_WORDS, PHASE2_WORDS, PHASE3_WORDS, PHASE4_WORDS, PHASE5_WORDS];
 
@@ -81,16 +81,11 @@ export const CategoryGame: React.FC<GameProps> = ({ words, phase = 1, onComplete
   const currentWord = roundWords[roundIdx];
   const finished = roundIdx >= roundWords.length;
 
-  // Announce word with Sofia
-  useEffect(() => {
-    if (gamePhase !== "announcing" || !currentWord || finished || paused) return;
-    let cancelled = false;
-    speakDucked(() => sofiaNameWord(currentWord.text)).then(() => {
-      if (!cancelled) setTimeout(() => { if (!cancelled) setGamePhase("playing"); }, 300);
-    });
-    return () => { cancelled = true; };
-  }, [gamePhase, roundIdx, paused]); // eslint-disable-line react-hooks/exhaustive-deps
-
+  // Deliberately NO audio announcement before the round starts. The word
+  // is shown as text (below) and the child must read it to pick the right
+  // category — saying it out loud first would let the game be won by ear
+  // alone. Sofia only speaks the word AFTER a correct answer, in
+  // handleCategoryTap.
 
   // Demo: auto-select correct answer
   useDemoAutoplay(isDemo, gamePhase === "playing" && !feedbackType && !!currentWord, () => {
@@ -133,7 +128,7 @@ export const CategoryGame: React.FC<GameProps> = ({ words, phase = 1, onComplete
       setFeedbackType(null);
       setBurstPos(null);
       setRoundIdx((i) => i + 1);
-      setGamePhase("announcing");
+      setGamePhase("playing");
     },
     [currentWord, feedbackType, gamePhase, recordAttempt, speakDucked]
   );
@@ -167,7 +162,7 @@ export const CategoryGame: React.FC<GameProps> = ({ words, phase = 1, onComplete
           gameIcon="🗂️"
           rulesText="¡Pon cada palabra en su categoria! Yo te digo la palabra y tu eliges donde va."
           color={GAME_COLOR}
-          isDemo={isDemo} onReady={() => setGamePhase("announcing")}
+          isDemo={isDemo} onReady={() => setGamePhase("playing")}
         />
       </GameShell>
     );
