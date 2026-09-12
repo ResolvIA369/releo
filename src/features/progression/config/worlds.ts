@@ -22,7 +22,7 @@ export const WORLDS: WorldConfig[] = [
     icon: "🌊",
     image: "/images/worlds/bahia.png",
     categories: ["colores", "tamaños_y_formas", "opuestos", "emociones", "naturaleza"],
-    availableGames: ["leo-runner", "salta-palabra", "word-train", "category-sort"],
+    availableGames: ["leo-runner", "salta-palabra", "leo-vuela", "word-train", "category-sort"],
     totalWords: 50,
   },
   {
@@ -34,7 +34,7 @@ export const WORLDS: WorldConfig[] = [
     icon: "🌄",
     image: "/images/worlds/valle.png",
     categories: ["verbos_cotidianos", "verbos_de_accion", "ropa", "escuela", "lugares"],
-    availableGames: ["leo-runner", "salta-palabra", "phrase-builder", "word-rain"],
+    availableGames: ["leo-runner", "salta-palabra", "leo-vuela", "phrase-builder", "word-rain"],
     totalWords: 50,
   },
   {
@@ -46,7 +46,7 @@ export const WORLDS: WorldConfig[] = [
     icon: "🏔️",
     image: "/images/worlds/montana.png",
     categories: ["articulos_y_conectores", "preposiciones", "pronombres", "tiempo", "numeros"],
-    availableGames: ["leo-runner", "salta-palabra", "word-fishing"],
+    availableGames: ["leo-runner", "salta-palabra", "leo-vuela", "word-fishing"],
     totalWords: 50,
   },
   {
