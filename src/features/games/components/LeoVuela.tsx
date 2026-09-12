@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { Application, Container, Sprite } from "pixi.js";
+import type { Application, Container, Sprite, Graphics, Text } from "pixi.js";
 import type { GameProps } from "../types";
 import type { DomanWord } from "@/shared/types/doman";
 import { useGameState } from "../hooks/useGameState";
@@ -9,19 +9,26 @@ import { useGameKeys } from "../hooks/useGameKeys";
 import { useArcadeEnergy } from "../hooks/useArcadeEnergy";
 import { useArcadeLevel } from "../hooks/useArcadeLevel";
 import { useSofiaIntro } from "../hooks/useSofiaIntro";
+import { useQualityTier } from "../hooks/useQualityTier";
 import { GameShell, usePause } from "./GameShell";
 import { useRewards } from "@/shared/components/RewardsLayer";
 import { FeedbackFlash } from "@/shared/components/FeedbackFlash";
 import { GameCompleteScreen } from "@/shared/components/GameCompleteScreen";
 import { colors, spacing, radii, fontSizes, fonts } from "@/shared/styles/design-tokens";
 import { sofiaNameWord, sofiaPlayAudio, stopVoice } from "@/shared/services/sofiaVoice";
+import { recordGameEvent } from "@/shared/services/gameTelemetry";
 import { domanCanvasText } from "../config/doman-canvas";
 import { physicsForPhase, stepFlight, buildCloudRound, tuningForPhase, rewardForLevel } from "../config/leo-vuela";
 import { createWordBag } from "../config/arcade-tuning";
+import { getConsequenceEmoji } from "../config/word-consequence";
 import { LeoVuelaObstacles } from "./leo-vuela-obstacles";
+import { ArcadeSky, moodForLevel } from "./arcade-sky";
+import { WordConsequenceFx } from "./word-consequence-fx";
+import { MissionNarrative } from "./MissionNarrative";
 import { ArcadeHud, MoveButtons } from "./ArcadeHud";
 import { ArcadeIntro } from "./ArcadeIntro";
 import { LeoVuelaMusic } from "./leo-vuela-music";
+import { WORLDS } from "@/features/progression/config/worlds";
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -51,6 +58,9 @@ const CLOUD_BANDS = [105, 200, 295]; // alturas posibles de las nubes
 const CATCH_X = 60; // rango horizontal de atrape
 const CATCH_Y = 48; // rango vertical de atrape (centro de Leo vs nube)
 const FADE_RATE = 0.04; // alpha/frame con que se desvanece la tanda anterior
+const BOOK_X = 34; // ancla fija del Libro Magico (arriba a la izquierda)
+const BOOK_Y = 30;
+const MAX_TRAIL_DOTS = 40;
 
 // Intro de Sofia al arrancar (mp3 generado con edge-tts es-AR-ElenaNeural;
 // este texto es el fallback hablado si el audio no carga)
@@ -59,7 +69,7 @@ const INTRO_TEXT =
   "Escuchá la palabra, y tocá la pantalla para que Leo vuele hasta la nube correcta. " +
   "¡Vos podés! ¡A volar!";
 
-type Phase = "loading" | "intro" | "running" | "finished";
+type Phase = "loading" | "story-intro" | "intro" | "running" | "story-outro" | "finished";
 
 interface FlyingCloud {
   box: Container;
@@ -75,15 +85,46 @@ interface RoundData {
   resolved: boolean;
 }
 
-export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, onBack, isDemo = false }) => {
+export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, worldId, onComplete, onBack, isDemo = false }) => {
   const { state, recordAttempt, finish, reset } = useGameState("leo-vuela", { phase });
   const { rewardCorrect } = useRewards();
   const { paused } = usePause();
+  const qualityTier = useQualityTier();
+  const qualityTierRef = useRef(qualityTier);
+  qualityTierRef.current = qualityTier;
 
   const [gamePhase, setGamePhase] = useState<Phase>("loading");
   const [roundIdx, setRoundIdx] = useState(0);
   const [targetWord, setTargetWord] = useState<DomanWord | null>(null);
   const [feedbackType, setFeedbackType] = useState<"correct" | "wrong" | null>(null);
+
+  // Narrativa breve: solo la primera vez que se abre Leo Vuela en este
+  // mundo durante la sesión del navegador — no en cada partida (ver
+  // docs/RELEO-JUEGOS-V2.md §6). Sin worldId (p.ej. algún acceso
+  // directo sin contexto de mundo) no hay narrativa, no hay curriculum
+  // real del que tirar.
+  // Lectura PURA (sin escribir) — un initializer de useState que escribe
+  // se ejecuta dos veces en dev bajo StrictMode y la segunda vez ya ve
+  // su propia marca, quedando siempre en false. Marcar "visto" se hace
+  // recien cuando el niño realmente cierra la narrativa (mas abajo).
+  const [showIntroNarrative] = useState(() => {
+    if (typeof window === "undefined" || !worldId) return false;
+    try {
+      return !window.sessionStorage.getItem(`releo:leo-vuela-intro-seen:${worldId}`);
+    } catch {
+      return false;
+    }
+  });
+  const markIntroSeen = useCallback(() => {
+    if (typeof window === "undefined" || !worldId) return;
+    try {
+      window.sessionStorage.setItem(`releo:leo-vuela-intro-seen:${worldId}`, "1");
+    } catch {
+      // Sin sessionStorage (privado, cuota) la narrativa se puede repetir; no es grave.
+    }
+  }, [worldId]);
+  const worldName = useMemo(() => WORLDS.find((w) => w.id === worldId)?.name, [worldId]);
+  const caughtEmojisRef = useRef<string[]>([]);
 
   const hostRef = useRef<HTMLDivElement>(null);
   const appRef = useRef<Application | null>(null);
@@ -91,6 +132,12 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
   const leoSpriteRef = useRef<Sprite | null>(null);
   const cloudsLayerRef = useRef<Container | null>(null);
   const obstaclesRef = useRef<LeoVuelaObstacles | null>(null);
+  const skyRef = useRef<ArcadeSky | null>(null);
+  const wordFxRef = useRef<WordConsequenceFx | null>(null);
+  const bookIconRef = useRef<Text | null>(null);
+  const bookPulseRef = useRef(1); // 1 = en reposo; <1 = animando el pulso
+  const trailLayerRef = useRef<Container | null>(null);
+  const trailRef = useRef<Graphics[]>([]);
 
   const leoYRef = useRef(GROUND_Y + 4); // pies de Leo
   const leoXRef = useRef(LEO_BASE_X);
@@ -108,6 +155,7 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
   const onEscapeRef = useRef<() => void>(() => {});
   const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cancelledRef = useRef(false);
+  const sessionStartRef = useRef(0); // Date.now() al arrancar la primera tanda
 
   gamePhaseRef.current = gamePhase;
   isDemoRef.current = isDemo;
@@ -178,16 +226,9 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
       app.canvas.style.borderRadius = "16px";
       hostRef.current.appendChild(app.canvas);
 
-      // Sky: sun + decorative far clouds + grass floor
-      const scenery = new PIXI.Graphics();
-      scenery.circle(W - 76, 58, 28).fill({ color: 0xfff176, alpha: 0.9 });
-      for (const [cx, cy, s] of [[140, 52, 0.7], [380, 78, 0.55], [540, 130, 0.5]] as const) {
-        scenery.ellipse(cx, cy, 46 * s, 16 * s).fill({ color: 0xffffff, alpha: 0.6 });
-        scenery.ellipse(cx + 24 * s, cy - 10 * s, 30 * s, 13 * s).fill({ color: 0xffffff, alpha: 0.6 });
-      }
-      scenery.rect(0, GROUND_Y, W, H - GROUND_Y).fill("#a8d5b0");
-      scenery.rect(0, GROUND_Y, W, 6).fill("#8bc49a");
-      app.stage.addChild(scenery);
+      // Cielo: parallax de 2 capas + progresion de humor por nivel
+      // (dia -> atardecer -> noche), ver components/arcade-sky.ts
+      skyRef.current = new ArcadeSky(PIXI, app.stage, { W, H, groundY: GROUND_Y });
 
       // Word clouds layer
       const cloudsLayer = new PIXI.Container();
@@ -198,6 +239,11 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
       const obstaclesLayer = new PIXI.Container();
       app.stage.addChild(obstaclesLayer);
       obstaclesRef.current = new LeoVuelaObstacles(PIXI, obstaclesLayer, { W, H, groundY: GROUND_Y });
+
+      // Trail decorativo de Leo (se apaga solo en quality tier bajo)
+      const trailLayer = new PIXI.Container();
+      app.stage.addChild(trailLayer);
+      trailLayerRef.current = trailLayer;
 
       // Leo — sprite if the texture loads, emoji fallback otherwise
       const leo = new PIXI.Container();
@@ -227,11 +273,38 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
       app.stage.addChild(leo);
       leoRef.current = leo;
 
+      // Libro Magico: ancla fija de "la palabra vuelve al libro" tras
+      // un acierto (word-consequence-fx.ts) — decorativo, nunca compite
+      // con la lectura porque solo reacciona DESPUES de un acierto.
+      const bookIcon = new PIXI.Text({ text: "📖", style: { fontSize: 30 } });
+      bookIcon.anchor.set(0.5);
+      bookIcon.x = BOOK_X;
+      bookIcon.y = BOOK_Y;
+      app.stage.addChild(bookIcon);
+      bookIconRef.current = bookIcon;
+
+      const fxLayer = new PIXI.Container();
+      app.stage.addChild(fxLayer);
+      wordFxRef.current = new WordConsequenceFx(PIXI, fxLayer);
+
       // ─── Game loop — reads refs only, so no stale closures ──────
       app.ticker.add((ticker) => {
         const dt = ticker.deltaTime;
         elapsedRef.current += dt;
         const round = roundRef.current;
+
+        // Cielo: el humor sigue al nivel real (mismos 3 niveles de
+        // siempre, ver arcade-sky.ts); setMood no hace nada si no cambio
+        skyRef.current?.setMood(moodForLevel(levelRef.current));
+        skyRef.current?.update(dt);
+
+        // Efecto "la palabra vuelve al libro" (solo avanza si hay alguno activo)
+        wordFxRef.current?.update(dt);
+        if (bookIconRef.current && bookPulseRef.current < 1) {
+          bookPulseRef.current = Math.min(1, bookPulseRef.current + dt / 20);
+          const k = Math.sin(bookPulseRef.current * Math.PI);
+          bookIconRef.current.scale.set(1 + 0.4 * k);
+        }
 
         // Nivel por tiempo jugado: mas velocidad y nubes mas juntas
         const tun = tuningRef.current;
@@ -350,6 +423,39 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
             leoSpriteRef.current.scale.set(baseScaleRef.current * sx, baseScaleRef.current * sy);
           }
 
+          // Estela decorativa detras de Leo en pleno vuelo — solo en
+          // tier alto (useQualityTier.ts): pura ambientacion, nunca
+          // compite con la legibilidad de la nube-objetivo
+          if (trailLayerRef.current) {
+            if (
+              qualityTierRef.current === "high" &&
+              round.active &&
+              gamePhaseRef.current === "running" &&
+              !onGround &&
+              Math.floor(elapsedRef.current) % 3 === 0
+            ) {
+              const dot = new PIXI.Graphics();
+              dot.circle(0, 0, 4).fill({ color: 0xffffff, alpha: 0.5 });
+              dot.x = leoC.x - 22;
+              dot.y = leoC.y;
+              trailLayerRef.current.addChild(dot);
+              trailRef.current.push(dot);
+              if (trailRef.current.length > MAX_TRAIL_DOTS) {
+                trailRef.current.shift()?.destroy();
+              }
+            }
+            trailRef.current = trailRef.current.filter((dot) => {
+              if (dot.destroyed) return false;
+              dot.alpha -= 0.03 * dt;
+              dot.x -= effSpeed * 0.4 * dt;
+              if (dot.alpha <= 0) {
+                dot.destroy();
+                return false;
+              }
+              return true;
+            });
+          }
+
           // Flying through a cloud catches it (both axes, vs Leo's center)
           if (round.active && !round.resolved) {
             const leoCenterY = leoYRef.current - LEO_CENTER_OFFSET;
@@ -388,7 +494,7 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
         }
       });
 
-      setGamePhase("intro");
+      setGamePhase(showIntroNarrative ? "story-intro" : "intro");
     })();
 
     return () => {
@@ -396,6 +502,23 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
       cancelledRef.current = true;
       stopVoice();
       if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
+      // Abandono real: se fue con la partida ya arrancada y sin llegar
+      // a "finished" (ese caso ya reporto su propio game_finished)
+      if (gamePhaseRef.current !== "finished" && sessionStartRef.current > 0) {
+        recordGameEvent({
+          type: "game_abandoned",
+          gameId: "leo-vuela",
+          phase,
+          elapsedMs: Date.now() - sessionStartRef.current,
+        });
+      }
+      skyRef.current?.destroy();
+      wordFxRef.current?.reset();
+      skyRef.current = null;
+      wordFxRef.current = null;
+      bookIconRef.current = null;
+      trailLayerRef.current = null;
+      trailRef.current = [];
       // Only destroy once appRef was set (init finished); before that
       // the async init path destroys the app itself when it sees
       // `disposed`, and destroying mid-init throws.
@@ -512,6 +635,8 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
   // First wave once Pixi is up
   useEffect(() => {
     if (gamePhase === "running" && roundIdx === 0 && roundRef.current.clouds.length === 0) {
+      sessionStartRef.current = Date.now();
+      recordGameEvent({ type: "game_started", gameId: "leo-vuela", phase, worldId });
       spawnWave();
     }
   }, [gamePhase]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -527,9 +652,20 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
     if (cancelledRef.current) return;
     stopVoice();
     musicRef.current?.pause();
-    setGamePhase("finished");
+    recordGameEvent({
+      type: "game_finished",
+      gameId: "leo-vuela",
+      phase,
+      durationMs: Date.now() - sessionStartRef.current,
+      correct: state.correctAttempts,
+      total: state.totalAttempts,
+      levelReached: levelRef.current,
+    });
+    // Si recupero al menos una palabra hay algo que "vuelve al libro":
+    // un cierre narrativo breve antes de la pantalla de resultados
+    setGamePhase(state.correctAttempts > 0 ? "story-outro" : "finished");
     finish().then(() => onComplete?.(state));
-  }, [finish, onComplete, state]);
+  }, [finish, onComplete, state, phase]);
   onEnergyOutRef.current = finishGame;
 
   const adjustEnergy = energy.adjust;
@@ -553,6 +689,15 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
         rewardCorrect(rect.left + leoXRef.current * scale, rect.top + (leoYRef.current - LEO_CENTER_OFFSET) * scale);
       }
       squashTRef.current = 0; // celebration squash-and-stretch
+
+      // La palabra ya se leyo y se acerto: RECIEN aca puede "hacer algo"
+      // en el mundo (vuela hacia el Libro Magico) — nunca antes de elegir
+      const emoji = getConsequenceEmoji(target.text);
+      wordFxRef.current?.spawn(emoji, { x: fc.box.x, y: fc.box.y }, { x: BOOK_X, y: BOOK_Y });
+      bookPulseRef.current = 0;
+      caughtEmojisRef.current = [...caughtEmojisRef.current, emoji].slice(-5);
+      recordGameEvent({ type: "round_result", gameId: "leo-vuela", phase, wordId: target.id, correct: true });
+
       adjustEnergy(tuningRef.current.energyGainCorrect);
       if (level.registerCorrect()) musicRef.current?.setLevel(levelRef.current);
       speakDucked(() => sofiaPlayAudio("reaccion-muy-bien", "¡Muy bien!", "excited"));
@@ -561,6 +706,7 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
       // Tropezon en silencio: solo el tint visual, sin audio — el
       // objetivo sigue visible en la pill de arriba
       recordAttempt(false);
+      recordGameEvent({ type: "round_result", gameId: "leo-vuela", phase, wordId: target.id, correct: false });
       adjustEnergy(-tuningRef.current.energyLossWrong);
       crashTRef.current = 0;
       flashFeedback("wrong");
@@ -571,17 +717,18 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
         nextWave();
       }
     }
-  }, [recordAttempt, rewardCorrect, nextWave, flashFeedback, adjustEnergy]);
+  }, [recordAttempt, rewardCorrect, nextWave, flashFeedback, adjustEnergy, phase]);
 
   const handleEscape = useCallback(() => {
     const round = roundRef.current;
     if (!round.target) return;
     recordAttempt(false);
+    recordGameEvent({ type: "round_result", gameId: "leo-vuela", phase, wordId: round.target.id, correct: false });
     adjustEnergy(-tuningRef.current.energyLossEscape);
     flashFeedback("wrong");
     speakDucked(() => sofiaPlayAudio("reaccion-se-escapo", "¡Se escapó!", "gentle"));
     nextWave();
-  }, [recordAttempt, nextWave, flashFeedback, adjustEnergy]);
+  }, [recordAttempt, nextWave, flashFeedback, adjustEnergy, phase]);
 
   onCatchRef.current = handleCatch;
   onEscapeRef.current = handleEscape;
@@ -644,12 +791,34 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
     birdInvulnUntilRef.current = 0;
     obstaclesRef.current?.reset();
     bagRef.current = createWordBag(words);
+    caughtEmojisRef.current = [];
+    bookPulseRef.current = 1;
     setRoundIdx(0);
     setGamePhase("running");
     musicRef.current?.setLevel(0);
     musicRef.current?.resume();
+    sessionStartRef.current = Date.now();
+    recordGameEvent({ type: "game_started", gameId: "leo-vuela", phase, worldId });
     spawnWave();
-  }, [reset, spawnWave, energy, level]);
+  }, [reset, spawnWave, energy, level, phase, worldId]);
+
+  // Narrativa minima (hipotesis del §6): una rafaga disperso las
+  // palabras del Libro Magico y Leo tiene que recuperarlas volando.
+  // Datos reales del mundo (worldName), nunca un curriculum inventado.
+  const introLines = useMemo(
+    () =>
+      worldName
+        ? ["¡Se escaparon las palabras!", `El viento las dispersó por ${worldName}. ¡Ayudá a Leo a recuperarlas volando!`]
+        : ["¡Se escaparon las palabras!", "El viento las dispersó. ¡Ayudá a Leo a recuperarlas volando!"],
+    [worldName],
+  );
+  const outroLines = useMemo(
+    () => [
+      "¡Las palabras volvieron al Libro Mágico!",
+      `Leo recuperó ${state.correctAttempts} ${state.correctAttempts === 1 ? "palabra" : "palabras"}.`,
+    ],
+    [state.correctAttempts],
+  );
 
   // ═══ RENDER ══════════════════════════════════════════════════
 
@@ -675,6 +844,28 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
   return (
     <GameShell title="Leo Vuela" icon="🪁" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})}>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: spacing.md, paddingTop: spacing.sm }}>
+        {gamePhase === "story-intro" && (
+          <MissionNarrative
+            variant="intro"
+            icon="📖"
+            lines={introLines}
+            color={GAME_COLOR}
+            onDone={() => {
+              markIntroSeen();
+              setGamePhase("intro");
+            }}
+          />
+        )}
+        {gamePhase === "story-outro" && (
+          <MissionNarrative
+            variant="outro"
+            icon="📖"
+            lines={outroLines}
+            scatterEmojis={caughtEmojisRef.current}
+            color={GAME_COLOR}
+            onDone={() => setGamePhase("finished")}
+          />
+        )}
         {gamePhase === "intro" && <ArcadeIntro color={GAME_COLOR} />}
         <ArcadeHud
           color={GAME_COLOR}

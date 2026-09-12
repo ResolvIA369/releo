@@ -40,7 +40,6 @@ export function recordGameEvent(event: GameTelemetryEvent): void {
     // Un sink roto nunca debe interrumpir el juego.
   }
   if (process.env.NODE_ENV !== "production") {
-    // eslint-disable-next-line no-console
     console.debug("[gameTelemetry]", event);
   }
 }
