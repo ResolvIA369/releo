@@ -661,10 +661,20 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, worldId, onCom
       total: state.totalAttempts,
       levelReached: levelRef.current,
     });
-    // Si recupero al menos una palabra hay algo que "vuelve al libro":
-    // un cierre narrativo breve antes de la pantalla de resultados
-    setGamePhase(state.correctAttempts > 0 ? "story-outro" : "finished");
-    finish().then(() => onComplete?.(state));
+    // Si recuperó al menos una palabra hay algo que "vuelve al libro":
+    // un cierre narrativo breve ANTES de avisarle al padre (onComplete)
+    // que la partida terminó. Bug real encontrado en QA: antes esto
+    // llamaba a onComplete() en el mismo momento que mostraba la
+    // narrativa — la pantalla que la usa (demo y /play) desmonta el
+    // juego apenas onComplete dispara, así que la narrativa nunca
+    // llegaba a verse. Ahora onComplete se pospone hasta que el niño
+    // cierra la narrativa (o pasan los ~6s de autodismiss).
+    if (state.correctAttempts > 0) {
+      setGamePhase("story-outro");
+    } else {
+      setGamePhase("finished");
+      finish().then(() => onComplete?.(state));
+    }
   }, [finish, onComplete, state, phase]);
   onEnergyOutRef.current = finishGame;
 
@@ -863,7 +873,10 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, worldId, onCom
             lines={outroLines}
             scatterEmojis={caughtEmojisRef.current}
             color={GAME_COLOR}
-            onDone={() => setGamePhase("finished")}
+            onDone={() => {
+              setGamePhase("finished");
+              finish().then(() => onComplete?.(state));
+            }}
           />
         )}
         {gamePhase === "intro" && <ArcadeIntro color={GAME_COLOR} />}
