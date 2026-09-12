@@ -1,5 +1,6 @@
 import type { DomanWord, PhaseNumber } from "@/shared/types/doman";
 import { ARCADE_MUSIC_TRACKS } from "./arcade-tuning";
+import { getAntonym } from "./antonym-pairs";
 
 // Helpers compartidos del arcade: mismos nombres que siempre exporto
 // este modulo, ahora viven en arcade-tuning.ts
@@ -136,16 +137,34 @@ function defaultShuffle<T>(arr: T[]): T[] {
   return a;
 }
 
-// Arma la ronda: target + 2 distractores, cada nube en una banda de
+// Arma la ronda: target + distractores, cada nube en una banda de
 // altura distinta para que volar hasta una implique una decision.
+//
+// En Fase 2 ("Parejas de Palabras"), si el opuesto real del objetivo
+// esta en el bloque, se lo prioriza como uno de los distractores: leer
+// "alto" vs "bajo" exige mas precision que leer "alto" vs una palabra
+// sin relacion, y es la unica forma de que el juego escale con la fase
+// sin inventar contenido que no este en el curriculum. Para el resto de
+// las fases el pool no contiene esas palabras, asi que esto nunca se
+// activa por accidente.
 export function buildCloudRound(
   target: DomanWord,
   distractorPool: DomanWord[],
   bands: number[],
   shuffleFn: <T>(arr: T[]) => T[] = defaultShuffle,
 ): CloudSpec[] {
-  const distractors = shuffleFn(distractorPool.filter((w) => w.id !== target.id))
-    .slice(0, Math.max(0, bands.length - 1));
+  const pool = distractorPool.filter((w) => w.id !== target.id);
+  const slots = Math.max(0, bands.length - 1);
+
+  const antonymText = getAntonym(target.text);
+  const antonymWord = antonymText ? pool.find((w) => w.text === antonymText) : undefined;
+
+  const rest = shuffleFn(pool.filter((w) => w !== antonymWord)).slice(
+    0,
+    antonymWord ? Math.max(0, slots - 1) : slots,
+  );
+  const distractors = antonymWord ? [antonymWord, ...rest] : rest;
+
   const roundWords = shuffleFn([target, ...distractors]);
   const shuffledBands = shuffleFn(bands);
   return roundWords.map((word, i) => ({ word, band: shuffledBands[i] }));

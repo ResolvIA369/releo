@@ -15,7 +15,7 @@ import {
 import { spawnRoll } from "../components/leo-vuela-obstacles";
 import fs from "node:fs";
 import path from "node:path";
-import { PHASE1_WORDS } from "@/shared/constants";
+import { PHASE1_WORDS, PHASE2_WORDS } from "@/shared/constants";
 import type { PhaseNumber } from "@/shared/types/doman";
 
 const pool = PHASE1_WORDS.slice(0, 10);
@@ -278,5 +278,31 @@ describe("buildCloudRound", () => {
     const clouds = buildCloudRound(target, [target], BANDS, identity);
     expect(clouds).toHaveLength(1);
     expect(clouds[0].word.id).toBe(target.id);
+  });
+
+  // Fase 2 ("Parejas de Palabras"): el opuesto real, cuando esta en el
+  // bloque, se prioriza como distractor — ver config/antonym-pairs.ts.
+  describe("distractor por opuesto real (Fase 2)", () => {
+    const alto = PHASE2_WORDS.find((w) => w.text === "alto")!;
+    const bajo = PHASE2_WORDS.find((w) => w.text === "bajo")!;
+    const bloqueFase2 = PHASE2_WORDS.slice(0, 20); // incluye alto y bajo
+
+    it("incluye el opuesto real cuando esta en el bloque", () => {
+      const clouds = buildCloudRound(alto, bloqueFase2, BANDS, identity);
+      expect(clouds.some((c) => c.word.id === bajo.id)).toBe(true);
+    });
+
+    it("no rompe la fase 1: sin opuesto conocido, cae al comportamiento normal", () => {
+      const clouds = buildCloudRound(target, pool, BANDS, identity);
+      expect(clouds).toHaveLength(3);
+    });
+
+    it("sigue funcionando si el opuesto real no esta en el bloque disponible", () => {
+      const soloColores = PHASE2_WORDS.slice(0, 7); // colores, sin "alto"/"bajo"
+      const rojo = soloColores[0];
+      const clouds = buildCloudRound(rojo, soloColores, BANDS, identity);
+      expect(clouds).toHaveLength(3);
+      expect(clouds.some((c) => c.word.id === rojo.id)).toBe(true);
+    });
   });
 });
