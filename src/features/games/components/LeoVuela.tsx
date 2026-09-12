@@ -19,7 +19,7 @@ import { sofiaNameWord, sofiaPlayAudio, stopVoice } from "@/shared/services/sofi
 import { recordGameEvent } from "@/shared/services/gameTelemetry";
 import { domanCanvasText } from "../config/doman-canvas";
 import { physicsForPhase, stepFlight, buildCloudRound, tuningForPhase, rewardForLevel } from "../config/leo-vuela";
-import { createWordBag } from "../config/arcade-tuning";
+import { createWordBag, normalizedCloudPuffWidth } from "../config/arcade-tuning";
 import { getConsequenceEmoji } from "../config/word-consequence";
 import { LeoVuelaObstacles } from "./leo-vuela-obstacles";
 import { ArcadeSky, moodForLevel } from "./arcade-sky";
@@ -578,9 +578,12 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, worldId, onCom
     const target = bagRef.current!.next();
     const specs = buildCloudRound(target, wordsRef.current, CLOUD_BANDS, shuffle);
 
-    const flying: FlyingCloud[] = specs.map(({ word, band }, i) => {
-      const box = new PIXI.Container();
-
+    // Medimos primero las 3 etiquetas de la ronda: las 3 nubes van a
+    // compartir el mismo ancho de pill (normalizedCloudPuffWidth) — si
+    // el ancho dependiera de cada palabra, la mas larga delataria la
+    // respuesta sin necesidad de leer (hallazgo real de QA con
+    // "caliente"/"frio").
+    const labels = specs.map(({ word }) => {
       const doman = domanCanvasText(word);
       const label = new PIXI.Text({
         text: word.text,
@@ -592,7 +595,13 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, worldId, onCom
         },
       });
       label.anchor.set(0.5);
-      const puffW = Math.max(140, label.width + 56);
+      return label;
+    });
+    const puffW = normalizedCloudPuffWidth(labels.map((l) => l.width));
+
+    const flying: FlyingCloud[] = specs.map(({ word, band }, i) => {
+      const box = new PIXI.Container();
+      const label = labels[i];
 
       // Cloud body: a white pill with puffs on top
       const cloud = new PIXI.Graphics();

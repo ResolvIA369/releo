@@ -1,6 +1,5 @@
 import type { DomanWord, PhaseNumber } from "@/shared/types/doman";
 import { ARCADE_MUSIC_TRACKS } from "./arcade-tuning";
-import { getAntonym } from "./antonym-pairs";
 
 // Helpers compartidos del arcade: mismos nombres que siempre exporto
 // este modulo, ahora viven en arcade-tuning.ts
@@ -140,13 +139,19 @@ function defaultShuffle<T>(arr: T[]): T[] {
 // Arma la ronda: target + distractores, cada nube en una banda de
 // altura distinta para que volar hasta una implique una decision.
 //
-// En Fase 2 ("Parejas de Palabras"), si el opuesto real del objetivo
-// esta en el bloque, se lo prioriza como uno de los distractores: leer
-// "alto" vs "bajo" exige mas precision que leer "alto" vs una palabra
-// sin relacion, y es la unica forma de que el juego escale con la fase
-// sin inventar contenido que no este en el curriculum. Para el resto de
-// las fases el pool no contiene esas palabras, asi que esto nunca se
-// activa por accidente.
+// Los distractores salen al azar del mismo bloque de palabras ya
+// aprendidas. Se probo (y se removio tras el QA de sep-2026) priorizar
+// el antonimo real como distractor en Fase 2 (ej. "alto" vs "bajo"):
+// la meta del juego es reconocimiento visual/global de la palabra, no
+// discriminacion semantica, y como el juego no muestra imagenes (la
+// unica pista posible ya es el texto) el antonimo no aportaba nada que
+// un distractor al azar no diera. Ademas sumaba dos problemas reales:
+// pares de longitud dispar delataban la respuesta por el tamano de la
+// nube (ej. "caliente"/"frio" — resuelto aparte con
+// normalizedCloudPuffWidth para CUALQUIER palabra, no solo esa pareja),
+// y al repetirse siempre la misma pareja el chico podia aprender el
+// patron de co-ocurrencia en vez de leer cada palabra por separado. Ver
+// docs/RELEO-JUEGOS-V2.md para el detalle de la decision.
 export function buildCloudRound(
   target: DomanWord,
   distractorPool: DomanWord[],
@@ -155,15 +160,7 @@ export function buildCloudRound(
 ): CloudSpec[] {
   const pool = distractorPool.filter((w) => w.id !== target.id);
   const slots = Math.max(0, bands.length - 1);
-
-  const antonymText = getAntonym(target.text);
-  const antonymWord = antonymText ? pool.find((w) => w.text === antonymText) : undefined;
-
-  const rest = shuffleFn(pool.filter((w) => w !== antonymWord)).slice(
-    0,
-    antonymWord ? Math.max(0, slots - 1) : slots,
-  );
-  const distractors = antonymWord ? [antonymWord, ...rest] : rest;
+  const distractors = shuffleFn(pool).slice(0, slots);
 
   const roundWords = shuffleFn([target, ...distractors]);
   const shuffledBands = shuffleFn(bands);

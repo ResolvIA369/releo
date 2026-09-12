@@ -71,6 +71,25 @@ export function pickNextTarget(
   return candidates[Math.min(candidates.length - 1, Math.floor(rng() * candidates.length))];
 }
 
+// ─── Ancho normalizado de opciones (Leo Vuela) ──────────────────────
+// Si el ancho de una nube dependiera del ancho renderizado de SU
+// palabra, la palabra mas larga de la ronda quedaria en la nube mas
+// ancha — una pista visible sin necesidad de leer (hallazgo real de
+// QA con "caliente"/"frio", ver docs/RELEO-JUEGOS-V2.md). Por eso las
+// 3 opciones de una misma ronda comparten SIEMPRE el mismo ancho de
+// pill: el necesario para la mas larga de esa ronda, con un piso para
+// palabras cortas y un techo de seguridad muy por encima de la palabra
+// mas larga real del curriculum ("sorprendido", 11 letras) para que
+// nunca dependa de asumir un limite exacto.
+export const CLOUD_PUFF_MIN_W = 140;
+export const CLOUD_PUFF_MAX_W = 320;
+export const CLOUD_PUFF_PADDING = 56;
+
+export function normalizedCloudPuffWidth(labelWidths: number[]): number {
+  const widest = labelWidths.length ? Math.max(...labelWidths) : 0;
+  return Math.min(CLOUD_PUFF_MAX_W, Math.max(CLOUD_PUFF_MIN_W, widest + CLOUD_PUFF_PADDING));
+}
+
 export interface WordBag {
   next: () => DomanWord;
 }

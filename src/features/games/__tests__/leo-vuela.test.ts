@@ -12,6 +12,7 @@ import {
   buildCloudRound,
   MAX_FALL_SPEED,
 } from "../config/leo-vuela";
+import { normalizedCloudPuffWidth, CLOUD_PUFF_MIN_W, CLOUD_PUFF_MAX_W } from "../config/arcade-tuning";
 import { spawnRoll } from "../components/leo-vuela-obstacles";
 import fs from "node:fs";
 import path from "node:path";
@@ -280,29 +281,55 @@ describe("buildCloudRound", () => {
     expect(clouds[0].word.id).toBe(target.id);
   });
 
-  // Fase 2 ("Parejas de Palabras"): el opuesto real, cuando esta en el
-  // bloque, se prioriza como distractor — ver config/antonym-pairs.ts.
-  describe("distractor por opuesto real (Fase 2)", () => {
+  // El distractor por antonimo (Fase 2: "alto" forzaba "bajo" si estaba
+  // en el bloque) se removio tras el QA de sep-2026 — ver el comentario
+  // en buildCloudRound y docs/RELEO-JUEGOS-V2.md. Ahora Fase 2 se
+  // comporta igual que el resto: distractores al azar del bloque.
+  it("Fase 2 elige distractores al azar como cualquier otra fase, sin forzar el opuesto", () => {
     const alto = PHASE2_WORDS.find((w) => w.text === "alto")!;
-    const bajo = PHASE2_WORDS.find((w) => w.text === "bajo")!;
     const bloqueFase2 = PHASE2_WORDS.slice(0, 20); // incluye alto y bajo
+    // Con identity (sin barajar) los distractores son simplemente los
+    // primeros del pool filtrado, nunca se prioriza "bajo" por texto.
+    const clouds = buildCloudRound(alto, bloqueFase2, BANDS, identity);
+    expect(clouds).toHaveLength(3);
+    expect(clouds.some((c) => c.word.id === alto.id)).toBe(true);
+  });
+});
 
-    it("incluye el opuesto real cuando esta en el bloque", () => {
-      const clouds = buildCloudRound(alto, bloqueFase2, BANDS, identity);
-      expect(clouds.some((c) => c.word.id === bajo.id)).toBe(true);
-    });
+describe("normalizedCloudPuffWidth", () => {
+  it("da el mismo ancho a una palabra de 2 letras y a la mas larga del curriculum", () => {
+    // "el" (2 letras) vs "sorprendido" (11 letras, la mas larga real)
+    const shortLabelWidth = 18; // ancho renderizado tipico de "el"
+    const longLabelWidth = 165; // ancho renderizado tipico de "sorprendido"
+    const shared = normalizedCloudPuffWidth([shortLabelWidth, longLabelWidth, 40]);
+    // Las 3 nubes de la ronda comparten el mismo ancho: sale del mas
+    // largo, no hay forma de que la nube de "el" sea mas angosta.
+    expect(shared).toBeGreaterThan(longLabelWidth);
+    expect(shared).toBe(normalizedCloudPuffWidth([longLabelWidth]));
+  });
 
-    it("no rompe la fase 1: sin opuesto conocido, cae al comportamiento normal", () => {
-      const clouds = buildCloudRound(target, pool, BANDS, identity);
-      expect(clouds).toHaveLength(3);
-    });
+  it("respeta el piso minimo para rondas de puras palabras cortas", () => {
+    expect(normalizedCloudPuffWidth([10, 15, 20])).toBe(CLOUD_PUFF_MIN_W);
+  });
 
-    it("sigue funcionando si el opuesto real no esta en el bloque disponible", () => {
-      const soloColores = PHASE2_WORDS.slice(0, 7); // colores, sin "alto"/"bajo"
-      const rojo = soloColores[0];
-      const clouds = buildCloudRound(rojo, soloColores, BANDS, identity);
-      expect(clouds).toHaveLength(3);
-      expect(clouds.some((c) => c.word.id === rojo.id)).toBe(true);
-    });
+  it("nunca supera el techo de seguridad, ni con un ancho absurdo", () => {
+    expect(normalizedCloudPuffWidth([10000])).toBe(CLOUD_PUFF_MAX_W);
+  });
+
+  it("el caso real que motivo el fix — 'frio' vs 'caliente' — ya no puede diferir", () => {
+    // Anchos aproximados reales a fontSize 25 (Fase 2, bold Arial):
+    // "frio" ~55px, "caliente" ~120px.
+    const frioW = 55;
+    const calienteW = 120;
+    const puffForFrioRound = normalizedCloudPuffWidth([frioW, calienteW, 60]);
+    const puffForCalienteRound = normalizedCloudPuffWidth([calienteW, frioW, 60]);
+    // Ambas rondas (sin importar el orden) dan la MISMA pill para las 3:
+    // ya no hay forma de que el tamano delate cual es la palabra larga.
+    expect(puffForFrioRound).toBe(puffForCalienteRound);
+    expect(puffForFrioRound).toBeGreaterThanOrEqual(calienteW + 56);
+  });
+
+  it("con lista vacia cae al piso minimo, no explota", () => {
+    expect(normalizedCloudPuffWidth([])).toBe(CLOUD_PUFF_MIN_W);
   });
 });

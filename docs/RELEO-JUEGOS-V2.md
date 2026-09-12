@@ -456,6 +456,73 @@ Con `capturar` (desktop 1440px y mobile ~390px), fase 1 y fase 2, se confirmó:
 
 ---
 
+## 14. Segunda ronda de QA — correcciones estructurales (2026-09-11)
+
+Tras aprobar el piloto "con cambios", esta ronda cierra los problemas
+estructurales encontrados antes de producir arte definitivo. No se agregó
+narrativa, fases ni sistemas nuevos; no se tocó ningún otro juego.
+
+### 14.1 Fuga por longitud de palabra — causa general, no solo "caliente/frío"
+`puffW` (ancho del pill de cada nube) dependía de `label.width` de CADA
+palabra por separado, así que la nube más larga de una ronda era siempre
+visualmente más ancha — una pista sin necesidad de leer. Se corrigió en la
+raíz: `normalizedCloudPuffWidth()` (`config/arcade-tuning.ts`) mide las 3
+etiquetas de la ronda ANTES de dibujar y las 3 nubes comparten el mayor
+ancho necesario (piso 140px para palabras muy cortas, techo de seguridad
+320px muy por encima de "sorprendido", la palabra real más larga del
+currículum en 11 letras). `LeoVuela.tsx` ahora mide las 3 etiquetas primero
+y usa ese ancho compartido para las 3 nubes de cada tanda. Test de
+regresión en `__tests__/leo-vuela.test.ts` (`normalizedCloudPuffWidth`),
+incluyendo el caso real "frío"/"caliente". Verificado en vivo con
+Playwright: ronda real con "enojado"(7)/"río"(3) mostrando pills del mismo
+ancho.
+
+### 14.2 Antónimo como distractor (Fase 2) — removido
+El distractor priorizado por antónimo (`ANTONYM_PAIRS`/`getAntonym`, en
+`buildCloudRound`) se evaluó contra el objetivo del juego (reconocimiento
+visual/global de la palabra, no discriminación semántica) y se concluyó
+que no aportaba: el juego no muestra imágenes, así que no hay pista
+contextual que un antónimo esté "previniendo". Además introducía dos
+problemas reales: la fuga por longitud en pares dispares (`caliente`/
+`frío`, ya resuelta de forma general en 14.1) y el riesgo de que el chico
+aprendiera el PATRÓN de co-ocurrencia (mismo par siempre) en vez de leer
+cada palabra. Se removió el archivo `config/antonym-pairs.ts` y la
+prioridad especial en `buildCloudRound`: Fase 2 ahora elige distractores al
+azar del bloque, igual que el resto de las fases. No se tocó el currículum.
+
+### 14.3 Ritmo — variedad ambiental sin mecánicas nuevas
+`ArcadeSky` (única consumidora hoy, no afecta a Leo Corre/Salta la
+Palabra) suma tres elementos puramente decorativos, sin significado
+pedagógico y sin tocar energía/pilotaje: bob vertical sutil y constante en
+las nubes de parallax, una bandada de fondo de baja frecuencia (silueta
+chica y semitransparente, vive en `farLayer`, nunca colisiona) y una ráfaga
+de viento que acelera brevemente el parallax cada tanto. Frecuencias bajas
+a propósito (spawnRoll ~2-2.5/min) para romper monotonía sin
+hiperestimular. Verificado en vivo (Playwright, capturas de bandada
+visible sin competir con las nubes-palabra).
+
+### 14.4 `wordsPerLevel = 10` — análisis, sin cambiarlo todavía
+Evidencia: el piloto automático de demo (lectura "perfecta", nunca falla
+por no leer) alcanzó 17/20 aciertos en ~8 minutos de juego continuo antes
+de quedarse sin energía — no llegó a Nivel 3/noche. Los obstáculos de
+Nivel 2 (`birdsPerMin: 5`, `boltsPerMin: 2`) ya consumen energía más rápido
+de lo que el drenaje pasivo por sí solo explicaría, y un chico real (que sí
+falla lecturas, a diferencia del bot) tiene *menos* margen que este
+best-case. Conclusión: llegar a "noche" hoy requiere una sesión más larga y
+más precisa que lo esperable para la edad objetivo; "atardecer" (10
+aciertos) es razonablemente alcanzable, "noche" (20) probablemente no en
+una sesión típica. Recomendación (no aplicada): bajar `wordsPerLevel` a
+6-7, o revisar el balance de energía en Nivel 2+, antes de invertir en arte
+de "noche". Requiere confirmar con sesiones reales, no solo el bot.
+
+### 14.5 Especificación de assets — ver informe de QA entregado en el chat
+Las especificaciones exactas (sprite de Leo con aleteo, fondos de los 4
+mundos) se entregaron en el informe de esta ronda de QA, no se repiten acá
+para no duplicar la fuente de verdad. Reemplazan/precisan los ítems
+"deseable" de la lista de la sección 13.
+
+---
+
 ## Apéndice — archivos citados por auditoría (para referencia rápida)
 
 - Flash: `WordFlash.tsx`, `FlipCard.tsx`, `TimeBar.tsx`, `RewardsLayer.tsx`, `session/config/curriculum.ts`
