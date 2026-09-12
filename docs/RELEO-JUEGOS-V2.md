@@ -406,6 +406,56 @@ Aumenta hoy con velocidad/frecuencia de obstáculos por nivel — se mantiene. L
 
 ---
 
+## 13. Estado de implementación del piloto (post-auditoría, 2026-09-11)
+
+Ejecutado sobre `feature/juegos-v2` (rama local, sin pushear). Commits: `df3edda` (bug pedagógico), `fcb97bb` (Mundos 2-4), `01e3626` (sistemas reutilizables + integración), `9f14910` (fix de verificación visual).
+
+### Bugs pedagógicos (hallazgo #1)
+Corregidos en `WordImageMatch.tsx` y `CategoryGame.tsx`: Sofía ya no dice la palabra objetivo antes de que el niño elija; solo confirma por voz tras un acierto. Con tests de regresión (`WordImageMatch.test.tsx`, `CategoryGame.test.tsx`) que mockean `sofiaVoice` y verifican el orden.
+
+### Leo Vuela V2 — qué cambió vs. V1
+| | V1 | V2 |
+|---|---|---|
+| Cielo | fondo plano celeste fijo | `ArcadeSky`: parallax 2 capas + humor por nivel (día → atardecer → noche) |
+| Consecuencia del acierto | ninguna, solo puntaje | la palabra vuela como emoji real hacia el Libro Mágico (ancla 📖), disparada **solo tras** el acierto |
+| Distractor en Fase 2 (opuestos) | azar puro | un distractor real es el antónimo de la palabra objetivo cuando existe |
+| Narrativa | ninguna | intro/outro de 3-6s con el nombre real del mundo, saltable, solo la primera vez por mundo por sesión de navegador |
+| Estela de Leo | ninguna | partículas suaves en vuelo, solo en `qualityTier: "high"` |
+| Telemetría | ninguna | `game_started` / `round_result` / `game_finished` / `game_abandoned` vía `gameTelemetry.ts` (sink desconectado por defecto) |
+| Alcance | solo Mundo 1 | Mundos 1-4 (igual que Leo Corre/Salta la Palabra) |
+
+### Verificación visual real (regla del proyecto: mirar antes de declarar terminado)
+Con `capturar` (desktop 1440px y mobile ~390px), fase 1 y fase 2, se confirmó:
+- La narrativa de intro se ve y lee bien en ambos anchos, con el nombre real del mundo ("Bahía de los Pares").
+- El juego en curso (cielo día, HUD, libro, nubes-palabra, Leo) es legible en ambos anchos.
+- **Encontrado y corregido en el momento**: la narrativa de intro no aparecía nunca en dev porque el `useState` que la activaba escribía en `sessionStorage` dentro de su initializer, y React StrictMode lo invoca dos veces al montar — la segunda invocación ya veía la marca propia. Fix: el initializer ahora solo lee; la escritura ("ya visto") se hace al cerrar la narrativa de verdad.
+- **No verificado en vivo**: la transición a "atardecer"/"noche" (requiere ~10-20 aciertos por nivel; en 55s de autoplay headless solo se alcanzaron 3-4 aciertos, insuficiente para subir de nivel). Queda cubierta por tests unitarios de `moodForLevel` y por revisión de código (se llama en cada frame del ticker), pero no por una captura real de esos dos estados. Recomendado: una prueba manual jugando unos minutos antes de dar el piloto por cerrado.
+- **Riesgo pre-existente, no introducido por V2**: en el instante exacto de atravesar una nube, el sprite de Leo puede tapar parcialmente el texto de la palabra (mecánica de "atrapar volando a través"). Es breve y ya existía en V1; no se tocó en este piloto.
+
+### Performance
+- No se agregó ningún asset binario nuevo (0 KB de imagen/audio/video). Todo lo nuevo es código: ~17 KB de TypeScript/TSX sin minificar (~487 líneas en 7 archivos), negligible frente a los ~75 MB de `public/`.
+- `npm run build` compila sin errores (Next.js 16 + Turbopack).
+- No se midió FPS real en un dispositivo físico ni con Lighthouse — este entorno no tiene un teléfono real ni un Chrome headless con GPU para un perfil confiable. Recomendado antes de producción: abrir el juego en un Android de gama media real unos minutos y confirmar que no hay caída de cuadros con la estela activada.
+
+### Reutilizable para otros juegos arcade (Leo Corre, Salta la Palabra, y potencialmente Lluvia/Pesca/Burbujas)
+`ArcadeSky`, `WordConsequenceFx` + `getConsequenceEmoji`, `MissionNarrative`, `useQualityTier`, `gameTelemetry` — ninguno tiene una dependencia dura con Leo Vuela; todos reciben `PIXI`/contenedor/props genéricos.
+
+### Deuda y riesgos
+1. La transición día→atardecer→noche no se vio en vivo (ver arriba).
+2. El solape breve de Leo sobre la palabra al atrapar es una deuda visual pre-existente, no de este piloto.
+3. `gameTelemetry` no tiene sink conectado todavía (a propósito, por pedido explícito de no agregar analytics externos en esta tarea) — los eventos hoy solo van a `console.debug` en dev.
+4. Las líneas nuevas de narrativa (`MissionNarrative`) no tienen audio grabado de Sofía todavía — funcionan igual por texto en pantalla, pero falta generarlas (bloqueado: no hay `ELEVENLABS_API_KEY` en este entorno).
+
+### Lista de assets — si se decide invertir en arte nuevo
+- **NECESARIO:** ninguno. El piloto funciona completo con geometría vectorial (PixiJS Graphics/Text) y el sprite de Leo ya existente.
+- **DESEABLE:**
+  - 2 líneas de audio nuevas de Sofía (ElevenLabs, voz existente): "¡Se escaparon las palabras!" (intro) y una de cierre tipo "¡Las palabras volvieron al libro!" (outro). Costo bajo, mejora real de inmersión.
+  - Una animación de aleteo (squash/stretch de alas) para Leo en vuelo — hoy el sprite es estático salvo inclinación/escala; requiere ver el PSD/capas originales del sprite, no se puede aproximar bien con un overlay vectorial sin verlo.
+  - 1-2 siluetas de fondo (montañas/costa) específicas de cada mundo, para que el parallax lejano no sea genérico entre Isla/Bahía/Valle/Montaña.
+- **NO NECESARIO:** más nubes/variantes de nube, más partículas, más colores de cielo — lo vectorial actual ya cubre esto sin pesar KB.
+
+---
+
 ## Apéndice — archivos citados por auditoría (para referencia rápida)
 
 - Flash: `WordFlash.tsx`, `FlipCard.tsx`, `TimeBar.tsx`, `RewardsLayer.tsx`, `session/config/curriculum.ts`
