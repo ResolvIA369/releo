@@ -429,7 +429,7 @@ Con `capturar` (desktop 1440px y mobile ~390px), fase 1 y fase 2, se confirmó:
 - La narrativa de intro se ve y lee bien en ambos anchos, con el nombre real del mundo ("Bahía de los Pares").
 - El juego en curso (cielo día, HUD, libro, nubes-palabra, Leo) es legible en ambos anchos.
 - **Encontrado y corregido en el momento**: la narrativa de intro no aparecía nunca en dev porque el `useState` que la activaba escribía en `sessionStorage` dentro de su initializer, y React StrictMode lo invoca dos veces al montar — la segunda invocación ya veía la marca propia. Fix: el initializer ahora solo lee; la escritura ("ya visto") se hace al cerrar la narrativa de verdad.
-- **No verificado en vivo**: la transición a "atardecer"/"noche" (requiere ~10-20 aciertos por nivel; en 55s de autoplay headless solo se alcanzaron 3-4 aciertos, insuficiente para subir de nivel). Queda cubierta por tests unitarios de `moodForLevel` y por revisión de código (se llama en cada frame del ticker), pero no por una captura real de esos dos estados. Recomendado: una prueba manual jugando unos minutos antes de dar el piloto por cerrado.
+- **Verificado en vivo (2026-09-13)**: transición día→atardecer→noche confirmada jugando ~11 min con el autoplay de `/demo?game=leo-vuela&phase=1` (`scripts/leo-vuela-nightcheck.mjs`), capturas en `/tmp/leo-vuela-night-t*.png`. Nivel 1 (día, cielo celeste) hasta el acierto 9, Nivel 2 (atardecer, cielo naranja, aparecen obstáculos pájaro/rayo) desde el 10, Nivel 3 (noche, cielo azul oscuro con luna) desde el 20 — igual que predice `levelForCorrectCount`. Con el ritmo actual el bot llegó a Nivel 3 en ~3 min (mucho antes que los ~8 min sin llegar a noche del audit original de la sección 13; las correcciones de la sección 14 no deberían haber acelerado esto, revisar si vuelve a medirse con un chico real). Cero errores de consola/página en los 11 minutos. También se confirmó visualmente la bandada de fondo (14.3) en pantalla.
 - **Riesgo pre-existente, no introducido por V2**: en el instante exacto de atravesar una nube, el sprite de Leo puede tapar parcialmente el texto de la palabra (mecánica de "atrapar volando a través"). Es breve y ya existía en V1; no se tocó en este piloto.
 
 ### Performance
@@ -441,7 +441,7 @@ Con `capturar` (desktop 1440px y mobile ~390px), fase 1 y fase 2, se confirmó:
 `ArcadeSky`, `WordConsequenceFx` + `getConsequenceEmoji`, `MissionNarrative`, `useQualityTier`, `gameTelemetry` — ninguno tiene una dependencia dura con Leo Vuela; todos reciben `PIXI`/contenedor/props genéricos.
 
 ### Deuda y riesgos
-1. La transición día→atardecer→noche no se vio en vivo (ver arriba).
+1. ~~La transición día→atardecer→noche no se vio en vivo~~ — verificada 2026-09-13 (ver arriba). Pendiente real: confirmar el ritmo (10/20 aciertos) con un chico jugando, no solo el bot.
 2. El solape breve de Leo sobre la palabra al atrapar es una deuda visual pre-existente, no de este piloto.
 3. `gameTelemetry` no tiene sink conectado todavía (a propósito, por pedido explícito de no agregar analytics externos en esta tarea) — los eventos hoy solo van a `console.debug` en dev.
 4. Las líneas nuevas de narrativa (`MissionNarrative`) no tienen audio grabado de Sofía todavía — funcionan igual por texto en pantalla, pero falta generarlas (bloqueado: no hay `ELEVENLABS_API_KEY` en este entorno).
