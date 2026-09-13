@@ -12,8 +12,12 @@ describe("getWorldBackgroundUrl", () => {
     expect(getWorldBackgroundUrl("world_2")).toBe("/images/games/backgrounds/bahia-de-los-pares.png");
   });
 
+  it("world_3 (Valle de las Frases) tiene asset asignado", () => {
+    expect(getWorldBackgroundUrl("world_3")).toBe(WORLD_BACKGROUNDS.world_3);
+    expect(getWorldBackgroundUrl("world_3")).toBe("/images/games/backgrounds/valle-de-las-frases.png");
+  });
+
   it("mundos sin asset todavía devuelven null (fallback = cielo procedural)", () => {
-    expect(getWorldBackgroundUrl("world_3")).toBeNull();
     expect(getWorldBackgroundUrl("world_4")).toBeNull();
   });
 
