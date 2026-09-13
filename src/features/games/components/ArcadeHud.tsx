@@ -93,6 +93,14 @@ interface MoveButtonsProps {
 }
 
 export const MoveButtons: React.FC<MoveButtonsProps> = ({ color, active, onDir }) => {
+  // El fondo detras de estos botones cambia por mundo (cielo liso, agua,
+  // follaje, flores...) y no todos tienen el mismo contraste contra un
+  // circulo blanco traslucido. En vez de resolverlo por mundo, subimos la
+  // opacidad del relleno, sumamos blur (mismo patron que ArcadeIntro /
+  // MissionNarrative / GameShell) para que lo que se ve detras deje de
+  // leerse "textura" en vez de color solido, y una sombra — que separa el
+  // boton de cualquier fondo sin depender de su tono — para que el icono
+  // mantenga contraste sin importar que haya debajo.
   const btnStyle = (side: "left" | "right"): React.CSSProperties => ({
     position: "absolute",
     bottom: 10,
@@ -100,8 +108,10 @@ export const MoveButtons: React.FC<MoveButtonsProps> = ({ color, active, onDir }
     width: 56,
     height: 56,
     borderRadius: "50%",
-    border: `2px solid ${color}80`,
-    backgroundColor: "rgba(255,255,255,0.55)",
+    border: `2px solid ${color}b3`,
+    backgroundColor: "rgba(255,255,255,0.72)",
+    backdropFilter: "blur(3px)",
+    boxShadow: "0 2px 6px rgba(0,0,0,0.25)",
     color,
     fontSize: 22,
     cursor: active ? "pointer" : "default",
