@@ -17,8 +17,13 @@ describe("getWorldBackgroundUrl", () => {
     expect(getWorldBackgroundUrl("world_3")).toBe("/images/games/backgrounds/valle-de-las-frases.png");
   });
 
+  it("world_4 (Montaña de la Lectura) tiene asset asignado", () => {
+    expect(getWorldBackgroundUrl("world_4")).toBe(WORLD_BACKGROUNDS.world_4);
+    expect(getWorldBackgroundUrl("world_4")).toBe("/images/games/backgrounds/montana-de-la-lectura.png");
+  });
+
   it("mundos sin asset todavía devuelven null (fallback = cielo procedural)", () => {
-    expect(getWorldBackgroundUrl("world_4")).toBeNull();
+    expect(getWorldBackgroundUrl("world_5")).toBeNull();
   });
 
   it("sin worldId devuelve null en vez de romper", () => {
