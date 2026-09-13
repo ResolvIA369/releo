@@ -20,6 +20,7 @@ import { recordGameEvent } from "@/shared/services/gameTelemetry";
 import { domanCanvasText } from "../config/doman-canvas";
 import { physicsForPhase, stepFlight, buildCloudRound, tuningForPhase, rewardForLevel } from "../config/leo-vuela";
 import { createWordBag, normalizedCloudPuffWidth } from "../config/arcade-tuning";
+import { getWorldBackgroundUrl } from "../config/world-backgrounds";
 import { getConsequenceEmoji } from "../config/word-consequence";
 import { LeoVuelaObstacles } from "./leo-vuela-obstacles";
 import { ArcadeSky, moodForLevel } from "./arcade-sky";
@@ -239,6 +240,14 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, worldId, onCom
       // Cielo: parallax de 2 capas + progresion de humor por nivel
       // (dia -> atardecer -> noche), ver components/arcade-sky.ts
       skyRef.current = new ArcadeSky(PIXI, app.stage, { W, H, groundY: GROUND_Y });
+
+      // Fondo tematico por mundo (opcional) — un PNG por worldId que se
+      // superpone al cielo procedural, ver config/world-backgrounds.ts.
+      // Se dispara sin bloquear el resto del init: si el mundo no tiene
+      // asset todavia (o falla la carga), el cielo procedural sigue
+      // exactamente igual — no hace falta ningun fallback aparte.
+      const worldBgUrl = getWorldBackgroundUrl(worldId);
+      if (worldBgUrl) void skyRef.current.loadLandscape(worldBgUrl);
 
       // Word clouds layer
       const cloudsLayer = new PIXI.Container();

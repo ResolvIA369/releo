@@ -1,4 +1,4 @@
-import type { Container, Graphics } from "pixi.js";
+import type { Container, Graphics, Sprite } from "pixi.js";
 import { drawBird, spawnRoll } from "./arcade-obstacles";
 
 // Cielo con parallax y progresión de clima, reutilizable por cualquier
@@ -26,12 +26,17 @@ interface SkyPalette {
   groundEdgeColor: string;
   sunMoonColor: number;
   showStars: boolean;
+  // Tint/alpha para la capa de paisaje opcional (ver loadLandscape) —
+  // un solo PNG por mundo, "iluminado" distinto por mood en vez de
+  // pedir 3 versiones del mismo asset.
+  landscapeTint: number;
+  landscapeAlpha: number;
 }
 
 const PALETTES: Record<SkyMood, SkyPalette> = {
-  dia: { bg: 0xdbeafe, cloudColor: 0xffffff, cloudAlpha: 0.6, groundColor: "#a8d5b0", groundEdgeColor: "#8bc49a", sunMoonColor: 0xfff176, showStars: false },
-  atardecer: { bg: 0xfcd9b8, cloudColor: 0xfff0e0, cloudAlpha: 0.6, groundColor: "#c9a15a", groundEdgeColor: "#b0863f", sunMoonColor: 0xffb74d, showStars: false },
-  noche: { bg: 0x24305c, cloudColor: 0x4b5688, cloudAlpha: 0.55, groundColor: "#33425a", groundEdgeColor: "#283549", sunMoonColor: 0xf5f5f0, showStars: true },
+  dia: { bg: 0xdbeafe, cloudColor: 0xffffff, cloudAlpha: 0.6, groundColor: "#a8d5b0", groundEdgeColor: "#8bc49a", sunMoonColor: 0xfff176, showStars: false, landscapeTint: 0xffffff, landscapeAlpha: 1 },
+  atardecer: { bg: 0xfcd9b8, cloudColor: 0xfff0e0, cloudAlpha: 0.6, groundColor: "#c9a15a", groundEdgeColor: "#b0863f", sunMoonColor: 0xffb74d, showStars: false, landscapeTint: 0xffd9a8, landscapeAlpha: 1 },
+  noche: { bg: 0x24305c, cloudColor: 0x4b5688, cloudAlpha: 0.55, groundColor: "#33425a", groundEdgeColor: "#283549", sunMoonColor: 0xf5f5f0, showStars: true, landscapeTint: 0x7783b8, landscapeAlpha: 0.92 },
 };
 
 const STAR_POSITIONS: Array<[number, number]> = [
@@ -68,10 +73,14 @@ export class ArcadeSky {
   private ambientBirds: AmbientBird[] = [];
   private gustFrames = 0;
   private time = 0;
+  // Capa de paisaje por mundo (opcional) — ver loadLandscape() y
+  // docs/RELEO-JUEGOS-V2.md §16. null mientras no hay asset o no cargó.
+  private landscapeSprite: Sprite | null = null;
+  private destroyed = false;
 
   constructor(
     private PIXI: PixiModule,
-    stage: Container,
+    private stage: Container,
     private bounds: { W: number; H: number; groundY: number },
   ) {
     this.skyGfx = new PIXI.Graphics();
@@ -159,6 +168,48 @@ export class ArcadeSky {
 
     for (const c of this.farClouds) this.redrawCloud(c.g, 0.7, p);
     for (const c of this.nearClouds) this.redrawCloud(c.g, 1.05, p);
+
+    if (this.landscapeSprite) {
+      this.landscapeSprite.tint = p.landscapeTint;
+      this.landscapeSprite.alpha = p.landscapeAlpha;
+    }
+  }
+
+  /**
+   * Capa de paisaje opcional (isla, bahía, valle, montaña — un PNG por
+   * mundo, ver world-backgrounds.ts). Un solo asset sirve para los 3
+   * moods: se "ilumina" distinto con tint/alpha en vez de pedir 3
+   * versiones de la imagen. Se agrega DESPUÉS del groundGfx (encima del
+   * piso liso, que sigue existiendo como base) y ANTES que las capas de
+   * juego (nubes-palabra, obstáculos, Leo), que LeoVuela agrega al
+   * stage recién después de construir ArcadeSky — así el paisaje queda
+   * siempre detrás de todo lo jugable sin tener que ordenar z-index a mano.
+   *
+   * Si el PNG todavía no existe (mundo sin asset producido aún) o falla
+   * la carga, no pasa nada: el cielo procedural sigue exactamente igual.
+   */
+  async loadLandscape(url: string): Promise<void> {
+    try {
+      const texture = await this.PIXI.Assets.load(url);
+      if (this.destroyed) return;
+      const sprite = new this.PIXI.Sprite(texture);
+      // El asset se produce a 2x (1280x840) con el mismo aspect ratio
+      // que el canvas lógico (640x420) para que este escalado sea 1:1,
+      // sin recortar ni distorsionar la composición.
+      sprite.x = 0;
+      sprite.y = 0;
+      sprite.width = this.bounds.W;
+      sprite.height = this.bounds.H;
+      this.stage.addChild(sprite);
+      this.landscapeSprite = sprite;
+      if (this.mood) {
+        const p = PALETTES[this.mood];
+        sprite.tint = p.landscapeTint;
+        sprite.alpha = p.landscapeAlpha;
+      }
+    } catch {
+      // Sin asset todavía, o 404/red — cielo procedural sin cambios.
+    }
   }
 
   /**
@@ -198,11 +249,14 @@ export class ArcadeSky {
   }
 
   destroy(): void {
+    this.destroyed = true;
     this.skyGfx.destroy();
     this.starsGfx.destroy();
     this.groundGfx.destroy();
     this.farLayer.destroy({ children: true });
     this.nearLayer.destroy({ children: true });
+    this.landscapeSprite?.destroy();
+    this.landscapeSprite = null;
     for (const b of this.ambientBirds) b.node.destroy({ children: true });
     this.ambientBirds = [];
   }
