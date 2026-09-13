@@ -41,9 +41,18 @@ function shuffle<T>(arr: T[]): T[] {
 
 const GAME_COLOR = "#9f7aea";
 
-// Unico punto de cambio del sprite: Leo volando hacia la derecha,
-// hacia las nubes que entran (procesado por scripts/prepare-leo-sprites.py)
+// Animacion de vuelo: 2 poses (A extendido / B recogido) cruzadas por
+// alpha — ambas comparten el mismo lienzo y el mismo punto de anclaje
+// (ojo), preparadas a partir de "Leo A.png"/"Leo B.png" (QA sep-2026).
+// Si alguna de las dos no carga, cae al sprite estatico anterior.
+const LEO_FRAME_A_URL = "/images/games/leo-vuela-frame-a.png";
+const LEO_FRAME_B_URL = "/images/games/leo-vuela-frame-b.png";
 const LEO_SPRITE_URL = "/images/games/leo-vuela-sprite.png";
+// Ciclo completo A→B→A. "Suave" a proposito: ida y vuelta por cruce de
+// alpha (coseno), no un cambio de textura duro — pedido explicito de
+// no parecer flipbook/parpadeo. Ajustado mirando el resultado en vivo.
+const LEO_FLIGHT_CYCLE_MS = 900;
+const LEO_FLIGHT_CYCLE_FRAMES = (LEO_FLIGHT_CYCLE_MS / 1000) * 60;
 
 // Logical canvas size — CSS scales it to the container width
 const W = 640;
@@ -129,7 +138,8 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, worldId, onCom
   const hostRef = useRef<HTMLDivElement>(null);
   const appRef = useRef<Application | null>(null);
   const leoRef = useRef<Container | null>(null);
-  const leoSpriteRef = useRef<Sprite | null>(null);
+  const leoSpriteRef = useRef<Sprite | null>(null); // pose A (extendido) — sigue siendo la referencia de tilt/tint/squash
+  const leoSpriteBRef = useRef<Sprite | null>(null); // pose B (recogido) — espeja las mismas transformaciones, solo cambia el alpha
   const cloudsLayerRef = useRef<Container | null>(null);
   const obstaclesRef = useRef<LeoVuelaObstacles | null>(null);
   const skyRef = useRef<ArcadeSky | null>(null);
@@ -245,25 +255,51 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, worldId, onCom
       app.stage.addChild(trailLayer);
       trailLayerRef.current = trailLayer;
 
-      // Leo — sprite if the texture loads, emoji fallback otherwise
+      // Leo — 2 poses (A/B) cruzadas por alpha; si alguna de las 2 no
+      // carga cae al sprite estatico anterior, y si ese tampoco carga
+      // al emoji de siempre.
       const leo = new PIXI.Container();
       try {
-        const tex = await PIXI.Assets.load(LEO_SPRITE_URL);
+        const [texA, texB] = await Promise.all([
+          PIXI.Assets.load(LEO_FRAME_A_URL),
+          PIXI.Assets.load(LEO_FRAME_B_URL),
+        ]);
         // After appRef is set the cleanup owns destruction — just bail
         if (disposed) return;
-        const sprite = new PIXI.Sprite(tex);
-        // Anclado al centro del cuerpo: la inclinacion al subir/caer
-        // rota alrededor de Leo, no de sus pies
-        sprite.anchor.set(0.5, 0.5);
-        sprite.y = -LEO_CENTER_OFFSET;
-        baseScaleRef.current = 96 / sprite.height;
-        sprite.scale.set(baseScaleRef.current);
-        leo.addChild(sprite);
-        leoSpriteRef.current = sprite;
+        const spriteA = new PIXI.Sprite(texA);
+        const spriteB = new PIXI.Sprite(texB);
+        for (const sprite of [spriteA, spriteB]) {
+          // Anclado al centro del cuerpo: la inclinacion al subir/caer
+          // rota alrededor de Leo, no de sus pies. Los 2 frames comparten
+          // lienzo y punto de anclaje (ojo), asi que el mismo anchor/scale
+          // les queda igual a ambos sin recalcular nada por textura.
+          sprite.anchor.set(0.5, 0.5);
+          sprite.y = -LEO_CENTER_OFFSET;
+        }
+        baseScaleRef.current = 96 / spriteA.height;
+        spriteA.scale.set(baseScaleRef.current);
+        spriteB.scale.set(baseScaleRef.current);
+        spriteB.alpha = 0;
+        leo.addChild(spriteA);
+        leo.addChild(spriteB);
+        leoSpriteRef.current = spriteA;
+        leoSpriteBRef.current = spriteB;
       } catch {
-        const fallback = new PIXI.Text({ text: "🦁", style: { fontSize: 64 } });
-        fallback.anchor.set(0.5, 1);
-        leo.addChild(fallback);
+        try {
+          const tex = await PIXI.Assets.load(LEO_SPRITE_URL);
+          if (disposed) return;
+          const sprite = new PIXI.Sprite(tex);
+          sprite.anchor.set(0.5, 0.5);
+          sprite.y = -LEO_CENTER_OFFSET;
+          baseScaleRef.current = 96 / sprite.height;
+          sprite.scale.set(baseScaleRef.current);
+          leo.addChild(sprite);
+          leoSpriteRef.current = sprite;
+        } catch {
+          const fallback = new PIXI.Text({ text: "🦁", style: { fontSize: 64 } });
+          fallback.anchor.set(0.5, 1);
+          leo.addChild(fallback);
+        }
       }
       const shadow = new PIXI.Graphics();
       shadow.ellipse(0, 0, 34, 9).fill({ color: 0x000000, alpha: 0.15 });
@@ -423,6 +459,24 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, worldId, onCom
             leoSpriteRef.current.scale.set(baseScaleRef.current * sx, baseScaleRef.current * sy);
           }
 
+          // Pose B espeja tint/rotacion/escala de la pose A frame a
+          // frame (mismo lienzo y anclaje, asi que no hace falta
+          // recalcular nada) y solo se distingue por el alpha: un
+          // cruce suave A→B→A por coseno, nunca un corte duro entre
+          // texturas. Se congela durante el sacudido de impacto
+          // (crashT<1) para no competir con esa reaccion.
+          if (leoSpriteRef.current && leoSpriteBRef.current) {
+            leoSpriteBRef.current.tint = leoSpriteRef.current.tint;
+            leoSpriteBRef.current.rotation = leoSpriteRef.current.rotation;
+            leoSpriteBRef.current.scale.copyFrom(leoSpriteRef.current.scale);
+            if (crashTRef.current >= 1) {
+              const cyclePos = (elapsedRef.current % LEO_FLIGHT_CYCLE_FRAMES) / LEO_FLIGHT_CYCLE_FRAMES;
+              const alphaA = (Math.cos(cyclePos * Math.PI * 2) + 1) / 2;
+              leoSpriteRef.current.alpha = alphaA;
+              leoSpriteBRef.current.alpha = 1 - alphaA;
+            }
+          }
+
           // Estela decorativa detras de Leo en pleno vuelo — solo en
           // tier alto (useQualityTier.ts): pura ambientacion, nunca
           // compite con la legibilidad de la nube-objetivo
@@ -527,6 +581,7 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, worldId, onCom
         appRef.current = null;
         leoRef.current = null;
         leoSpriteRef.current = null;
+        leoSpriteBRef.current = null;
         cloudsLayerRef.current = null;
         obstaclesRef.current = null;
         fadingRef.current = [];
