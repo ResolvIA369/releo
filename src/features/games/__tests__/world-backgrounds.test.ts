@@ -7,8 +7,12 @@ describe("getWorldBackgroundUrl", () => {
     expect(getWorldBackgroundUrl("world_1")).toMatch(/\.png$/);
   });
 
+  it("world_2 (Bahía de los Pares) tiene asset asignado", () => {
+    expect(getWorldBackgroundUrl("world_2")).toBe(WORLD_BACKGROUNDS.world_2);
+    expect(getWorldBackgroundUrl("world_2")).toBe("/images/games/backgrounds/bahia-de-los-pares.png");
+  });
+
   it("mundos sin asset todavía devuelven null (fallback = cielo procedural)", () => {
-    expect(getWorldBackgroundUrl("world_2")).toBeNull();
     expect(getWorldBackgroundUrl("world_3")).toBeNull();
     expect(getWorldBackgroundUrl("world_4")).toBeNull();
   });

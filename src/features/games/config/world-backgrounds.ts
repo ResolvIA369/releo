@@ -16,10 +16,11 @@
 //   coordenadas lógicas 640×420); el resto del lienzo queda
 //   transparente para no invadir la zona de lectura (y≈60–330).
 //
-// Solo world_1 tiene asset en esta ronda a propósito — no inventar
-// rutas para los mundos 2–4 hasta tener el PNG real de cada uno.
+// world_1 y world_2 tienen asset; world_3/4 quedan sin entrada a
+// propósito — no inventar rutas hasta tener el PNG real de cada uno.
 export const WORLD_BACKGROUNDS: Partial<Record<string, string>> = {
   world_1: "/images/games/backgrounds/isla-de-las-palabras.png",
+  world_2: "/images/games/backgrounds/bahia-de-los-pares.png",
 };
 
 export function getWorldBackgroundUrl(worldId: string | undefined): string | null {
