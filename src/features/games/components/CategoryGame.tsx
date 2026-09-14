@@ -32,6 +32,13 @@ function shuffle<T>(arr: T[]): T[] {
 
 const GAME_COLOR = "#667eea";
 
+// -22dB (valor original) quedaba ~-40/-44dB RMS efectivo, por debajo del
+// piso de audibilidad — mismo diagnostico que Leo Vuela. -10dB es el
+// valor ya validado ahi. musicDuckDb sin cambios.
+export const CATEGORY_GAME_MUSIC_VOLUME_DB = -10;
+const MUSIC_VOLUME_DB = CATEGORY_GAME_MUSIC_VOLUME_DB;
+const MUSIC_DUCK_DB = -34;
+
 type Phase = "intro" | "playing" | "feedback" | "finished";
 
 const WORDS_BY_PHASE = [PHASE1_WORDS, PHASE2_WORDS, PHASE3_WORDS, PHASE4_WORDS, PHASE5_WORDS];
@@ -43,7 +50,7 @@ export const CategoryGame: React.FC<GameProps> = ({ words, phase = 1, onComplete
 
   // Musica de selva (loop suave); arranca tras el primer gesto
   const musicRef = useRef<ArcadeMusic | null>(null);
-  if (!musicRef.current) musicRef.current = new ArcadeMusic(-22, -34, ARCADE_MUSIC_TRACKS);
+  if (!musicRef.current) musicRef.current = new ArcadeMusic(MUSIC_VOLUME_DB, MUSIC_DUCK_DB, ARCADE_MUSIC_TRACKS);
   useEffect(() => () => { musicRef.current?.dispose(); musicRef.current = null; }, []);
   useEffect(() => {
     if (paused) musicRef.current?.pause();
