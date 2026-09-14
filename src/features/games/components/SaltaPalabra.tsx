@@ -38,6 +38,19 @@ const GAME_COLOR = "#38b2ac";
 // hacia las palabras que entran (procesado por scripts/prepare-leo-sprites.py)
 const LEO_SPRITE_URL = "/images/games/leo-salta-sprite.png";
 
+// Orden de dibujo explicito (mismo patron ARCADE_Z de arcade-sky.ts,
+// aplicado aca preventivamente — auditoría de grabación sep-2026,
+// docs/RELEO-AUDITORIA-GRABACION.md categoría B3). Ver el mismo
+// comentario en LeoRunner.tsx: hoy el orden ya sale bien por la
+// secuencia sincrónica del init, pero sortableChildren+zIndex lo deja
+// garantizado sin importar cuando termine cada carga async.
+export const SALTA_PALABRA_Z = {
+  scenery: 0,
+  words: 1,
+  obstacles: 2,
+  leo: 3,
+} as const;
+
 // Logical canvas size — CSS scales it to the container width
 const W = 640;
 const H = 420;
@@ -175,6 +188,10 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
       app.canvas.style.borderRadius = "16px";
       hostRef.current.appendChild(app.canvas);
 
+      // ARCADE_Z (ver SALTA_PALABRA_Z arriba): el zIndex manda, no el
+      // orden de addChild().
+      app.stage.sortableChildren = true;
+
       // Sky decorations + grass floor
       const scenery = new PIXI.Graphics();
       scenery.circle(72, 64, 30).fill({ color: 0xfff176, alpha: 0.9 }); // sun
@@ -184,20 +201,24 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
       }
       scenery.rect(0, GROUND_Y, W, H - GROUND_Y).fill("#a8d5b0");
       scenery.rect(0, GROUND_Y, W, 6).fill("#8bc49a");
+      scenery.zIndex = SALTA_PALABRA_Z.scenery;
       app.stage.addChild(scenery);
 
       // Floating words layer
       const wordsLayer = new PIXI.Container();
+      wordsLayer.zIndex = SALTA_PALABRA_Z.words;
       app.stage.addChild(wordsLayer);
       wordsLayerRef.current = wordsLayer;
 
       // Obstaculos del piso (troncos, puercoespines, pajaros en picada)
       const obstaclesLayer = new PIXI.Container();
+      obstaclesLayer.zIndex = SALTA_PALABRA_Z.obstacles;
       app.stage.addChild(obstaclesLayer);
       obstaclesRef.current = new GroundObstacles(PIXI, obstaclesLayer, { W, groundY: GROUND_Y, minGapPx: tuning.minGroundGapPx });
 
       // Leo — sprite if the texture loads, emoji fallback otherwise
       const leo = new PIXI.Container();
+      leo.zIndex = SALTA_PALABRA_Z.leo;
       try {
         const tex = await PIXI.Assets.load(LEO_SPRITE_URL);
         // After appRef is set the cleanup owns destruction — just bail
