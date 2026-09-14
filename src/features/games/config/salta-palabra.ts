@@ -40,7 +40,11 @@ const SALTA_BASE = {
   levels: SALTA_LEVELS,
   levelCoinBonus: [0, 10, 25],
   musicTracks: ARCADE_MUSIC_TRACKS,
-  musicVolumeDb: -22, musicDuckDb: -34,
+  // -22dB (valor original) quedaba por debajo del piso de audibilidad en
+  // parlantes tipicos (~-40/-44dB RMS efectivo, medido en Leo Vuela con
+  // los mismos loops). -10dB es el valor ya validado ahi. musicDuckDb
+  // queda igual — el agachado durante la narracion ya funcionaba.
+  musicVolumeDb: -10, musicDuckDb: -34,
   minGroundGapPx: 200,
   horizontalSpeed: 3,
 };
