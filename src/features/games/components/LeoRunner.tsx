@@ -38,6 +38,22 @@ const GAME_COLOR = "#ed8936";
 // adentro de la pantalla (procesado por scripts/prepare-leo-sprites.py)
 const LEO_SPRITE_URL = "/images/games/leo-corre-sprite.png";
 
+// Orden de dibujo explicito (mismo patron ARCADE_Z de arcade-sky.ts,
+// aplicado aca preventivamente — auditoría de grabación sep-2026,
+// docs/RELEO-AUDITORIA-GRABACION.md categoría B3). Hoy el orden de
+// addChild() ya resulta correcto porque la carga async del sprite de
+// Leo siempre termina antes del addChild(leo) sincronico que le sigue,
+// pero no hay ninguna garantia estructural de eso — con
+// sortableChildren=true, el zIndex manda siempre, sin importar cuando
+// se agrego cada capa.
+export const LEO_RUNNER_Z = {
+  road: 0,
+  dashes: 1,
+  signs: 2,
+  obstacles: 3,
+  leo: 4,
+} as const;
+
 // Logical canvas size — CSS scales it to the container width.
 // W es generoso para que aun con 4 carriles las palabras entren
 // completas y grandes (la legibilidad es lo primero).
@@ -194,32 +210,41 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
       app.canvas.style.borderRadius = "16px";
       hostRef.current.appendChild(app.canvas);
 
+      // ARCADE_Z (ver LEO_RUNNER_Z arriba): el zIndex manda, no el orden
+      // de addChild().
+      app.stage.sortableChildren = true;
+
       // Road background: 3 lanes separated by scrolling dashed lines
       const road = new PIXI.Graphics();
       road.rect(0, 0, W, H).fill("#dcefe2");
       road.rect(0, 0, 14, H).fill("#a8d5b0");
       road.rect(W - 14, 0, 14, H).fill("#a8d5b0");
+      road.zIndex = LEO_RUNNER_Z.road;
       app.stage.addChild(road);
 
       // Dashed lane separators (entre carriles) — se redibujan si el
       // Nivel 3 agrega un cuarto carril
       const dashLayer = new PIXI.Container();
+      dashLayer.zIndex = LEO_RUNNER_Z.dashes;
       rebuildDashes(PIXI, dashLayer, separatorXs(DEFAULT_LANES_X));
       app.stage.addChild(dashLayer);
       dashLayerRef.current = dashLayer;
 
       // Signs layer (word signs + rocks come down this layer)
       const signsLayer = new PIXI.Container();
+      signsLayer.zIndex = LEO_RUNNER_Z.signs;
       app.stage.addChild(signsLayer);
       signsLayerRef.current = signsLayer;
 
       // Obstaculos del camino (troncos, pajaros que bajan, lluvia)
       const obstaclesLayer = new PIXI.Container();
+      obstaclesLayer.zIndex = LEO_RUNNER_Z.obstacles;
       app.stage.addChild(obstaclesLayer);
       obstaclesRef.current = new LaneObstacles(PIXI, obstaclesLayer, { lanesX: DEFAULT_LANES_X, H, leoY: LEO_Y });
 
       // Leo — sprite if the texture loads, emoji fallback otherwise
       const leo = new PIXI.Container();
+      leo.zIndex = LEO_RUNNER_Z.leo;
       try {
         const tex = await PIXI.Assets.load(LEO_SPRITE_URL);
         // After appRef is set the cleanup owns destruction — just bail
