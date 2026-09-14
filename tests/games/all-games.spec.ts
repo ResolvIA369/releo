@@ -313,6 +313,58 @@ test("Parents panel route exists", async () => {
   expect(res.ok).toBeTruthy();
 });
 
+// ═══ Regresion: /play/leo-vuela no debe quedar trabado en "Cargando..." ═══
+//
+// Los tests de arriba solo hacen fetch() (ver playwright.config.ts: "Use
+// fetch-based tests, no browser needed"), asi que nunca ejecutan JS de
+// cliente ni esperan hidratacion — no hubieran detectado el bug real
+// reportado por Cesar (QA sep-2026): la pagina se quedaba indefinidamente
+// en el fallback de Suspense ("Cargando...", ver play/[gameId]/page.tsx).
+//
+// Causa confirmada (diagnostico en vivo, ver commit de este fix): el
+// proceso del dev server de Turbopack se cayo/quedo sin responder tras una
+// sesion larga con muchisimos cambios en caliente sobre esta misma ruta
+// (que importa estaticamente los 11 juegos, varios con PixiJS). Con el
+// servidor caido, el navegador se queda esperando para siempre una
+// respuesta que nunca llega — no es un bug de este codigo (typecheck,
+// vitest, build y este mismo test pasan limpio contra un servidor
+// reiniciado). No hay fix de codigo posible para "el proceso del server
+// se murio"; este test es la red para detectar el sintoma si vuelve a
+// pasar. Este test SI usa un browser real y espera a que la pantalla
+// jugable aparezca de verdad.
+test("Leo Vuela — /play/leo-vuela no queda trabado en Cargando", async ({ page }) => {
+  const pageErrors: string[] = [];
+  page.on("pageerror", (err) => pageErrors.push(String(err)));
+
+  await page.goto(`${BASE}/play/leo-vuela`, { waitUntil: "load" });
+
+  // Turbopack dev hace un par de reloads automaticos justo despues de
+  // compilar por primera vez una ruta "fria" (confirmado: pasa igual en
+  // /onboarding, que este fix no toca) — interactuar antes de que se
+  // asiente pierde el click/fill. Un margen breve evita ese falso negativo.
+  await page.waitForTimeout(1500);
+
+  // Perfil nuevo (contexto de test limpio, sin IndexedDB previa): completar
+  // el onboarding minimo para llegar a la pantalla real del juego.
+  const nameInput = page.getByPlaceholder(/Sofía/i).first();
+  const sawOnboarding = await nameInput.waitFor({ state: "visible", timeout: 5000 }).then(() => true).catch(() => false);
+  if (sawOnboarding) {
+    await nameInput.fill("QA Playwright");
+    await page.getByText(/Empezar a aprender/i).first().click();
+    // onComplete() hace router.replace("/dashboard") recien despues de que
+    // save() (escritura a IndexedDB) resuelve — esperar esa URL asegura que
+    // el perfil ya quedo persistido antes de recargar /play/leo-vuela.
+    await page.waitForURL(/\/dashboard/, { timeout: 10000 });
+    await page.goto(`${BASE}/play/leo-vuela`, { waitUntil: "load" });
+    await page.waitForTimeout(1500);
+  }
+
+  // El bug real: quedarse para siempre en el fallback de Suspense/ProfileGuard.
+  await expect(page.getByText("Elige un mundo")).toBeVisible({ timeout: 15000 });
+  await expect(page.getByText("Cargando...")).not.toBeVisible();
+  expect(pageErrors).toEqual([]);
+});
+
 // ═══ Generate report ══════════════════════════════════════════
 
 test.afterAll(() => {
