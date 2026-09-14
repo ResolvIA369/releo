@@ -30,7 +30,10 @@ const BUBBLES_BASE = {
   levels: BUBBLES_LEVELS,
   levelCoinBonus: [0, 10, 25],
   musicTracks: ARCADE_MUSIC_TRACKS,
-  musicVolumeDb: -22, musicDuckDb: -34,
+  // -22dB quedaba ~-40/-44dB RMS efectivo, por debajo del piso de
+  // audibilidad — mismo diagnostico que Leo Vuela. -10dB es el valor
+  // ya validado ahi. musicDuckDb sin cambios.
+  musicVolumeDb: -10, musicDuckDb: -34,
 };
 
 export const BUBBLES_TUNING: Record<PhaseNumber, BubblesTuning> = {
