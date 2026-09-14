@@ -20,9 +20,119 @@ interface ArcadeHudProps {
   waveKey: number; // re-anima la pill cuando cambia la tanda
   energy: number;
   energyMax: number;
+  // Variante para juegos con canvas grande (QA sep-2026, Leo Vuela): en vez
+  // de ocupar fila propia arriba del canvas, se dibuja ENCIMA de el como
+  // overlay. Requiere que el padre tenga position:relative (y, para que el
+  // tamano de fuente escale con el tamano real del canvas en vez de quedar
+  // fijo en px, containerType:"size" — por eso las medidas de acá usan
+  // unidades cqh/cqw, no px). Default false preserva el layout en flujo
+  // normal que usan los otros juegos arcade (BitsReading, WordFishing,
+  // WordRain, WordTrain, SaltaPalabra, LeoRunner) sin ningun cambio.
+  overlay?: boolean;
 }
 
-export const ArcadeHud: React.FC<ArcadeHudProps> = ({ color, targetPrefix, level, correct, targetWord, waveKey, energy, energyMax }) => (
+export const ArcadeHud: React.FC<ArcadeHudProps> = ({ color, targetPrefix, level, correct, targetWord, waveKey, energy, energyMax, overlay = false }) => {
+  if (overlay) {
+    return (
+      <div
+        style={{
+          // top en px fijo (no cqh): tiene que despejar la barra flotante
+          // de GameShell (pausa/titulo/cofre, ~60px de alto SIEMPRE, no
+          // escala con el canvas). 52px = borde inferior real del boton de
+          // pausa (medido), sin margen extra — cualquier px de mas acá le
+          // resta directamente a la banda libre de nubes de abajo, que en
+          // canvases chicos ya es escasa.
+          //
+          // Una sola fila (nivel + objetivo + energia) en vez de dos: la
+          // nube mas alta (CLOUD_BANDS[0] en LeoVuela.tsx) empieza recien
+          // al ~13.5% de la altura logica del canvas — con el offset de
+          // 52px fijo, esa banda seguro-de-nubes solo alcanza para UNA fila
+          // compacta en el rango de canvas de esta tarea (desktop, 1280-
+          // 1920px de viewport). Con dos filas (version anterior) la fila
+          // de energia quedaba pisando la banda de nubes en 1280x900 — se
+          // verifico con captura real, no era hipotetico.
+          position: "absolute", top: 52, left: 0, right: 0, zIndex: 15,
+          display: "flex", alignItems: "center", gap: "1cqw",
+          padding: "0 2cqw", pointerEvents: "none",
+        }}
+      >
+        <span
+          style={{
+            display: "flex", alignItems: "center", gap: "0.8cqw",
+            fontSize: "2.2cqh", color: colors.text.placeholder, whiteSpace: "nowrap",
+            backgroundColor: "rgba(255,255,255,0.72)", backdropFilter: "blur(3px)",
+            border: `2px solid ${color}b3`, boxShadow: "0 2px 6px rgba(0,0,0,0.25)",
+            borderRadius: 999, padding: "0.4cqh 1.2cqw",
+          }}
+        >
+          <motion.span
+            key={level}
+            initial={{ scale: 1.4 }}
+            animate={{ scale: 1 }}
+            style={{ fontWeight: "bold", fontFamily: fonts.display, color }}
+          >
+            N{level + 1}
+          </motion.span>
+          ✓{correct}
+        </span>
+
+        {/* El cartel del objetivo es el elemento pedagogico central: banda
+            segura fija en el tercio superior del canvas (ver CLOUD_BANDS
+            en LeoVuela.tsx — la nube mas alta empieza recien al ~13.5% de
+            la altura logica del canvas) mas fondo solido-ish, para que
+            nunca quede tapado ni se confunda con una nube-palabra. Ademas,
+            al ser DOM por encima del <canvas> (zIndex 15 vs el canvas sin
+            zIndex), ninguna nube puede taparlo aunque coincidieran en
+            posicion — solo importa la banda para que no se vean "pegados". */}
+        {targetWord && (
+          <div
+            style={{
+              flex: 1, textAlign: "center", minWidth: 0,
+              padding: "0.5cqh 2cqw",
+              backgroundColor: `${color}f2`, border: `2px solid ${color}`,
+              boxShadow: "0 3px 10px rgba(0,0,0,0.3)",
+              borderRadius: 999, fontSize: "3cqh", lineHeight: 1.15,
+              fontWeight: "bold", fontFamily: fonts.display, color: "#fff",
+              whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+            }}
+          >
+            {targetPrefix} <motion.span
+              key={targetWord.id + waveKey}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+            >{targetWord.text}</motion.span>
+          </div>
+        )}
+
+        {/* Barra de energia: compacta, sin icono propio, integrada a la
+            misma fila para no sumar una segunda banda de altura. */}
+        <div
+          role="progressbar"
+          aria-label="Energía"
+          aria-valuenow={energy}
+          aria-valuemin={0}
+          aria-valuemax={energyMax}
+          style={{
+            width: "10cqw", flexShrink: 0, height: "1.8cqh", minHeight: 8, borderRadius: 999,
+            backgroundColor: "rgba(238,234,243,0.85)", overflow: "hidden",
+            border: `1px solid ${colors.border.light}`, boxShadow: "0 1px 4px rgba(0,0,0,0.2)",
+          }}
+        >
+          <div
+            style={{
+              width: `${(energy / energyMax) * 100}%`,
+              height: "100%",
+              borderRadius: 999,
+              backgroundColor: energy > 50 ? "#48bb78" : energy > 25 ? "#f6ad55" : "#f56565",
+              transition: "width 0.25s ease, background-color 0.3s ease",
+            }}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  return (
   <>
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", maxWidth: MAX_W }}>
       <span style={{ display: "flex", alignItems: "center", gap: spacing.sm, fontSize: fontSizes.sm, color: colors.text.placeholder }}>
@@ -82,7 +192,8 @@ export const ArcadeHud: React.FC<ArcadeHudProps> = ({ color, targetPrefix, level
       </div>
     </div>
   </>
-);
+  );
+};
 
 // ─── Botones ◀ ▶ para esquivar (mobile) — el resto del canvas es accion ──
 

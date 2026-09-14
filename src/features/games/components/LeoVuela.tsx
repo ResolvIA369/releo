@@ -938,8 +938,8 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, worldId, onCom
   }
 
   return (
-    <GameShell title="Leo Vuela" icon="🪁" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})} contentAlign="top">
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: spacing.md, paddingTop: spacing.sm }}>
+    <GameShell title="Leo Vuela" icon="🪁" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})} contentAlign="top" immersive>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: spacing.md, paddingTop: spacing.xs }}>
         {gamePhase === "story-intro" && (
           <MissionNarrative
             variant="intro"
@@ -966,21 +966,23 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, worldId, onCom
           />
         )}
         {gamePhase === "intro" && <ArcadeIntro color={GAME_COLOR} />}
-        <ArcadeHud
-          color={GAME_COLOR}
-          targetPrefix="Volá a:"
-          level={levelUi}
-          correct={state.correctAttempts}
-          targetWord={targetWord}
-          waveKey={roundIdx}
-          energy={energy.energyUi}
-          energyMax={tuning.energyMax}
-        />
 
-        {/* Pixi canvas + full-surface flap tap zone */}
+        {/* Pixi canvas + full-surface flap tap zone. El header de GameShell
+            (immersive) y el ArcadeHud (overlay) flotan encima en vez de
+            empujar esto hacia abajo — por eso el presupuesto vertical fijo
+            de la formula de ancho bajo de 280px a ~16px (padding minimo del
+            shell + de este wrapper, medido en vivo). containerType:"size"
+            habilita las unidades cqh/cqw que usa ArcadeHud en modo overlay
+            para que el texto escale con el tamano real del canvas — pero
+            "size" containment ignora el contenido para calcular el alto, asi
+            que sin un aspectRatio PROPIO (no alcanza con el de hostRef, que
+            es hijo) este div queda con alto 0 y overflow:hidden le recorta
+            todo el contenido a invisible (bug real, visto en pantalla). */}
         <div style={{
-          position: "relative", width: "min(96vw, 1200px, calc((100dvh - 280px) * 1.5238))",
+          position: "relative", width: "min(96vw, calc((100dvh - 16px) * 1.5238))",
+          aspectRatio: `${W} / ${H}`,
           borderRadius: radii.xl, overflow: "hidden", border: `2px solid ${colors.border.light}`,
+          containerType: "size",
         }}>
           {/* React must never render children inside hostRef — Pixi
               appends its canvas there manually */}
@@ -1000,6 +1002,17 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, worldId, onCom
               background: "transparent", border: "none", padding: 0,
               cursor: gamePhase === "running" ? "pointer" : "default",
             }}
+          />
+          <ArcadeHud
+            overlay
+            color={GAME_COLOR}
+            targetPrefix="Volá a:"
+            level={levelUi}
+            correct={state.correctAttempts}
+            targetWord={targetWord}
+            waveKey={roundIdx}
+            energy={energy.energyUi}
+            energyMax={tuning.energyMax}
           />
           <MoveButtons color={GAME_COLOR} active={gamePhase === "running"} onDir={handleMoveDir} />
         </div>
