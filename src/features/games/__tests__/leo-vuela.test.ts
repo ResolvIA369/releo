@@ -114,10 +114,16 @@ describe("musica", () => {
     }
   });
 
-  it("volumen base bien bajo y ducking aun mas bajo cuando habla Sofia", () => {
+  it("volumen base audible (no silencioso) y ducking claramente mas bajo cuando habla Sofia", () => {
+    // -22dB (valor anterior) medía, decodificando los 3 loops reales,
+    // ~-40/-44dB RMS efectivo — por debajo del piso de audibilidad en
+    // parlantes tipicos (ver comentario en config/leo-vuela.ts). El
+    // rango de acá abajo mantiene la música de fondo (no debe superar
+    // -5dB, sería demasiado fuerte) pero ya no tan baja que no se oiga.
     for (const phase of [1, 2, 3, 4, 5] as PhaseNumber[]) {
       const t = LEO_VUELA_TUNING[phase];
-      expect(t.musicVolumeDb).toBeLessThanOrEqual(-20);
+      expect(t.musicVolumeDb).toBeLessThanOrEqual(-5);
+      expect(t.musicVolumeDb).toBeGreaterThanOrEqual(-20);
       expect(t.musicDuckDb).toBeLessThan(t.musicVolumeDb);
     }
   });

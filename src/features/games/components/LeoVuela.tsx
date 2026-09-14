@@ -23,7 +23,7 @@ import { createWordBag, normalizedCloudPuffWidth } from "../config/arcade-tuning
 import { getWorldBackgroundUrl } from "../config/world-backgrounds";
 import { getConsequenceEmoji } from "../config/word-consequence";
 import { LeoVuelaObstacles } from "./leo-vuela-obstacles";
-import { ArcadeSky, moodForLevel } from "./arcade-sky";
+import { ArcadeSky, moodForLevel, ARCADE_Z } from "./arcade-sky";
 import { WordConsequenceFx } from "./word-consequence-fx";
 import { MissionNarrative } from "./MissionNarrative";
 import { ArcadeHud, MoveButtons } from "./ArcadeHud";
@@ -225,7 +225,12 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, worldId, onCom
       if (disposed || !hostRef.current) return;
 
       app = new PIXI.Application();
-      await app.init({ width: W, height: H, background: "#dbeafe", antialias: true });
+      // El canvas ahora se muestra bastante más grande que su resolucion
+      // logica (640x420) — resolution > 1 evita que ese estiramiento CSS
+      // se vea borroso en pantallas de alta densidad. Tope en 2 por costo
+      // de GPU/memoria, igual que cualquier app Pixi que soporte retina.
+      const dpr = typeof window !== "undefined" ? Math.min(window.devicePixelRatio || 1, 2) : 1;
+      await app.init({ width: W, height: H, background: "#dbeafe", antialias: true, resolution: dpr });
       if (disposed || !hostRef.current) {
         app.destroy(true, { children: true });
         return;
@@ -245,22 +250,27 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, worldId, onCom
       // superpone al cielo procedural, ver config/world-backgrounds.ts.
       // Se dispara sin bloquear el resto del init: si el mundo no tiene
       // asset todavia (o falla la carga), el cielo procedural sigue
-      // exactamente igual — no hace falta ningun fallback aparte.
+      // exactamente igual — no hace falta ningun fallback aparte. El
+      // orden final en pantalla lo fija ARCADE_Z (zIndex), no el momento
+      // en que esta promesa resuelve.
       const worldBgUrl = getWorldBackgroundUrl(worldId);
       if (worldBgUrl) void skyRef.current.loadLandscape(worldBgUrl);
 
       // Word clouds layer
       const cloudsLayer = new PIXI.Container();
+      cloudsLayer.zIndex = ARCADE_Z.wordClouds;
       app.stage.addChild(cloudsLayer);
       cloudsLayerRef.current = cloudsLayer;
 
       // Obstacles layer (delante de las nubes, detras de Leo)
       const obstaclesLayer = new PIXI.Container();
+      obstaclesLayer.zIndex = ARCADE_Z.obstacles;
       app.stage.addChild(obstaclesLayer);
       obstaclesRef.current = new LeoVuelaObstacles(PIXI, obstaclesLayer, { W, H, groundY: GROUND_Y });
 
       // Trail decorativo de Leo (se apaga solo en quality tier bajo)
       const trailLayer = new PIXI.Container();
+      trailLayer.zIndex = ARCADE_Z.trail;
       app.stage.addChild(trailLayer);
       trailLayerRef.current = trailLayer;
 
@@ -315,6 +325,7 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, worldId, onCom
       leo.addChildAt(shadow, 0);
       leo.x = LEO_BASE_X;
       leo.y = GROUND_Y + 4;
+      leo.zIndex = ARCADE_Z.leo;
       app.stage.addChild(leo);
       leoRef.current = leo;
 
@@ -325,10 +336,12 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, worldId, onCom
       bookIcon.anchor.set(0.5);
       bookIcon.x = BOOK_X;
       bookIcon.y = BOOK_Y;
+      bookIcon.zIndex = ARCADE_Z.bookIcon;
       app.stage.addChild(bookIcon);
       bookIconRef.current = bookIcon;
 
       const fxLayer = new PIXI.Container();
+      fxLayer.zIndex = ARCADE_Z.fx;
       app.stage.addChild(fxLayer);
       wordFxRef.current = new WordConsequenceFx(PIXI, fxLayer);
 
@@ -925,7 +938,7 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, worldId, onCom
   }
 
   return (
-    <GameShell title="Leo Vuela" icon="🪁" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})}>
+    <GameShell title="Leo Vuela" icon="🪁" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})} contentAlign="top">
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: spacing.md, paddingTop: spacing.sm }}>
         {gamePhase === "story-intro" && (
           <MissionNarrative
@@ -965,7 +978,10 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, worldId, onCom
         />
 
         {/* Pixi canvas + full-surface flap tap zone */}
-        <div style={{ position: "relative", width: "100%", maxWidth: "min(640px, calc(100vw - 32px))", borderRadius: radii.xl, overflow: "hidden", border: `2px solid ${colors.border.light}` }}>
+        <div style={{
+          position: "relative", width: "min(96vw, 1200px, calc((100dvh - 280px) * 1.5238))",
+          borderRadius: radii.xl, overflow: "hidden", border: `2px solid ${colors.border.light}`,
+        }}>
           {/* React must never render children inside hostRef — Pixi
               appends its canvas there manually */}
           <div ref={hostRef} style={{ width: "100%", aspectRatio: `${W} / ${H}` }} />

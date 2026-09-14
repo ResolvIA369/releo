@@ -24,9 +24,17 @@ interface GameShellProps {
   session: GameSessionState;
   onBack: () => void;
   children: React.ReactNode;
+  // Por defecto el contenido se centra verticalmente (bueno para pantallas
+  // cortas tipo "resultado"). Los juegos con gameplay inmersivo (canvas
+  // grande con aspect-ratio fijo) pueden terminar mucho mas bajos que el
+  // viewport en mobile-portrait (el ancho manda, no la altura), y centrar
+  // deja franjas vacias arriba/abajo en vez de aprovechar la pantalla.
+  // "top" empaqueta el contenido arriba en lugar de centrarlo. Default
+  // "center" preserva el comportamiento actual de todos los demas juegos.
+  contentAlign?: "center" | "top";
 }
 
-export const GameShell: React.FC<GameShellProps> = ({ title, icon, color, session, onBack, children }) => {
+export const GameShell: React.FC<GameShellProps> = ({ title, icon, color, session, onBack, children, contentAlign = "center" }) => {
   const [showMenu, setShowMenu] = useState(false);
   const [paused, setPaused] = useState(false);
   const leo = useLeo();
@@ -95,12 +103,12 @@ export const GameShell: React.FC<GameShellProps> = ({ title, icon, color, sessio
           <div style={{
             minHeight: "100%",
             padding: spacing.lg,
-            paddingTop: spacing.xl,
+            paddingTop: contentAlign === "top" ? spacing.sm : spacing.xl,
             paddingBottom: spacing.xl,
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
-            justifyContent: "center",
+            justifyContent: contentAlign === "top" ? "flex-start" : "center",
             boxSizing: "border-box",
           }}>
             <div style={{ width: "100%", maxWidth: 1000 }}>

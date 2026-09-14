@@ -12,6 +12,35 @@ import { drawBird, spawnRoll } from "./arcade-obstacles";
 
 export type SkyMood = "dia" | "atardecer" | "noche";
 
+// Orden de dibujo explícito del stage Pixi de Leo Vuela (y de cualquier
+// otro juego arcade que reuse ArcadeSky). Antes, el orden salía por
+// puro accidente de qué addChild() se ejecutaba primero — y como
+// loadLandscape() y la carga de los sprites de Leo son asíncronas
+// (esperan un PIXI.Assets.load), no había garantía de que terminaran
+// antes que las capas de gameplay, que se agregan sincrónicamente. El
+// resultado real: el paisaje del mundo (o Leo) podía terminar ARRIBA
+// de las nubes-palabra o del propio Leo si esa imagen tardaba en
+// resolver — exactamente el bug reportado.
+//
+// Con stage.sortableChildren=true, Pixi reordena por zIndex antes de
+// cada frame sin importar en qué momento (ni en qué orden) se llamó
+// addChild(): el valor de zIndex es la única fuente de verdad. Un
+// número más alto se dibuja más arriba (más "cerca" de la cámara).
+export const ARCADE_Z = {
+  sky: 0, // cielo procedural + sol/luna
+  stars: 1,
+  ambientFar: 2, // parallax lejano + pajaros ambientales decorativos
+  ambientNear: 3, // parallax cercano
+  ground: 4, // piso liso procedural (base, debajo del paisaje)
+  landscape: 5, // PNG del mundo (isla/bahia/valle/montaña)
+  wordClouds: 6, // nubes-palabra (el objetivo de lectura)
+  obstacles: 7, // pajaros que empujan a Leo
+  trail: 8, // estela decorativa de Leo
+  leo: 9, // Leo (sprite A/B)
+  bookIcon: 10, // icono del Libro Magico
+  fx: 11, // particulas/feedback de acierto
+} as const;
+
 export function moodForLevel(levelIdx: number): SkyMood {
   if (levelIdx <= 0) return "dia";
   if (levelIdx === 1) return "atardecer";
@@ -88,6 +117,16 @@ export class ArcadeSky {
     this.farLayer = new PIXI.Container();
     this.nearLayer = new PIXI.Container();
     this.groundGfx = new PIXI.Graphics();
+
+    // Fuente de verdad del orden de dibujo — ver ARCADE_Z. Se activa acá
+    // (antes de agregar ningun hijo) porque ArcadeSky es lo primero que
+    // se construye sobre el stage.
+    stage.sortableChildren = true;
+    this.skyGfx.zIndex = ARCADE_Z.sky;
+    this.starsGfx.zIndex = ARCADE_Z.stars;
+    this.farLayer.zIndex = ARCADE_Z.ambientFar;
+    this.nearLayer.zIndex = ARCADE_Z.ambientNear;
+    this.groundGfx.zIndex = ARCADE_Z.ground;
 
     stage.addChild(this.skyGfx);
     stage.addChild(this.starsGfx);
@@ -179,11 +218,14 @@ export class ArcadeSky {
    * Capa de paisaje opcional (isla, bahía, valle, montaña — un PNG por
    * mundo, ver world-backgrounds.ts). Un solo asset sirve para los 3
    * moods: se "ilumina" distinto con tint/alpha en vez de pedir 3
-   * versiones de la imagen. Se agrega DESPUÉS del groundGfx (encima del
-   * piso liso, que sigue existiendo como base) y ANTES que las capas de
-   * juego (nubes-palabra, obstáculos, Leo), que LeoVuela agrega al
-   * stage recién después de construir ArcadeSky — así el paisaje queda
-   * siempre detrás de todo lo jugable sin tener que ordenar z-index a mano.
+   * versiones de la imagen.
+   *
+   * PIXI.Assets.load() es async, así que este addChild() puede llegar
+   * bien después de que LeoVuela ya agregó sus propias capas de
+   * gameplay (nubes-palabra, Leo, etc.) al stage. Eso ya NO importa:
+   * sprite.zIndex = ARCADE_Z.landscape + stage.sortableChildren=true
+   * (activado en el constructor) garantizan la posición final sin
+   * importar cuándo termina de resolver esta promesa.
    *
    * Si el PNG todavía no existe (mundo sin asset producido aún) o falla
    * la carga, no pasa nada: el cielo procedural sigue exactamente igual.
@@ -200,6 +242,7 @@ export class ArcadeSky {
       sprite.y = 0;
       sprite.width = this.bounds.W;
       sprite.height = this.bounds.H;
+      sprite.zIndex = ARCADE_Z.landscape;
       this.stage.addChild(sprite);
       this.landscapeSprite = sprite;
       if (this.mood) {
