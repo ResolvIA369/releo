@@ -9,7 +9,7 @@ import { useGameKeys } from "../hooks/useGameKeys";
 import { useArcadeEnergy } from "../hooks/useArcadeEnergy";
 import { useArcadeLevel } from "../hooks/useArcadeLevel";
 import { useSofiaIntro } from "../hooks/useSofiaIntro";
-import { GameShell, usePause } from "./GameShell";
+import { GameShell, usePause, IMMERSIVE_HEADER_H } from "./GameShell";
 import { ArcadeHud } from "./ArcadeHud";
 import { ArcadeIntro } from "./ArcadeIntro";
 import { ArcadeMusic } from "./arcade-music";
@@ -64,6 +64,18 @@ const LEO_Y = H - 72;
 const SIGN_H = 56;
 const LANE_GAP = 16; // separacion entre carteles vecinos (px logicos)
 const SIGN_PAD = 16; // margen interno del cartel a cada lado del texto
+// Alto del sprite de Leo en el mismo espacio logico (ver baseScaleRef en
+// el init de Pixi: se escala siempre a 96px fijo, cualquiera sea el
+// tamano de la imagen fuente).
+const LEO_SPRITE_H = 96;
+// Los carteles tienen que resolver ANTES de que su mitad inferior entre
+// en la banda que ocupa el sprite de Leo (LEO_Y hacia arriba
+// LEO_SPRITE_H) — si no, Leo (zIndex mas alto que los carteles, ver
+// LEO_RUNNER_Z) lo tapa visualmente en los ultimos instantes de lectura
+// antes de resolver ("se lee solo la ultima letra", QA sep-2026). Antes
+// esto era 52 a secas, bastante menor que LEO_SPRITE_H (96): el cartel
+// ya estaba resolviendo con su mitad inferior 44px DENTRO del sprite.
+const SIGN_RESOLVE_OFFSET = LEO_SPRITE_H + SIGN_H / 2 + 10; // 134, +10 de aire
 // Fraccion del ancho usable para carriles (igual que lanesXForCount)
 const ROAD_FRAC = 0.76;
 const SIGN_SPAWN_Y = -70;
@@ -133,6 +145,19 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
   const dashLayerRef = useRef<Container | null>(null);
   const obstaclesRef = useRef<LaneObstacles | null>(null);
   const invulnUntilRef = useRef(0); // fin de invulnerabilidad (seg de juego)
+  // Banda logica (0..H) donde un cartel todavia no es seguro mostrar: el
+  // cartel de objetivo (ArcadeHud overlay) flota ENCIMA del canvas con un
+  // top fijo en px reales (IMMERSIVE_HEADER_H + spacing.sm, para despejar
+  // el header) — como el canvas se reescala por CSS a lo que mida el
+  // viewport, esos mismos px reales representan una fraccion muy distinta
+  // del canvas logico segun el tamano real (chica en desktop ancho, mas de
+  // un tercio del alto en mobile portrait compacto, QA sep-2026: "Tocá:
+  // banana" tapaba el cartel "pez" recien spawneado a 1920x1080). Se mide
+  // el alto real del canvas una vez montado y se convierte esa banda a
+  // unidades logicas — no hay forma de fijar un numero logico unico que
+  // sirva para todos los viewports, porque el desfasaje viene de mezclar
+  // px reales (header) con unidades logicas (canvas).
+  const signSafeTopRef = useRef(0);
 
   const leoLaneRef = useRef(1);
   const lanesXRef = useRef<number[]>(DEFAULT_LANES_X);
@@ -209,6 +234,30 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
       app.canvas.style.display = "block";
       app.canvas.style.borderRadius = "16px";
       hostRef.current.appendChild(app.canvas);
+
+      // Alto real del cartel de objetivo: IMMERSIVE_HEADER_H+spacing.sm de
+      // offset fijo (68px) mas una estimacion generosa de su propio alto
+      // (fontSize 3cqh + padding + borde, redondeado para arriba con
+      // margen — no hace falta medir el DOM del pill, un numero conservador
+      // alcanza porque de todos modos se pisa contra el canvas completo).
+      const wrapperH = hostRef.current.getBoundingClientRect().height || H;
+      const pillAllowancePx = 0.0445 * wrapperH + 24; // pill + margen de aire
+      const unsafeTopPx = IMMERSIVE_HEADER_H + spacing.sm + pillAllowancePx;
+      const rawSafeTop = (unsafeTopPx / wrapperH) * H;
+      // En canvases muy chicos (mobile portrait: Leo Corre ya mide ~190px
+      // reales de alto ahi, aceptado en RELEO-LAYOUT-V3.md) el offset fijo
+      // del header pesa una fraccion enorme del canvas logico — el calculo
+      // "de arriba" solo daba ~178 de 420, dejando practicamente CERO
+      // ventana visible antes de SIGN_RESOLVE_OFFSET (214): en la practica
+      // el cartel nunca aparecia y la ronda se perdia siempre (QA sep-2026,
+      // capturas mobile sin un solo cartel visible en 8s de juego real). Se
+      // prioriza una ventana minima jugable por sobre evitar el solape al
+      // 100% en ese caso extremo — puede quedar un solape breve con el
+      // cartel de objetivo en mobile, pero es acotado y el juego vuelve a
+      // ser jugable (antes del fix de banda segura el solape ya cubria TODO
+      // el recorrido, no solo una franja).
+      const MIN_SIGN_VISIBLE_WINDOW = 120;
+      signSafeTopRef.current = Math.min(H * 0.45, rawSafeTop, LEO_Y - SIGN_RESOLVE_OFFSET - MIN_SIGN_VISIBLE_WINDOW);
 
       // ARCADE_Z (ver LEO_RUNNER_Z arriba): el zIndex manda, no el orden
       // de addChild().
@@ -344,10 +393,17 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
           }
         }
 
-        // Los carteles bajan SIEMPRE (flujo continuo, sin estacionarse)
+        // Los carteles bajan SIEMPRE (flujo continuo, sin estacionarse).
+        // Mientras esten por encima de signSafeTopRef quedan invisibles:
+        // esa banda es donde vive el cartel de objetivo (ver comentario en
+        // signSafeTopRef arriba) — igual que ya pasaba con SIGN_SPAWN_Y
+        // (-70, fuera del canvas), esto solo corre hacia abajo el punto en
+        // el que un cartel se vuelve visible, no cambia velocidad ni logica
+        // de resolucion.
         if (round.active || round.resolved) {
           for (const { box } of round.signs) {
             box.y += effSpeed * dt;
+            box.visible = box.y >= signSafeTopRef.current;
           }
         }
 
@@ -367,7 +423,7 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
         // Resolver cuando los carteles llegan a Leo
         if (round.active && !round.resolved && round.signs.length > 0) {
           const firstY = round.signs[0].box.y;
-          if (firstY >= LEO_Y - 52) {
+          if (firstY >= LEO_Y - SIGN_RESOLVE_OFFSET) {
             round.resolved = true;
             resolveRef.current();
           }
