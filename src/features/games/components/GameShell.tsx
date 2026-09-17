@@ -43,6 +43,15 @@ interface GameShellProps {
   immersive?: boolean;
 }
 
+// Alto real (px) de la barra flotante en modo immersive: boton 44px +
+// spacing.sm (8) de padding arriba y abajo = 60. Fuente unica: quien
+// necesite esquivar el header (ArcadeHud overlay, MoveButtons) importa
+// esto en vez de remedir a mano. Antes ArcadeHud tenia su propio 52 —
+// el borde inferior del BOTON, no el borde real del header (que sigue
+// 8px de padding mas abajo) — y quedaba pegado, casi tocando el HUD de
+// abajo (QA mobile 390x844/360x740, sep-2026).
+export const IMMERSIVE_HEADER_H = 44 + spacing.sm * 2;
+
 export const GameShell: React.FC<GameShellProps> = ({ title, icon, color, session, onBack, children, contentAlign = "center", immersive = false }) => {
   const [showMenu, setShowMenu] = useState(false);
   const [paused, setPaused] = useState(false);

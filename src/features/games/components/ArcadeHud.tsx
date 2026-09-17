@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import type { DomanWord } from "@/shared/types/doman";
 import { colors, spacing, radii, fontSizes, fonts } from "@/shared/styles/design-tokens";
 import { domanCanvasText } from "../config/doman-canvas";
+import { IMMERSIVE_HEADER_H } from "./GameShell";
 
 const MAX_W = "min(640px, calc(100vw - 32px))";
 
@@ -37,21 +38,25 @@ export const ArcadeHud: React.FC<ArcadeHudProps> = ({ color, targetPrefix, level
       <div
         style={{
           // top en px fijo (no cqh): tiene que despejar la barra flotante
-          // de GameShell (pausa/titulo/cofre, ~60px de alto SIEMPRE, no
-          // escala con el canvas). 52px = borde inferior real del boton de
-          // pausa (medido), sin margen extra — cualquier px de mas acá le
-          // resta directamente a la banda libre de nubes de abajo, que en
-          // canvases chicos ya es escasa.
+          // de GameShell (pausa/titulo/cofre). IMMERSIVE_HEADER_H (60) es
+          // el alto REAL del header — importado de GameShell, no remedido
+          // acá — mas spacing.sm (8) de aire minimo. Antes esto era 52 fijo
+          // ("sin margen extra"), que es el borde del BOTON de pausa, no el
+          // borde real del header (8px mas abajo): en mobile (390x844,
+          // 360x740 — canvas chico, arranca casi pegado al viewport) el HUD
+          // quedaba tocando el header (QA sep-2026). Cualquier px de mas
+          // acá le resta directamente a la banda libre de nubes de abajo,
+          // que en canvases chicos ya es escasa — no agrandar sin motivo.
           //
           // Una sola fila (nivel + objetivo + energia) en vez de dos: la
           // nube mas alta (CLOUD_BANDS[0] en LeoVuela.tsx) empieza recien
-          // al ~13.5% de la altura logica del canvas — con el offset de
-          // 52px fijo, esa banda seguro-de-nubes solo alcanza para UNA fila
-          // compacta en el rango de canvas de esta tarea (desktop, 1280-
-          // 1920px de viewport). Con dos filas (version anterior) la fila
-          // de energia quedaba pisando la banda de nubes en 1280x900 — se
-          // verifico con captura real, no era hipotetico.
-          position: "absolute", top: 52, left: 0, right: 0, zIndex: 15,
+          // al ~13.5% de la altura logica del canvas — con este offset esa
+          // banda seguro-de-nubes solo alcanza para UNA fila compacta en el
+          // rango de canvas de esta tarea (desktop, 1280-1920px de
+          // viewport). Con dos filas (version anterior) la fila de energia
+          // quedaba pisando la banda de nubes en 1280x900 — se verifico con
+          // captura real, no era hipotetico.
+          position: "absolute", top: IMMERSIVE_HEADER_H + spacing.sm, left: 0, right: 0, zIndex: 15,
           display: "flex", alignItems: "center", gap: "1cqw",
           padding: "0 2cqw", pointerEvents: "none",
         }}
