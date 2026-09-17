@@ -120,7 +120,11 @@ export const BitsReading: React.FC<GameProps> = ({ words, phase = 1, onComplete,
     const others = shuffle(wordsRef.current.filter((w) => w.id !== t.id)).slice(0, lvl.count - 1);
     const all = shuffle([t, ...others]);
     bubblesRef.current = all.map((w, i) => ({
-      word: w, x: 12 + Math.random() * 66, y: 12 + Math.random() * 58,
+      // y arranca en 18% (no 12%): con el area inmersiva el ArcadeHud
+      // overlay ocupa esa franja superior — antes el HUD estaba FUERA de
+      // este contenedor (fila propia arriba) asi que 12% no chocaba con
+      // nada; ahora sí.
+      word: w, x: 12 + Math.random() * 66, y: 18 + Math.random() * 56,
       size: 72 + Math.random() * 18, color: BUBBLE_COLORS[i % BUBBLE_COLORS.length],
       dx: (Math.random() - 0.5) * 0.4, dy: (Math.random() - 0.5) * 0.35,
     }));
@@ -168,10 +172,12 @@ export const BitsReading: React.FC<GameProps> = ({ words, phase = 1, onComplete,
       if (poppedId === b.word.id) continue;
       b.x += b.dx * speedMul * dt;
       b.y += b.dy * speedMul * dt;
+      // Piso de 16% (no 5%): misma razon que el spawn — despeja el
+      // ArcadeHud overlay, que ahora vive DENTRO de este contenedor.
       if (b.x < 5 || b.x > 85) b.dx *= -1;
-      if (b.y < 5 || b.y > 75) b.dy *= -1;
+      if (b.y < 16 || b.y > 80) b.dy *= -1;
       b.x = Math.max(5, Math.min(85, b.x));
-      b.y = Math.max(5, Math.min(75, b.y));
+      b.y = Math.max(16, Math.min(80, b.y));
       moved = true;
     }
     if (moved) forceRender((n) => n + 1);
@@ -263,26 +269,28 @@ export const BitsReading: React.FC<GameProps> = ({ words, phase = 1, onComplete,
   }
 
   return (
-    <GameShell title="Burbujas Magicas" icon="🫧" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})}>
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: spacing.md, paddingTop: spacing.sm }}>
+    <GameShell title="Burbujas Magicas" icon="🫧" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})} contentAlign="top" immersive>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: spacing.md, paddingTop: spacing.xs, width: "100%" }}>
         {gamePhase === "intro" && <ArcadeIntro color={GAME_COLOR} />}
-        <ArcadeHud
-          color={GAME_COLOR}
-          targetPrefix="Reventá:"
-          level={levelUi}
-          correct={state.correctAttempts}
-          targetWord={target}
-          waveKey={waveIdx}
-          energy={energy.energyUi}
-          energyMax={tuning.energyMax}
-        />
 
         <div style={{
-          position: "relative", width: "100%", maxWidth: "min(600px, calc(100vw - 32px))", height: "min(420px, 55vh)",
+          position: "relative", width: "100%", maxWidth: "96vw", height: "calc(100dvh - 16px)",
           borderRadius: radii.xl, overflow: "hidden",
           background: "linear-gradient(180deg, #e8daef 0%, #d2b4de 40%, #bb8fce 100%)",
           border: `2px solid ${colors.border.light}`,
+          containerType: "size",
         }}>
+          <ArcadeHud
+            overlay
+            color={GAME_COLOR}
+            targetPrefix="Reventá:"
+            level={levelUi}
+            correct={state.correctAttempts}
+            targetWord={target}
+            waveKey={waveIdx}
+            energy={energy.energyUi}
+            energyMax={tuning.energyMax}
+          />
           <FloatingBubbles />
           {[0, 1, 2, 3, 4].map((i) => (
             <motion.div key={i} animate={{ opacity: [0.2, 0.6, 0.2], scale: [0.8, 1.2, 0.8] }}
