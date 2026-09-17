@@ -406,6 +406,123 @@ Aumenta hoy con velocidad/frecuencia de obstáculos por nivel — se mantiene. L
 
 ---
 
+## 13. Estado de implementación del piloto (post-auditoría, 2026-09-11)
+
+Ejecutado sobre `feature/juegos-v2` (rama local, sin pushear). Commits: `df3edda` (bug pedagógico), `fcb97bb` (Mundos 2-4), `01e3626` (sistemas reutilizables + integración), `9f14910` (fix de verificación visual).
+
+### Bugs pedagógicos (hallazgo #1)
+Corregidos en `WordImageMatch.tsx` y `CategoryGame.tsx`: Sofía ya no dice la palabra objetivo antes de que el niño elija; solo confirma por voz tras un acierto. Con tests de regresión (`WordImageMatch.test.tsx`, `CategoryGame.test.tsx`) que mockean `sofiaVoice` y verifican el orden.
+
+### Leo Vuela V2 — qué cambió vs. V1
+| | V1 | V2 |
+|---|---|---|
+| Cielo | fondo plano celeste fijo | `ArcadeSky`: parallax 2 capas + humor por nivel (día → atardecer → noche) |
+| Consecuencia del acierto | ninguna, solo puntaje | la palabra vuela como emoji real hacia el Libro Mágico (ancla 📖), disparada **solo tras** el acierto |
+| Distractor en Fase 2 (opuestos) | azar puro | un distractor real es el antónimo de la palabra objetivo cuando existe |
+| Narrativa | ninguna | intro/outro de 3-6s con el nombre real del mundo, saltable, solo la primera vez por mundo por sesión de navegador |
+| Estela de Leo | ninguna | partículas suaves en vuelo, solo en `qualityTier: "high"` |
+| Telemetría | ninguna | `game_started` / `round_result` / `game_finished` / `game_abandoned` vía `gameTelemetry.ts` (sink desconectado por defecto) |
+| Alcance | solo Mundo 1 | Mundos 1-4 (igual que Leo Corre/Salta la Palabra) |
+
+### Verificación visual real (regla del proyecto: mirar antes de declarar terminado)
+Con `capturar` (desktop 1440px y mobile ~390px), fase 1 y fase 2, se confirmó:
+- La narrativa de intro se ve y lee bien en ambos anchos, con el nombre real del mundo ("Bahía de los Pares").
+- El juego en curso (cielo día, HUD, libro, nubes-palabra, Leo) es legible en ambos anchos.
+- **Encontrado y corregido en el momento**: la narrativa de intro no aparecía nunca en dev porque el `useState` que la activaba escribía en `sessionStorage` dentro de su initializer, y React StrictMode lo invoca dos veces al montar — la segunda invocación ya veía la marca propia. Fix: el initializer ahora solo lee; la escritura ("ya visto") se hace al cerrar la narrativa de verdad.
+- **Verificado en vivo (2026-09-13)**: transición día→atardecer→noche confirmada jugando ~11 min con el autoplay de `/demo?game=leo-vuela&phase=1` (`scripts/leo-vuela-nightcheck.mjs`), capturas en `/tmp/leo-vuela-night-t*.png`. Nivel 1 (día, cielo celeste) hasta el acierto 9, Nivel 2 (atardecer, cielo naranja, aparecen obstáculos pájaro/rayo) desde el 10, Nivel 3 (noche, cielo azul oscuro con luna) desde el 20 — igual que predice `levelForCorrectCount`. Con el ritmo actual el bot llegó a Nivel 3 en ~3 min (mucho antes que los ~8 min sin llegar a noche del audit original de la sección 13; las correcciones de la sección 14 no deberían haber acelerado esto, revisar si vuelve a medirse con un chico real). Cero errores de consola/página en los 11 minutos. También se confirmó visualmente la bandada de fondo (14.3) en pantalla.
+- **Riesgo pre-existente, no introducido por V2**: en el instante exacto de atravesar una nube, el sprite de Leo puede tapar parcialmente el texto de la palabra (mecánica de "atrapar volando a través"). Es breve y ya existía en V1; no se tocó en este piloto.
+
+### Performance
+- No se agregó ningún asset binario nuevo (0 KB de imagen/audio/video). Todo lo nuevo es código: ~17 KB de TypeScript/TSX sin minificar (~487 líneas en 7 archivos), negligible frente a los ~75 MB de `public/`.
+- `npm run build` compila sin errores (Next.js 16 + Turbopack).
+- No se midió FPS real en un dispositivo físico ni con Lighthouse — este entorno no tiene un teléfono real ni un Chrome headless con GPU para un perfil confiable. Recomendado antes de producción: abrir el juego en un Android de gama media real unos minutos y confirmar que no hay caída de cuadros con la estela activada.
+
+### Reutilizable para otros juegos arcade (Leo Corre, Salta la Palabra, y potencialmente Lluvia/Pesca/Burbujas)
+`ArcadeSky`, `WordConsequenceFx` + `getConsequenceEmoji`, `MissionNarrative`, `useQualityTier`, `gameTelemetry` — ninguno tiene una dependencia dura con Leo Vuela; todos reciben `PIXI`/contenedor/props genéricos.
+
+### Deuda y riesgos
+1. ~~La transición día→atardecer→noche no se vio en vivo~~ — verificada 2026-09-13 (ver arriba). Pendiente real: confirmar el ritmo (10/20 aciertos) con un chico jugando, no solo el bot.
+2. El solape breve de Leo sobre la palabra al atrapar es una deuda visual pre-existente, no de este piloto.
+3. `gameTelemetry` no tiene sink conectado todavía (a propósito, por pedido explícito de no agregar analytics externos en esta tarea) — los eventos hoy solo van a `console.debug` en dev.
+4. Las líneas nuevas de narrativa (`MissionNarrative`) no tienen audio grabado de Sofía todavía — funcionan igual por texto en pantalla, pero falta generarlas (bloqueado: no hay `ELEVENLABS_API_KEY` en este entorno).
+
+### Lista de assets — si se decide invertir en arte nuevo
+- **NECESARIO:** ninguno. El piloto funciona completo con geometría vectorial (PixiJS Graphics/Text) y el sprite de Leo ya existente.
+- **DESEABLE:**
+  - 2 líneas de audio nuevas de Sofía (ElevenLabs, voz existente): "¡Se escaparon las palabras!" (intro) y una de cierre tipo "¡Las palabras volvieron al libro!" (outro). Costo bajo, mejora real de inmersión.
+  - Una animación de aleteo (squash/stretch de alas) para Leo en vuelo — hoy el sprite es estático salvo inclinación/escala; requiere ver el PSD/capas originales del sprite, no se puede aproximar bien con un overlay vectorial sin verlo.
+  - 1-2 siluetas de fondo (montañas/costa) específicas de cada mundo, para que el parallax lejano no sea genérico entre Isla/Bahía/Valle/Montaña.
+- **NO NECESARIO:** más nubes/variantes de nube, más partículas, más colores de cielo — lo vectorial actual ya cubre esto sin pesar KB.
+
+---
+
+## 14. Segunda ronda de QA — correcciones estructurales (2026-09-11)
+
+Tras aprobar el piloto "con cambios", esta ronda cierra los problemas
+estructurales encontrados antes de producir arte definitivo. No se agregó
+narrativa, fases ni sistemas nuevos; no se tocó ningún otro juego.
+
+### 14.1 Fuga por longitud de palabra — causa general, no solo "caliente/frío"
+`puffW` (ancho del pill de cada nube) dependía de `label.width` de CADA
+palabra por separado, así que la nube más larga de una ronda era siempre
+visualmente más ancha — una pista sin necesidad de leer. Se corrigió en la
+raíz: `normalizedCloudPuffWidth()` (`config/arcade-tuning.ts`) mide las 3
+etiquetas de la ronda ANTES de dibujar y las 3 nubes comparten el mayor
+ancho necesario (piso 140px para palabras muy cortas, techo de seguridad
+320px muy por encima de "sorprendido", la palabra real más larga del
+currículum en 11 letras). `LeoVuela.tsx` ahora mide las 3 etiquetas primero
+y usa ese ancho compartido para las 3 nubes de cada tanda. Test de
+regresión en `__tests__/leo-vuela.test.ts` (`normalizedCloudPuffWidth`),
+incluyendo el caso real "frío"/"caliente". Verificado en vivo con
+Playwright: ronda real con "enojado"(7)/"río"(3) mostrando pills del mismo
+ancho.
+
+### 14.2 Antónimo como distractor (Fase 2) — removido
+El distractor priorizado por antónimo (`ANTONYM_PAIRS`/`getAntonym`, en
+`buildCloudRound`) se evaluó contra el objetivo del juego (reconocimiento
+visual/global de la palabra, no discriminación semántica) y se concluyó
+que no aportaba: el juego no muestra imágenes, así que no hay pista
+contextual que un antónimo esté "previniendo". Además introducía dos
+problemas reales: la fuga por longitud en pares dispares (`caliente`/
+`frío`, ya resuelta de forma general en 14.1) y el riesgo de que el chico
+aprendiera el PATRÓN de co-ocurrencia (mismo par siempre) en vez de leer
+cada palabra. Se removió el archivo `config/antonym-pairs.ts` y la
+prioridad especial en `buildCloudRound`: Fase 2 ahora elige distractores al
+azar del bloque, igual que el resto de las fases. No se tocó el currículum.
+
+### 14.3 Ritmo — variedad ambiental sin mecánicas nuevas
+`ArcadeSky` (única consumidora hoy, no afecta a Leo Corre/Salta la
+Palabra) suma tres elementos puramente decorativos, sin significado
+pedagógico y sin tocar energía/pilotaje: bob vertical sutil y constante en
+las nubes de parallax, una bandada de fondo de baja frecuencia (silueta
+chica y semitransparente, vive en `farLayer`, nunca colisiona) y una ráfaga
+de viento que acelera brevemente el parallax cada tanto. Frecuencias bajas
+a propósito (spawnRoll ~2-2.5/min) para romper monotonía sin
+hiperestimular. Verificado en vivo (Playwright, capturas de bandada
+visible sin competir con las nubes-palabra).
+
+### 14.4 `wordsPerLevel = 10` — análisis, sin cambiarlo todavía
+Evidencia: el piloto automático de demo (lectura "perfecta", nunca falla
+por no leer) alcanzó 17/20 aciertos en ~8 minutos de juego continuo antes
+de quedarse sin energía — no llegó a Nivel 3/noche. Los obstáculos de
+Nivel 2 (`birdsPerMin: 5`, `boltsPerMin: 2`) ya consumen energía más rápido
+de lo que el drenaje pasivo por sí solo explicaría, y un chico real (que sí
+falla lecturas, a diferencia del bot) tiene *menos* margen que este
+best-case. Conclusión: llegar a "noche" hoy requiere una sesión más larga y
+más precisa que lo esperable para la edad objetivo; "atardecer" (10
+aciertos) es razonablemente alcanzable, "noche" (20) probablemente no en
+una sesión típica. Recomendación (no aplicada): bajar `wordsPerLevel` a
+6-7, o revisar el balance de energía en Nivel 2+, antes de invertir en arte
+de "noche". Requiere confirmar con sesiones reales, no solo el bot.
+
+### 14.5 Especificación de assets — ver informe de QA entregado en el chat
+Las especificaciones exactas (sprite de Leo con aleteo, fondos de los 4
+mundos) se entregaron en el informe de esta ronda de QA, no se repiten acá
+para no duplicar la fuente de verdad. Reemplazan/precisan los ítems
+"deseable" de la lista de la sección 13.
+
+---
+
 ## Apéndice — archivos citados por auditoría (para referencia rápida)
 
 - Flash: `WordFlash.tsx`, `FlipCard.tsx`, `TimeBar.tsx`, `RewardsLayer.tsx`, `session/config/curriculum.ts`

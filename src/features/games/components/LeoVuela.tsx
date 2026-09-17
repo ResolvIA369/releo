@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { Application, Container, Sprite } from "pixi.js";
+import type { Application, Container, Sprite, Graphics, Text } from "pixi.js";
 import type { GameProps } from "../types";
 import type { DomanWord } from "@/shared/types/doman";
 import { useGameState } from "../hooks/useGameState";
@@ -9,19 +9,27 @@ import { useGameKeys } from "../hooks/useGameKeys";
 import { useArcadeEnergy } from "../hooks/useArcadeEnergy";
 import { useArcadeLevel } from "../hooks/useArcadeLevel";
 import { useSofiaIntro } from "../hooks/useSofiaIntro";
+import { useQualityTier } from "../hooks/useQualityTier";
 import { GameShell, usePause } from "./GameShell";
 import { useRewards } from "@/shared/components/RewardsLayer";
 import { FeedbackFlash } from "@/shared/components/FeedbackFlash";
 import { GameCompleteScreen } from "@/shared/components/GameCompleteScreen";
 import { colors, spacing, radii, fontSizes, fonts } from "@/shared/styles/design-tokens";
 import { sofiaNameWord, sofiaPlayAudio, stopVoice } from "@/shared/services/sofiaVoice";
+import { recordGameEvent } from "@/shared/services/gameTelemetry";
 import { domanCanvasText } from "../config/doman-canvas";
 import { physicsForPhase, stepFlight, buildCloudRound, tuningForPhase, rewardForLevel } from "../config/leo-vuela";
-import { createWordBag } from "../config/arcade-tuning";
+import { createWordBag, normalizedCloudPuffWidth } from "../config/arcade-tuning";
+import { getWorldBackgroundUrl } from "../config/world-backgrounds";
+import { getConsequenceEmoji } from "../config/word-consequence";
 import { LeoVuelaObstacles } from "./leo-vuela-obstacles";
+import { ArcadeSky, moodForLevel, ARCADE_Z } from "./arcade-sky";
+import { WordConsequenceFx } from "./word-consequence-fx";
+import { MissionNarrative } from "./MissionNarrative";
 import { ArcadeHud, MoveButtons } from "./ArcadeHud";
 import { ArcadeIntro } from "./ArcadeIntro";
 import { LeoVuelaMusic } from "./leo-vuela-music";
+import { WORLDS } from "@/features/progression/config/worlds";
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -34,9 +42,18 @@ function shuffle<T>(arr: T[]): T[] {
 
 const GAME_COLOR = "#9f7aea";
 
-// Unico punto de cambio del sprite: Leo volando hacia la derecha,
-// hacia las nubes que entran (procesado por scripts/prepare-leo-sprites.py)
+// Animacion de vuelo: 2 poses (A extendido / B recogido) cruzadas por
+// alpha — ambas comparten el mismo lienzo y el mismo punto de anclaje
+// (ojo), preparadas a partir de "Leo A.png"/"Leo B.png" (QA sep-2026).
+// Si alguna de las dos no carga, cae al sprite estatico anterior.
+const LEO_FRAME_A_URL = "/images/games/leo-vuela-frame-a.png";
+const LEO_FRAME_B_URL = "/images/games/leo-vuela-frame-b.png";
 const LEO_SPRITE_URL = "/images/games/leo-vuela-sprite.png";
+// Ciclo completo A→B→A. "Suave" a proposito: ida y vuelta por cruce de
+// alpha (coseno), no un cambio de textura duro — pedido explicito de
+// no parecer flipbook/parpadeo. Ajustado mirando el resultado en vivo.
+const LEO_FLIGHT_CYCLE_MS = 900;
+const LEO_FLIGHT_CYCLE_FRAMES = (LEO_FLIGHT_CYCLE_MS / 1000) * 60;
 
 // Logical canvas size — CSS scales it to the container width
 const W = 640;
@@ -51,6 +68,9 @@ const CLOUD_BANDS = [105, 200, 295]; // alturas posibles de las nubes
 const CATCH_X = 60; // rango horizontal de atrape
 const CATCH_Y = 48; // rango vertical de atrape (centro de Leo vs nube)
 const FADE_RATE = 0.04; // alpha/frame con que se desvanece la tanda anterior
+const BOOK_X = 34; // ancla fija del Libro Magico (arriba a la izquierda)
+const BOOK_Y = 30;
+const MAX_TRAIL_DOTS = 40;
 
 // Intro de Sofia al arrancar (mp3 generado con edge-tts es-AR-ElenaNeural;
 // este texto es el fallback hablado si el audio no carga)
@@ -59,7 +79,7 @@ const INTRO_TEXT =
   "Escuchá la palabra, y tocá la pantalla para que Leo vuele hasta la nube correcta. " +
   "¡Vos podés! ¡A volar!";
 
-type Phase = "loading" | "intro" | "running" | "finished";
+type Phase = "loading" | "story-intro" | "intro" | "running" | "story-outro" | "finished";
 
 interface FlyingCloud {
   box: Container;
@@ -75,22 +95,60 @@ interface RoundData {
   resolved: boolean;
 }
 
-export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, onBack, isDemo = false }) => {
+export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, worldId, onComplete, onBack, isDemo = false }) => {
   const { state, recordAttempt, finish, reset } = useGameState("leo-vuela", { phase });
   const { rewardCorrect } = useRewards();
   const { paused } = usePause();
+  const qualityTier = useQualityTier();
+  const qualityTierRef = useRef(qualityTier);
+  qualityTierRef.current = qualityTier;
 
   const [gamePhase, setGamePhase] = useState<Phase>("loading");
   const [roundIdx, setRoundIdx] = useState(0);
   const [targetWord, setTargetWord] = useState<DomanWord | null>(null);
   const [feedbackType, setFeedbackType] = useState<"correct" | "wrong" | null>(null);
 
+  // Narrativa breve: solo la primera vez que se abre Leo Vuela en este
+  // mundo durante la sesión del navegador — no en cada partida (ver
+  // docs/RELEO-JUEGOS-V2.md §6). Sin worldId (p.ej. algún acceso
+  // directo sin contexto de mundo) no hay narrativa, no hay curriculum
+  // real del que tirar.
+  // Lectura PURA (sin escribir) — un initializer de useState que escribe
+  // se ejecuta dos veces en dev bajo StrictMode y la segunda vez ya ve
+  // su propia marca, quedando siempre en false. Marcar "visto" se hace
+  // recien cuando el niño realmente cierra la narrativa (mas abajo).
+  const [showIntroNarrative] = useState(() => {
+    if (typeof window === "undefined" || !worldId) return false;
+    try {
+      return !window.sessionStorage.getItem(`releo:leo-vuela-intro-seen:${worldId}`);
+    } catch {
+      return false;
+    }
+  });
+  const markIntroSeen = useCallback(() => {
+    if (typeof window === "undefined" || !worldId) return;
+    try {
+      window.sessionStorage.setItem(`releo:leo-vuela-intro-seen:${worldId}`, "1");
+    } catch {
+      // Sin sessionStorage (privado, cuota) la narrativa se puede repetir; no es grave.
+    }
+  }, [worldId]);
+  const worldName = useMemo(() => WORLDS.find((w) => w.id === worldId)?.name, [worldId]);
+  const caughtEmojisRef = useRef<string[]>([]);
+
   const hostRef = useRef<HTMLDivElement>(null);
   const appRef = useRef<Application | null>(null);
   const leoRef = useRef<Container | null>(null);
-  const leoSpriteRef = useRef<Sprite | null>(null);
+  const leoSpriteRef = useRef<Sprite | null>(null); // pose A (extendido) — sigue siendo la referencia de tilt/tint/squash
+  const leoSpriteBRef = useRef<Sprite | null>(null); // pose B (recogido) — espeja las mismas transformaciones, solo cambia el alpha
   const cloudsLayerRef = useRef<Container | null>(null);
   const obstaclesRef = useRef<LeoVuelaObstacles | null>(null);
+  const skyRef = useRef<ArcadeSky | null>(null);
+  const wordFxRef = useRef<WordConsequenceFx | null>(null);
+  const bookIconRef = useRef<Text | null>(null);
+  const bookPulseRef = useRef(1); // 1 = en reposo; <1 = animando el pulso
+  const trailLayerRef = useRef<Container | null>(null);
+  const trailRef = useRef<Graphics[]>([]);
 
   const leoYRef = useRef(GROUND_Y + 4); // pies de Leo
   const leoXRef = useRef(LEO_BASE_X);
@@ -108,6 +166,7 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
   const onEscapeRef = useRef<() => void>(() => {});
   const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cancelledRef = useRef(false);
+  const sessionStartRef = useRef(0); // Date.now() al arrancar la primera tanda
 
   gamePhaseRef.current = gamePhase;
   isDemoRef.current = isDemo;
@@ -166,7 +225,12 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
       if (disposed || !hostRef.current) return;
 
       app = new PIXI.Application();
-      await app.init({ width: W, height: H, background: "#dbeafe", antialias: true });
+      // El canvas ahora se muestra bastante más grande que su resolucion
+      // logica (640x420) — resolution > 1 evita que ese estiramiento CSS
+      // se vea borroso en pantallas de alta densidad. Tope en 2 por costo
+      // de GPU/memoria, igual que cualquier app Pixi que soporte retina.
+      const dpr = typeof window !== "undefined" ? Math.min(window.devicePixelRatio || 1, 2) : 1;
+      await app.init({ width: W, height: H, background: "#dbeafe", antialias: true, resolution: dpr });
       if (disposed || !hostRef.current) {
         app.destroy(true, { children: true });
         return;
@@ -178,60 +242,127 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
       app.canvas.style.borderRadius = "16px";
       hostRef.current.appendChild(app.canvas);
 
-      // Sky: sun + decorative far clouds + grass floor
-      const scenery = new PIXI.Graphics();
-      scenery.circle(W - 76, 58, 28).fill({ color: 0xfff176, alpha: 0.9 });
-      for (const [cx, cy, s] of [[140, 52, 0.7], [380, 78, 0.55], [540, 130, 0.5]] as const) {
-        scenery.ellipse(cx, cy, 46 * s, 16 * s).fill({ color: 0xffffff, alpha: 0.6 });
-        scenery.ellipse(cx + 24 * s, cy - 10 * s, 30 * s, 13 * s).fill({ color: 0xffffff, alpha: 0.6 });
-      }
-      scenery.rect(0, GROUND_Y, W, H - GROUND_Y).fill("#a8d5b0");
-      scenery.rect(0, GROUND_Y, W, 6).fill("#8bc49a");
-      app.stage.addChild(scenery);
+      // Cielo: parallax de 2 capas + progresion de humor por nivel
+      // (dia -> atardecer -> noche), ver components/arcade-sky.ts
+      skyRef.current = new ArcadeSky(PIXI, app.stage, { W, H, groundY: GROUND_Y });
+
+      // Fondo tematico por mundo (opcional) — un PNG por worldId que se
+      // superpone al cielo procedural, ver config/world-backgrounds.ts.
+      // Se dispara sin bloquear el resto del init: si el mundo no tiene
+      // asset todavia (o falla la carga), el cielo procedural sigue
+      // exactamente igual — no hace falta ningun fallback aparte. El
+      // orden final en pantalla lo fija ARCADE_Z (zIndex), no el momento
+      // en que esta promesa resuelve.
+      const worldBgUrl = getWorldBackgroundUrl(worldId);
+      if (worldBgUrl) void skyRef.current.loadLandscape(worldBgUrl);
 
       // Word clouds layer
       const cloudsLayer = new PIXI.Container();
+      cloudsLayer.zIndex = ARCADE_Z.wordClouds;
       app.stage.addChild(cloudsLayer);
       cloudsLayerRef.current = cloudsLayer;
 
       // Obstacles layer (delante de las nubes, detras de Leo)
       const obstaclesLayer = new PIXI.Container();
+      obstaclesLayer.zIndex = ARCADE_Z.obstacles;
       app.stage.addChild(obstaclesLayer);
       obstaclesRef.current = new LeoVuelaObstacles(PIXI, obstaclesLayer, { W, H, groundY: GROUND_Y });
 
-      // Leo — sprite if the texture loads, emoji fallback otherwise
+      // Trail decorativo de Leo (se apaga solo en quality tier bajo)
+      const trailLayer = new PIXI.Container();
+      trailLayer.zIndex = ARCADE_Z.trail;
+      app.stage.addChild(trailLayer);
+      trailLayerRef.current = trailLayer;
+
+      // Leo — 2 poses (A/B) cruzadas por alpha; si alguna de las 2 no
+      // carga cae al sprite estatico anterior, y si ese tampoco carga
+      // al emoji de siempre.
       const leo = new PIXI.Container();
       try {
-        const tex = await PIXI.Assets.load(LEO_SPRITE_URL);
+        const [texA, texB] = await Promise.all([
+          PIXI.Assets.load(LEO_FRAME_A_URL),
+          PIXI.Assets.load(LEO_FRAME_B_URL),
+        ]);
         // After appRef is set the cleanup owns destruction — just bail
         if (disposed) return;
-        const sprite = new PIXI.Sprite(tex);
-        // Anclado al centro del cuerpo: la inclinacion al subir/caer
-        // rota alrededor de Leo, no de sus pies
-        sprite.anchor.set(0.5, 0.5);
-        sprite.y = -LEO_CENTER_OFFSET;
-        baseScaleRef.current = 96 / sprite.height;
-        sprite.scale.set(baseScaleRef.current);
-        leo.addChild(sprite);
-        leoSpriteRef.current = sprite;
+        const spriteA = new PIXI.Sprite(texA);
+        const spriteB = new PIXI.Sprite(texB);
+        for (const sprite of [spriteA, spriteB]) {
+          // Anclado al centro del cuerpo: la inclinacion al subir/caer
+          // rota alrededor de Leo, no de sus pies. Los 2 frames comparten
+          // lienzo y punto de anclaje (ojo), asi que el mismo anchor/scale
+          // les queda igual a ambos sin recalcular nada por textura.
+          sprite.anchor.set(0.5, 0.5);
+          sprite.y = -LEO_CENTER_OFFSET;
+        }
+        baseScaleRef.current = 96 / spriteA.height;
+        spriteA.scale.set(baseScaleRef.current);
+        spriteB.scale.set(baseScaleRef.current);
+        spriteB.alpha = 0;
+        leo.addChild(spriteA);
+        leo.addChild(spriteB);
+        leoSpriteRef.current = spriteA;
+        leoSpriteBRef.current = spriteB;
       } catch {
-        const fallback = new PIXI.Text({ text: "🦁", style: { fontSize: 64 } });
-        fallback.anchor.set(0.5, 1);
-        leo.addChild(fallback);
+        try {
+          const tex = await PIXI.Assets.load(LEO_SPRITE_URL);
+          if (disposed) return;
+          const sprite = new PIXI.Sprite(tex);
+          sprite.anchor.set(0.5, 0.5);
+          sprite.y = -LEO_CENTER_OFFSET;
+          baseScaleRef.current = 96 / sprite.height;
+          sprite.scale.set(baseScaleRef.current);
+          leo.addChild(sprite);
+          leoSpriteRef.current = sprite;
+        } catch {
+          const fallback = new PIXI.Text({ text: "🦁", style: { fontSize: 64 } });
+          fallback.anchor.set(0.5, 1);
+          leo.addChild(fallback);
+        }
       }
       const shadow = new PIXI.Graphics();
       shadow.ellipse(0, 0, 34, 9).fill({ color: 0x000000, alpha: 0.15 });
       leo.addChildAt(shadow, 0);
       leo.x = LEO_BASE_X;
       leo.y = GROUND_Y + 4;
+      leo.zIndex = ARCADE_Z.leo;
       app.stage.addChild(leo);
       leoRef.current = leo;
+
+      // Libro Magico: ancla fija de "la palabra vuelve al libro" tras
+      // un acierto (word-consequence-fx.ts) — decorativo, nunca compite
+      // con la lectura porque solo reacciona DESPUES de un acierto.
+      const bookIcon = new PIXI.Text({ text: "📖", style: { fontSize: 30 } });
+      bookIcon.anchor.set(0.5);
+      bookIcon.x = BOOK_X;
+      bookIcon.y = BOOK_Y;
+      bookIcon.zIndex = ARCADE_Z.bookIcon;
+      app.stage.addChild(bookIcon);
+      bookIconRef.current = bookIcon;
+
+      const fxLayer = new PIXI.Container();
+      fxLayer.zIndex = ARCADE_Z.fx;
+      app.stage.addChild(fxLayer);
+      wordFxRef.current = new WordConsequenceFx(PIXI, fxLayer);
 
       // ─── Game loop — reads refs only, so no stale closures ──────
       app.ticker.add((ticker) => {
         const dt = ticker.deltaTime;
         elapsedRef.current += dt;
         const round = roundRef.current;
+
+        // Cielo: el humor sigue al nivel real (mismos 3 niveles de
+        // siempre, ver arcade-sky.ts); setMood no hace nada si no cambio
+        skyRef.current?.setMood(moodForLevel(levelRef.current));
+        skyRef.current?.update(dt);
+
+        // Efecto "la palabra vuelve al libro" (solo avanza si hay alguno activo)
+        wordFxRef.current?.update(dt);
+        if (bookIconRef.current && bookPulseRef.current < 1) {
+          bookPulseRef.current = Math.min(1, bookPulseRef.current + dt / 20);
+          const k = Math.sin(bookPulseRef.current * Math.PI);
+          bookIconRef.current.scale.set(1 + 0.4 * k);
+        }
 
         // Nivel por tiempo jugado: mas velocidad y nubes mas juntas
         const tun = tuningRef.current;
@@ -350,6 +481,57 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
             leoSpriteRef.current.scale.set(baseScaleRef.current * sx, baseScaleRef.current * sy);
           }
 
+          // Pose B espeja tint/rotacion/escala de la pose A frame a
+          // frame (mismo lienzo y anclaje, asi que no hace falta
+          // recalcular nada) y solo se distingue por el alpha: un
+          // cruce suave A→B→A por coseno, nunca un corte duro entre
+          // texturas. Se congela durante el sacudido de impacto
+          // (crashT<1) para no competir con esa reaccion.
+          if (leoSpriteRef.current && leoSpriteBRef.current) {
+            leoSpriteBRef.current.tint = leoSpriteRef.current.tint;
+            leoSpriteBRef.current.rotation = leoSpriteRef.current.rotation;
+            leoSpriteBRef.current.scale.copyFrom(leoSpriteRef.current.scale);
+            if (crashTRef.current >= 1) {
+              const cyclePos = (elapsedRef.current % LEO_FLIGHT_CYCLE_FRAMES) / LEO_FLIGHT_CYCLE_FRAMES;
+              const alphaA = (Math.cos(cyclePos * Math.PI * 2) + 1) / 2;
+              leoSpriteRef.current.alpha = alphaA;
+              leoSpriteBRef.current.alpha = 1 - alphaA;
+            }
+          }
+
+          // Estela decorativa detras de Leo en pleno vuelo — solo en
+          // tier alto (useQualityTier.ts): pura ambientacion, nunca
+          // compite con la legibilidad de la nube-objetivo
+          if (trailLayerRef.current) {
+            if (
+              qualityTierRef.current === "high" &&
+              round.active &&
+              gamePhaseRef.current === "running" &&
+              !onGround &&
+              Math.floor(elapsedRef.current) % 3 === 0
+            ) {
+              const dot = new PIXI.Graphics();
+              dot.circle(0, 0, 4).fill({ color: 0xffffff, alpha: 0.5 });
+              dot.x = leoC.x - 22;
+              dot.y = leoC.y;
+              trailLayerRef.current.addChild(dot);
+              trailRef.current.push(dot);
+              if (trailRef.current.length > MAX_TRAIL_DOTS) {
+                trailRef.current.shift()?.destroy();
+              }
+            }
+            trailRef.current = trailRef.current.filter((dot) => {
+              if (dot.destroyed) return false;
+              dot.alpha -= 0.03 * dt;
+              dot.x -= effSpeed * 0.4 * dt;
+              if (dot.alpha <= 0) {
+                dot.destroy();
+                return false;
+              }
+              return true;
+            });
+          }
+
           // Flying through a cloud catches it (both axes, vs Leo's center)
           if (round.active && !round.resolved) {
             const leoCenterY = leoYRef.current - LEO_CENTER_OFFSET;
@@ -388,7 +570,7 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
         }
       });
 
-      setGamePhase("intro");
+      setGamePhase(showIntroNarrative ? "story-intro" : "intro");
     })();
 
     return () => {
@@ -396,6 +578,23 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
       cancelledRef.current = true;
       stopVoice();
       if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
+      // Abandono real: se fue con la partida ya arrancada y sin llegar
+      // a "finished" (ese caso ya reporto su propio game_finished)
+      if (gamePhaseRef.current !== "finished" && sessionStartRef.current > 0) {
+        recordGameEvent({
+          type: "game_abandoned",
+          gameId: "leo-vuela",
+          phase,
+          elapsedMs: Date.now() - sessionStartRef.current,
+        });
+      }
+      skyRef.current?.destroy();
+      wordFxRef.current?.reset();
+      skyRef.current = null;
+      wordFxRef.current = null;
+      bookIconRef.current = null;
+      trailLayerRef.current = null;
+      trailRef.current = [];
       // Only destroy once appRef was set (init finished); before that
       // the async init path destroys the app itself when it sees
       // `disposed`, and destroying mid-init throws.
@@ -404,6 +603,7 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
         appRef.current = null;
         leoRef.current = null;
         leoSpriteRef.current = null;
+        leoSpriteBRef.current = null;
         cloudsLayerRef.current = null;
         obstaclesRef.current = null;
         fadingRef.current = [];
@@ -455,9 +655,12 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
     const target = bagRef.current!.next();
     const specs = buildCloudRound(target, wordsRef.current, CLOUD_BANDS, shuffle);
 
-    const flying: FlyingCloud[] = specs.map(({ word, band }, i) => {
-      const box = new PIXI.Container();
-
+    // Medimos primero las 3 etiquetas de la ronda: las 3 nubes van a
+    // compartir el mismo ancho de pill (normalizedCloudPuffWidth) — si
+    // el ancho dependiera de cada palabra, la mas larga delataria la
+    // respuesta sin necesidad de leer (hallazgo real de QA con
+    // "caliente"/"frio").
+    const labels = specs.map(({ word }) => {
       const doman = domanCanvasText(word);
       const label = new PIXI.Text({
         text: word.text,
@@ -469,7 +672,13 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
         },
       });
       label.anchor.set(0.5);
-      const puffW = Math.max(140, label.width + 56);
+      return label;
+    });
+    const puffW = normalizedCloudPuffWidth(labels.map((l) => l.width));
+
+    const flying: FlyingCloud[] = specs.map(({ word, band }, i) => {
+      const box = new PIXI.Container();
+      const label = labels[i];
 
       // Cloud body: a white pill with puffs on top
       const cloud = new PIXI.Graphics();
@@ -512,6 +721,8 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
   // First wave once Pixi is up
   useEffect(() => {
     if (gamePhase === "running" && roundIdx === 0 && roundRef.current.clouds.length === 0) {
+      sessionStartRef.current = Date.now();
+      recordGameEvent({ type: "game_started", gameId: "leo-vuela", phase, worldId });
       spawnWave();
     }
   }, [gamePhase]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -527,9 +738,30 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
     if (cancelledRef.current) return;
     stopVoice();
     musicRef.current?.pause();
-    setGamePhase("finished");
-    finish().then(() => onComplete?.(state));
-  }, [finish, onComplete, state]);
+    recordGameEvent({
+      type: "game_finished",
+      gameId: "leo-vuela",
+      phase,
+      durationMs: Date.now() - sessionStartRef.current,
+      correct: state.correctAttempts,
+      total: state.totalAttempts,
+      levelReached: levelRef.current,
+    });
+    // Si recuperó al menos una palabra hay algo que "vuelve al libro":
+    // un cierre narrativo breve ANTES de avisarle al padre (onComplete)
+    // que la partida terminó. Bug real encontrado en QA: antes esto
+    // llamaba a onComplete() en el mismo momento que mostraba la
+    // narrativa — la pantalla que la usa (demo y /play) desmonta el
+    // juego apenas onComplete dispara, así que la narrativa nunca
+    // llegaba a verse. Ahora onComplete se pospone hasta que el niño
+    // cierra la narrativa (o pasan los ~6s de autodismiss).
+    if (state.correctAttempts > 0) {
+      setGamePhase("story-outro");
+    } else {
+      setGamePhase("finished");
+      finish().then(() => onComplete?.(state));
+    }
+  }, [finish, onComplete, state, phase]);
   onEnergyOutRef.current = finishGame;
 
   const adjustEnergy = energy.adjust;
@@ -553,6 +785,15 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
         rewardCorrect(rect.left + leoXRef.current * scale, rect.top + (leoYRef.current - LEO_CENTER_OFFSET) * scale);
       }
       squashTRef.current = 0; // celebration squash-and-stretch
+
+      // La palabra ya se leyo y se acerto: RECIEN aca puede "hacer algo"
+      // en el mundo (vuela hacia el Libro Magico) — nunca antes de elegir
+      const emoji = getConsequenceEmoji(target.text);
+      wordFxRef.current?.spawn(emoji, { x: fc.box.x, y: fc.box.y }, { x: BOOK_X, y: BOOK_Y });
+      bookPulseRef.current = 0;
+      caughtEmojisRef.current = [...caughtEmojisRef.current, emoji].slice(-5);
+      recordGameEvent({ type: "round_result", gameId: "leo-vuela", phase, wordId: target.id, correct: true });
+
       adjustEnergy(tuningRef.current.energyGainCorrect);
       if (level.registerCorrect()) musicRef.current?.setLevel(levelRef.current);
       speakDucked(() => sofiaPlayAudio("reaccion-muy-bien", "¡Muy bien!", "excited"));
@@ -561,6 +802,7 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
       // Tropezon en silencio: solo el tint visual, sin audio — el
       // objetivo sigue visible en la pill de arriba
       recordAttempt(false);
+      recordGameEvent({ type: "round_result", gameId: "leo-vuela", phase, wordId: target.id, correct: false });
       adjustEnergy(-tuningRef.current.energyLossWrong);
       crashTRef.current = 0;
       flashFeedback("wrong");
@@ -571,17 +813,18 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
         nextWave();
       }
     }
-  }, [recordAttempt, rewardCorrect, nextWave, flashFeedback, adjustEnergy]);
+  }, [recordAttempt, rewardCorrect, nextWave, flashFeedback, adjustEnergy, phase]);
 
   const handleEscape = useCallback(() => {
     const round = roundRef.current;
     if (!round.target) return;
     recordAttempt(false);
+    recordGameEvent({ type: "round_result", gameId: "leo-vuela", phase, wordId: round.target.id, correct: false });
     adjustEnergy(-tuningRef.current.energyLossEscape);
     flashFeedback("wrong");
     speakDucked(() => sofiaPlayAudio("reaccion-se-escapo", "¡Se escapó!", "gentle"));
     nextWave();
-  }, [recordAttempt, nextWave, flashFeedback, adjustEnergy]);
+  }, [recordAttempt, nextWave, flashFeedback, adjustEnergy, phase]);
 
   onCatchRef.current = handleCatch;
   onEscapeRef.current = handleEscape;
@@ -644,12 +887,34 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
     birdInvulnUntilRef.current = 0;
     obstaclesRef.current?.reset();
     bagRef.current = createWordBag(words);
+    caughtEmojisRef.current = [];
+    bookPulseRef.current = 1;
     setRoundIdx(0);
     setGamePhase("running");
     musicRef.current?.setLevel(0);
     musicRef.current?.resume();
+    sessionStartRef.current = Date.now();
+    recordGameEvent({ type: "game_started", gameId: "leo-vuela", phase, worldId });
     spawnWave();
-  }, [reset, spawnWave, energy, level]);
+  }, [reset, spawnWave, energy, level, phase, worldId]);
+
+  // Narrativa minima (hipotesis del §6): una rafaga disperso las
+  // palabras del Libro Magico y Leo tiene que recuperarlas volando.
+  // Datos reales del mundo (worldName), nunca un curriculum inventado.
+  const introLines = useMemo(
+    () =>
+      worldName
+        ? ["¡Se escaparon las palabras!", `El viento las dispersó por ${worldName}. ¡Ayudá a Leo a recuperarlas volando!`]
+        : ["¡Se escaparon las palabras!", "El viento las dispersó. ¡Ayudá a Leo a recuperarlas volando!"],
+    [worldName],
+  );
+  const outroLines = useMemo(
+    () => [
+      "¡Las palabras volvieron al Libro Mágico!",
+      `Leo recuperó ${state.correctAttempts} ${state.correctAttempts === 1 ? "palabra" : "palabras"}.`,
+    ],
+    [state.correctAttempts],
+  );
 
   // ═══ RENDER ══════════════════════════════════════════════════
 
@@ -673,22 +938,52 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
   }
 
   return (
-    <GameShell title="Leo Vuela" icon="🪁" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})}>
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: spacing.md, paddingTop: spacing.sm }}>
+    <GameShell title="Leo Vuela" icon="🪁" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})} contentAlign="top" immersive>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: spacing.md, paddingTop: spacing.xs }}>
+        {gamePhase === "story-intro" && (
+          <MissionNarrative
+            variant="intro"
+            icon="📖"
+            lines={introLines}
+            color={GAME_COLOR}
+            onDone={() => {
+              markIntroSeen();
+              setGamePhase("intro");
+            }}
+          />
+        )}
+        {gamePhase === "story-outro" && (
+          <MissionNarrative
+            variant="outro"
+            icon="📖"
+            lines={outroLines}
+            scatterEmojis={caughtEmojisRef.current}
+            color={GAME_COLOR}
+            onDone={() => {
+              setGamePhase("finished");
+              finish().then(() => onComplete?.(state));
+            }}
+          />
+        )}
         {gamePhase === "intro" && <ArcadeIntro color={GAME_COLOR} />}
-        <ArcadeHud
-          color={GAME_COLOR}
-          targetPrefix="Volá a:"
-          level={levelUi}
-          correct={state.correctAttempts}
-          targetWord={targetWord}
-          waveKey={roundIdx}
-          energy={energy.energyUi}
-          energyMax={tuning.energyMax}
-        />
 
-        {/* Pixi canvas + full-surface flap tap zone */}
-        <div style={{ position: "relative", width: "100%", maxWidth: "min(640px, calc(100vw - 32px))", borderRadius: radii.xl, overflow: "hidden", border: `2px solid ${colors.border.light}` }}>
+        {/* Pixi canvas + full-surface flap tap zone. El header de GameShell
+            (immersive) y el ArcadeHud (overlay) flotan encima en vez de
+            empujar esto hacia abajo — por eso el presupuesto vertical fijo
+            de la formula de ancho bajo de 280px a ~16px (padding minimo del
+            shell + de este wrapper, medido en vivo). containerType:"size"
+            habilita las unidades cqh/cqw que usa ArcadeHud en modo overlay
+            para que el texto escale con el tamano real del canvas — pero
+            "size" containment ignora el contenido para calcular el alto, asi
+            que sin un aspectRatio PROPIO (no alcanza con el de hostRef, que
+            es hijo) este div queda con alto 0 y overflow:hidden le recorta
+            todo el contenido a invisible (bug real, visto en pantalla). */}
+        <div style={{
+          position: "relative", width: "min(96vw, calc((100dvh - 16px) * 1.5238))",
+          aspectRatio: `${W} / ${H}`,
+          borderRadius: radii.xl, overflow: "hidden", border: `2px solid ${colors.border.light}`,
+          containerType: "size",
+        }}>
           {/* React must never render children inside hostRef — Pixi
               appends its canvas there manually */}
           <div ref={hostRef} style={{ width: "100%", aspectRatio: `${W} / ${H}` }} />
@@ -707,6 +1002,17 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
               background: "transparent", border: "none", padding: 0,
               cursor: gamePhase === "running" ? "pointer" : "default",
             }}
+          />
+          <ArcadeHud
+            overlay
+            color={GAME_COLOR}
+            targetPrefix="Volá a:"
+            level={levelUi}
+            correct={state.correctAttempts}
+            targetWord={targetWord}
+            waveKey={roundIdx}
+            energy={energy.energyUi}
+            energyMax={tuning.energyMax}
           />
           <MoveButtons color={GAME_COLOR} active={gamePhase === "running"} onDir={handleMoveDir} />
         </div>

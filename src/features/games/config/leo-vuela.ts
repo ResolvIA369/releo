@@ -63,8 +63,17 @@ export interface LeoVuelaTuning {
   horizontalSpeed: number; // velocidad de Leo adelante/atras (px/frame)
   // Musica: un loop real por nivel (generados desde assets/ con ffmpeg,
   // atempo para variar velocidad sin cambiar el tono). El volumen base
-  // es BIEN bajo para que la voz siempre se escuche clara, y al hablar
-  // Sofia se agacha todavia mas (musicDuckDb).
+  // debe quedar bajo (no debe competir con la voz), y al hablar Sofia
+  // se agacha todavia mas (musicDuckDb).
+  //
+  // musicVolumeDb=-22 (valor original) dejaba la musica en ~-40/-44dB
+  // RMS efectivo (medido decodificando los 3 loops reales: fuente ya
+  // mastereada en ~-18/-22dB RMS, menos otros 22dB de atenuacion) —
+  // por debajo del piso de audibilidad en parlantes tipicos, que es la
+  // causa real de "no suena la musica" reportada en QA manual. Subido
+  // a -10dB (~-28/-32dB RMS efectivo): se seguiria escuchando de fondo,
+  // sin competir con la voz. Sin tocar musicDuckDb — el agachado durante
+  // la narracion de Sofia ya funcionaba como se esperaba.
   musicTracks: string[];
   musicVolumeDb: number;
   musicDuckDb: number;
@@ -85,11 +94,11 @@ const DEFAULT_MUSIC_TRACKS = ARCADE_MUSIC_TRACKS;
 const DEFAULT_COIN_BONUS = [0, 10, 25];
 
 export const LEO_VUELA_TUNING: Record<PhaseNumber, LeoVuelaTuning> = {
-  1: { energyStart: 60, energyMax: 100, energyGainCorrect: 14, energyLossWrong: 10, energyLossEscape: 8, energyDrainPerSec: 1.0, energyLossPerBird: 6, birdHitInvulnSec: 1.5, wordsPerLevel: 10, levels: DEFAULT_LEVELS, levelCoinBonus: DEFAULT_COIN_BONUS, horizontalSpeed: 3, musicTracks: DEFAULT_MUSIC_TRACKS, musicVolumeDb: -22, musicDuckDb: -34 },
-  2: { energyStart: 60, energyMax: 100, energyGainCorrect: 13, energyLossWrong: 10, energyLossEscape: 8, energyDrainPerSec: 1.2, energyLossPerBird: 6, birdHitInvulnSec: 1.5, wordsPerLevel: 10, levels: DEFAULT_LEVELS, levelCoinBonus: DEFAULT_COIN_BONUS, horizontalSpeed: 3, musicTracks: DEFAULT_MUSIC_TRACKS, musicVolumeDb: -22, musicDuckDb: -34 },
-  3: { energyStart: 60, energyMax: 100, energyGainCorrect: 12, energyLossWrong: 11, energyLossEscape: 9, energyDrainPerSec: 1.4, energyLossPerBird: 6, birdHitInvulnSec: 1.5, wordsPerLevel: 10, levels: DEFAULT_LEVELS, levelCoinBonus: DEFAULT_COIN_BONUS, horizontalSpeed: 3, musicTracks: DEFAULT_MUSIC_TRACKS, musicVolumeDb: -22, musicDuckDb: -34 },
-  4: { energyStart: 60, energyMax: 100, energyGainCorrect: 12, energyLossWrong: 11, energyLossEscape: 9, energyDrainPerSec: 1.6, energyLossPerBird: 6, birdHitInvulnSec: 1.5, wordsPerLevel: 10, levels: DEFAULT_LEVELS, levelCoinBonus: DEFAULT_COIN_BONUS, horizontalSpeed: 3, musicTracks: DEFAULT_MUSIC_TRACKS, musicVolumeDb: -22, musicDuckDb: -34 },
-  5: { energyStart: 60, energyMax: 100, energyGainCorrect: 11, energyLossWrong: 12, energyLossEscape: 10, energyDrainPerSec: 1.8, energyLossPerBird: 6, birdHitInvulnSec: 1.5, wordsPerLevel: 10, levels: DEFAULT_LEVELS, levelCoinBonus: DEFAULT_COIN_BONUS, horizontalSpeed: 3, musicTracks: DEFAULT_MUSIC_TRACKS, musicVolumeDb: -22, musicDuckDb: -34 },
+  1: { energyStart: 60, energyMax: 100, energyGainCorrect: 14, energyLossWrong: 10, energyLossEscape: 8, energyDrainPerSec: 1.0, energyLossPerBird: 6, birdHitInvulnSec: 1.5, wordsPerLevel: 10, levels: DEFAULT_LEVELS, levelCoinBonus: DEFAULT_COIN_BONUS, horizontalSpeed: 3, musicTracks: DEFAULT_MUSIC_TRACKS, musicVolumeDb: -10, musicDuckDb: -34 },
+  2: { energyStart: 60, energyMax: 100, energyGainCorrect: 13, energyLossWrong: 10, energyLossEscape: 8, energyDrainPerSec: 1.2, energyLossPerBird: 6, birdHitInvulnSec: 1.5, wordsPerLevel: 10, levels: DEFAULT_LEVELS, levelCoinBonus: DEFAULT_COIN_BONUS, horizontalSpeed: 3, musicTracks: DEFAULT_MUSIC_TRACKS, musicVolumeDb: -10, musicDuckDb: -34 },
+  3: { energyStart: 60, energyMax: 100, energyGainCorrect: 12, energyLossWrong: 11, energyLossEscape: 9, energyDrainPerSec: 1.4, energyLossPerBird: 6, birdHitInvulnSec: 1.5, wordsPerLevel: 10, levels: DEFAULT_LEVELS, levelCoinBonus: DEFAULT_COIN_BONUS, horizontalSpeed: 3, musicTracks: DEFAULT_MUSIC_TRACKS, musicVolumeDb: -10, musicDuckDb: -34 },
+  4: { energyStart: 60, energyMax: 100, energyGainCorrect: 12, energyLossWrong: 11, energyLossEscape: 9, energyDrainPerSec: 1.6, energyLossPerBird: 6, birdHitInvulnSec: 1.5, wordsPerLevel: 10, levels: DEFAULT_LEVELS, levelCoinBonus: DEFAULT_COIN_BONUS, horizontalSpeed: 3, musicTracks: DEFAULT_MUSIC_TRACKS, musicVolumeDb: -10, musicDuckDb: -34 },
+  5: { energyStart: 60, energyMax: 100, energyGainCorrect: 11, energyLossWrong: 12, energyLossEscape: 10, energyDrainPerSec: 1.8, energyLossPerBird: 6, birdHitInvulnSec: 1.5, wordsPerLevel: 10, levels: DEFAULT_LEVELS, levelCoinBonus: DEFAULT_COIN_BONUS, horizontalSpeed: 3, musicTracks: DEFAULT_MUSIC_TRACKS, musicVolumeDb: -10, musicDuckDb: -34 },
 };
 
 export function tuningForPhase(phase: PhaseNumber): LeoVuelaTuning {
@@ -136,16 +145,32 @@ function defaultShuffle<T>(arr: T[]): T[] {
   return a;
 }
 
-// Arma la ronda: target + 2 distractores, cada nube en una banda de
+// Arma la ronda: target + distractores, cada nube en una banda de
 // altura distinta para que volar hasta una implique una decision.
+//
+// Los distractores salen al azar del mismo bloque de palabras ya
+// aprendidas. Se probo (y se removio tras el QA de sep-2026) priorizar
+// el antonimo real como distractor en Fase 2 (ej. "alto" vs "bajo"):
+// la meta del juego es reconocimiento visual/global de la palabra, no
+// discriminacion semantica, y como el juego no muestra imagenes (la
+// unica pista posible ya es el texto) el antonimo no aportaba nada que
+// un distractor al azar no diera. Ademas sumaba dos problemas reales:
+// pares de longitud dispar delataban la respuesta por el tamano de la
+// nube (ej. "caliente"/"frio" — resuelto aparte con
+// normalizedCloudPuffWidth para CUALQUIER palabra, no solo esa pareja),
+// y al repetirse siempre la misma pareja el chico podia aprender el
+// patron de co-ocurrencia en vez de leer cada palabra por separado. Ver
+// docs/RELEO-JUEGOS-V2.md para el detalle de la decision.
 export function buildCloudRound(
   target: DomanWord,
   distractorPool: DomanWord[],
   bands: number[],
   shuffleFn: <T>(arr: T[]) => T[] = defaultShuffle,
 ): CloudSpec[] {
-  const distractors = shuffleFn(distractorPool.filter((w) => w.id !== target.id))
-    .slice(0, Math.max(0, bands.length - 1));
+  const pool = distractorPool.filter((w) => w.id !== target.id);
+  const slots = Math.max(0, bands.length - 1);
+  const distractors = shuffleFn(pool).slice(0, slots);
+
   const roundWords = shuffleFn([target, ...distractors]);
   const shuffledBands = shuffleFn(bands);
   return roundWords.map((word, i) => ({ word, band: shuffledBands[i] }));

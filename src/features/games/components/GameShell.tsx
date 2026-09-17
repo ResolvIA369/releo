@@ -24,9 +24,26 @@ interface GameShellProps {
   session: GameSessionState;
   onBack: () => void;
   children: React.ReactNode;
+  // Por defecto el contenido se centra verticalmente (bueno para pantallas
+  // cortas tipo "resultado"). Los juegos con gameplay inmersivo (canvas
+  // grande con aspect-ratio fijo) pueden terminar mucho mas bajos que el
+  // viewport en mobile-portrait (el ancho manda, no la altura), y centrar
+  // deja franjas vacias arriba/abajo en vez de aprovechar la pantalla.
+  // "top" empaqueta el contenido arriba en lugar de centrarlo. Default
+  // "center" preserva el comportamiento actual de todos los demas juegos.
+  contentAlign?: "center" | "top";
+  // Modo "el canvas es el elemento dominante" (QA sep-2026, Leo Vuela):
+  // la barra superior deja de empujar el contenido hacia abajo — pasa a
+  // flotar como overlay (mismo tratamiento de contraste que los botones
+  // ◀ ▶ de ArcadeHud: fondo translucido + blur + sombra, legible sobre
+  // cualquier fondo de juego) — y se oculta la mascota LeoCompanion (que
+  // en un canvas grande termina pisando el area de juego). Default false
+  // preserva el comportamiento exacto de los otros 11 juegos: no cambia
+  // nada para ellos a menos que un juego lo pida explicitamente.
+  immersive?: boolean;
 }
 
-export const GameShell: React.FC<GameShellProps> = ({ title, icon, color, session, onBack, children }) => {
+export const GameShell: React.FC<GameShellProps> = ({ title, icon, color, session, onBack, children, contentAlign = "center", immersive = false }) => {
   const [showMenu, setShowMenu] = useState(false);
   const [paused, setPaused] = useState(false);
   const leo = useLeo();
@@ -51,21 +68,28 @@ export const GameShell: React.FC<GameShellProps> = ({ title, icon, color, sessio
     <PauseContext.Provider value={{ paused, pause, resume }}>
     <LeoContext.Provider value={leo}>
       <div style={{ minHeight: "100vh", height: "100vh", backgroundColor: colors.bg.primary, fontFamily: fonts.body, position: "relative", display: "flex", flexDirection: "column", overflow: "hidden" }}>
-        {/* Header */}
+        {/* Header — overlay flotante en modo immersive, barra solida normal si no */}
         <motion.div
           initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.25 }}
-          style={{
+          style={immersive ? {
+            position: "absolute", top: 0, left: 0, right: 0, zIndex: 30,
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            padding: `${spacing.sm}px ${spacing.lg}px`,
+          } : {
             display: "flex", alignItems: "center", justifyContent: "space-between",
             padding: `${spacing.sm}px ${spacing.lg}px`,
             backgroundColor: colors.bg.card, borderBottom: `2px solid ${colors.border.light}`, boxShadow: shadows.sm,
           }}
         >
           {/* Pause button */}
-          <button onClick={handlePause} style={iconBtnStyle} aria-label="Pausar">
+          <button onClick={handlePause} style={immersive ? overlayIconBtnStyle(color) : iconBtnStyle} aria-label="Pausar">
             ⏸
           </button>
 
-          <div style={{ display: "flex", alignItems: "center", gap: spacing.sm, fontSize: fontSizes.md, fontWeight: "bold", color, fontFamily: fonts.display }}>
+          <div style={{
+            display: "flex", alignItems: "center", gap: spacing.sm, fontSize: fontSizes.md, fontWeight: "bold", color, fontFamily: fonts.display,
+            ...(immersive ? overlayPillStyle(color) : null),
+          }}>
             <span>{icon}</span><span>{title}</span>
           </div>
 
@@ -74,7 +98,8 @@ export const GameShell: React.FC<GameShellProps> = ({ title, icon, color, sessio
               display: "flex", alignItems: "center", gap: 4,
               padding: "2px 8px",
               borderRadius: radii.lg,
-              backgroundColor: "#FFF8E1",
+              backgroundColor: immersive ? "rgba(255,248,225,0.72)" : "#FFF8E1",
+              backdropFilter: immersive ? "blur(3px)" : undefined,
               border: "2px solid #FFD54F",
               boxShadow: "0 2px 6px rgba(218,165,32,0.25)",
             }}>
@@ -86,21 +111,25 @@ export const GameShell: React.FC<GameShellProps> = ({ title, icon, color, sessio
           </div>
         </motion.div>
 
-        {/* Content — fills remaining space, scrollable when content overflows */}
+        {/* Content — fills remaining space, scrollable when content overflows.
+            En modo immersive la barra de arriba flota encima (position:absolute)
+            en vez de empujar esto hacia abajo, asi que esto ocupa el 100% de la
+            altura disponible desde arriba. */}
         <motion.div variants={fadeInUp} initial="initial" animate="animate" style={{
           flex: 1,
-          overflowY: "auto",
+          overflowY: immersive ? "hidden" : "auto",
           WebkitOverflowScrolling: "touch",
         }}>
           <div style={{
             minHeight: "100%",
-            padding: spacing.lg,
-            paddingTop: spacing.xl,
-            paddingBottom: spacing.xl,
+            height: immersive ? "100%" : undefined,
+            padding: immersive ? spacing.xs : spacing.lg,
+            paddingTop: immersive ? spacing.xs : contentAlign === "top" ? spacing.sm : spacing.xl,
+            paddingBottom: immersive ? spacing.xs : spacing.xl,
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
-            justifyContent: "center",
+            justifyContent: contentAlign === "top" ? "flex-start" : "center",
             boxSizing: "border-box",
           }}>
             <div style={{ width: "100%", maxWidth: 1000 }}>
@@ -179,8 +208,10 @@ export const GameShell: React.FC<GameShellProps> = ({ title, icon, color, sessio
           )}
         </AnimatePresence>
 
-        {/* Leo the Lion companion */}
-        {!showMenu && <LeoCompanion mood={leo.mood} size="md" position="right" />}
+        {/* Leo the Lion companion — oculto en modo immersive: con el canvas
+            ocupando casi toda la pantalla no queda margen donde flotar sin
+            pisar el area de juego. */}
+        {!showMenu && !immersive && <LeoCompanion mood={leo.mood} size="md" position="right" />}
       </div>
     </LeoContext.Provider>
     </PauseContext.Provider>
@@ -195,3 +226,27 @@ const iconBtnStyle: React.CSSProperties = {
   display: "flex", alignItems: "center", justifyContent: "center",
   cursor: "pointer", fontSize: 18, color: "#666",
 };
+
+// Mismo tratamiento de contraste que los botones ◀ ▶ de ArcadeHud
+// (MoveButtons): opacidad 0.72 + blur + sombra + borde tenido del color
+// del juego — para que el header flotante se lea igual de bien sobre
+// cualquier fondo de mundo (cielo, agua, follaje...) sin resolverlo caso
+// por caso.
+const overlayIconBtnStyle = (color: string): React.CSSProperties => ({
+  width: 44, height: 44, borderRadius: "50%",
+  backgroundColor: "rgba(255,255,255,0.72)",
+  backdropFilter: "blur(3px)",
+  border: `2px solid ${color}b3`,
+  boxShadow: "0 2px 6px rgba(0,0,0,0.25)",
+  display: "flex", alignItems: "center", justifyContent: "center",
+  cursor: "pointer", fontSize: 18, color: "#666",
+});
+
+const overlayPillStyle = (color: string): React.CSSProperties => ({
+  padding: "4px 12px",
+  borderRadius: 999,
+  backgroundColor: "rgba(255,255,255,0.72)",
+  backdropFilter: "blur(3px)",
+  border: `2px solid ${color}b3`,
+  boxShadow: "0 2px 6px rgba(0,0,0,0.25)",
+});

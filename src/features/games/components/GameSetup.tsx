@@ -124,16 +124,35 @@ export const GameSetup: React.FC<GameSetupProps> = ({
       display: "flex", flexDirection: "column", alignItems: "center",
       gap: spacing.lg, maxWidth: 500, margin: "0 auto",
     }}>
-      <SofiaAvatar size={48} speaking={false} />
-
-      <div style={{ textAlign: "center" }}>
-        <h2 style={{ fontSize: fontSizes.xl, fontFamily: fonts.display, color: world!.color, margin: 0 }}>
-          {world!.icon} {world!.name}
-        </h2>
-        <p style={{ fontSize: fontSizes.sm, color: colors.text.muted, marginTop: spacing.xs }}>
-          Elegí las palabras para practicar
-        </p>
+      <div style={{
+        position: "relative", width: "100%", height: 140, borderRadius: radii.xl,
+        overflow: "hidden", boxShadow: shadows.md, border: `3px solid ${world!.color}`,
+      }}>
+        <Image
+          src={world!.image} alt={world!.name} fill sizes="500px"
+          style={{ objectFit: "cover" }}
+        />
+        <div style={{
+          position: "absolute", inset: 0,
+          background: `linear-gradient(180deg, transparent 35%, ${world!.color}e6 100%)`,
+        }} />
+        <div style={{
+          position: "absolute", left: spacing.md, right: spacing.md, bottom: spacing.sm,
+          display: "flex", alignItems: "center", gap: spacing.sm,
+        }}>
+          <SofiaAvatar size={36} speaking={false} />
+          <h2 style={{
+            fontSize: fontSizes.xl, fontFamily: fonts.display, color: "#fff", margin: 0,
+            textShadow: "0 2px 6px rgba(0,0,0,0.45)",
+          }}>
+            {world!.icon} {world!.name}
+          </h2>
+        </div>
       </div>
+
+      <p style={{ fontSize: fontSizes.sm, color: colors.text.muted, margin: 0 }}>
+        Elegí las palabras para practicar
+      </p>
 
       <motion.div
         variants={staggerContainer} initial="initial" animate="animate"
