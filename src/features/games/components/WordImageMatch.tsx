@@ -6,7 +6,7 @@ import type { GameProps } from "../types";
 import type { DomanWord } from "@/shared/types/doman";
 import { useGameState } from "../hooks/useGameState";
 import { useDemoAutoplay } from "../hooks/useDemoAutoplay";
-import { GameShell, usePause } from "./GameShell";
+import { GameShell, usePause, IMMERSIVE_HEADER_H } from "./GameShell";
 import { useGameMusic } from "../hooks/useGameMusic";
 import { useRewards } from "@/shared/components/RewardsLayer";
 import { GameIntro } from "./GameIntro";
@@ -171,8 +171,8 @@ export const WordImageMatch: React.FC<GameProps> = ({ words, phase = 1, onComple
   if (!currentWord) return null;
 
   return (
-    <GameShell title="Empareja Palabra-Imagen" icon="🖼️" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})}>
-      <div style={{ display: "flex", gap: spacing.md, paddingTop: spacing.md, maxWidth: "min(620px, calc(100vw - 32px))", margin: "0 auto" }}>
+    <GameShell title="Empareja Palabra-Imagen" icon="🖼️" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})} contentAlign="top" immersive>
+      <div style={{ display: "flex", gap: spacing.md, paddingTop: IMMERSIVE_HEADER_H + spacing.lg, maxWidth: "min(1100px, 96vw)", width: "100%", margin: "0 auto" }}>
         {/* Main content */}
         <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: spacing.lg }}>
           {/* Counter */}
@@ -192,7 +192,10 @@ export const WordImageMatch: React.FC<GameProps> = ({ words, phase = 1, onComple
               borderRadius: radii.xl,
             }}
           >
-            <span style={{ fontSize: fitWordFontSize(currentWord.text, fontSizes["3xl"]), fontWeight: "bold", fontFamily: fonts.display, color: GAME_COLOR, whiteSpace: "nowrap" }}>
+            <span style={{
+              fontSize: `clamp(${fitWordFontSize(currentWord.text, fontSizes["3xl"])}px, 9vh, ${fitWordFontSize(currentWord.text, 140)}px)`,
+              fontWeight: "bold", fontFamily: fonts.display, color: GAME_COLOR, whiteSpace: "nowrap",
+            }}>
               {currentWord.text}
             </span>
           </motion.div>
@@ -201,7 +204,7 @@ export const WordImageMatch: React.FC<GameProps> = ({ words, phase = 1, onComple
           <motion.div
             variants={staggerContainer} initial="initial" animate="animate"
             key={`opts-${currentWord.id}`}
-            style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: spacing.md, width: "100%" }}
+            style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: spacing.lg, width: "100%" }}
           >
             {options.map((word) => {
               const isSelected = selectedId === word.id;
@@ -228,10 +231,10 @@ export const WordImageMatch: React.FC<GameProps> = ({ words, phase = 1, onComple
                     padding: WORD_IMAGE_MAP[word.text] ? spacing.sm : spacing.lg,
                     borderRadius: radii.xl,
                     border: `3px solid ${borderColor}`, backgroundColor: bg,
-                    fontSize: 56, cursor: feedbackType ? "default" : "pointer",
+                    fontSize: "clamp(56px, 13vh, 160px)", cursor: feedbackType ? "default" : "pointer",
                     display: "flex", alignItems: "center", justifyContent: "center",
                     boxShadow: isSelected && feedbackType === "correct" ? shadows.glow(colors.success) : shadows.sm,
-                    minHeight: 90,
+                    minHeight: "clamp(90px, 30vh, 420px)",
                     overflow: "hidden",
                   }}
                 >
@@ -239,7 +242,7 @@ export const WordImageMatch: React.FC<GameProps> = ({ words, phase = 1, onComple
                     <img
                       src={WORD_IMAGE_MAP[word.text]}
                       alt={word.text}
-                      style={{ width: "100%", height: 80, objectFit: "contain", borderRadius: radii.lg }}
+                      style={{ width: "100%", height: "clamp(70px, 27vh, 380px)", objectFit: "contain", borderRadius: radii.lg }}
                     />
                   ) : (
                     <span>{EMOJI_MAP[word.text] ?? "❓"}</span>
