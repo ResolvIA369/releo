@@ -95,6 +95,109 @@ juego, y al cierre) — no sólo al final.
 e18fd75 fix(worlds): reemplaza thumbnail del Mundo 5 (decia "MONTAÑA")
 ```
 
+## Paso 4 — QA del Preview: cartel de objetivo y colisión Leo/palabras
+
+César revisó el Preview del Paso 2 y reportó un bug bloqueante en Leo Corre:
+el cartel "Tocá: <palabra>" se renderizaba DENTRO de la barra de progreso
+(fondo naranja estirado, sin forma de pill) y el sprite de Leo tapaba la
+palabra del carril izquierdo. Pidió además auditar el mismo patrón en los
+otros 5 juegos immersive y el orden audio/visual del cartel de objetivo.
+
+### A. Cartel de objetivo fuera de la barra (`ArcadeHud.tsx`)
+
+El wrapper del overlay era una sola fila flex (`display:flex`) con el cartel
+en `flex:1` compartiendo fila con el badge de nivel y la barra de energía.
+En Leo Corre (canvas 820×420, aspecto 1.95:1 — el más ancho de los 6 juegos
+immersive) ese `flex:1` estiraba el cartel a casi todo el ancho de pantalla:
+se leía como una barra de progreso, no como un cartel. En los demás juegos
+(aspecto 1.52:1) el mismo bug existía pero era menos notorio.
+
+Fix: el wrapper pasa a `flexDirection:"column"`; el cartel es el único hijo
+en flujo (`width:"max-content", maxWidth:"78cqw"`, sin `flex:1`); badge y
+energía pasan a `position:absolute` en las esquinas de la misma banda. Mismo
+font-size/padding que antes — el alto total de la banda no cambió, así que
+la banda segura de nubes de Leo Vuela (`CLOUD_BANDS`) sigue intacta.
+
+### B. Leo tapaba la palabra (`LeoRunner.tsx`)
+
+Los carteles resolvían en `LEO_Y - 52`, muy por debajo del alto real del
+sprite de Leo (`LEO_SPRITE_H = 96`, ancla inferior): con esa geometría el
+cartel ya estaba resolviendo con su mitad inferior 44px DENTRO del sprite,
+que tiene zIndex más alto (`LEO_RUNNER_Z.leo`). Fix: nueva constante
+`SIGN_RESOLVE_OFFSET = LEO_SPRITE_H + SIGN_H/2 + 10 = 134`, que reemplaza el
+52 hardcodeado. Trade-off explícito y aceptado (César habilitó "subí las
+tarjetas" como palanca): la ventana visible de lectura por cartel baja de
+~296 a ~214px lógicos — sigue habiendo tiempo de sobra para leer, pero es
+menos que antes. Velocidad, spawn y lógica de acierto no se tocaron.
+
+### A+B combinados: el cartel también podía pisar un cartel recién spawneado
+
+Al mirar Leo Corre jugando de verdad con las dos correcciones aplicadas
+apareció un tercer problema, no reportado por César porque no era visible en
+una captura estática: el cartel de objetivo flota con un offset fijo en px
+reales (`IMMERSIVE_HEADER_H + spacing.sm = 68px`, para despejar el header),
+y como el canvas se reescala por CSS, esos mismos 68px reales representan una
+fracción del canvas lógico muy distinta según el tamaño real — chica en
+desktop ancho, pero en el canvas de Leo Corre en mobile portrait (~190px
+reales de alto, ya aceptado en el Paso 2 como límite de aspecto) esos 68px
+son más de un tercio del alto. Con eso, un cartel recién spawneado (visible
+casi de inmediato tras `SIGN_SPAWN_Y=-70`) quedaba tapado por el cartel de
+objetivo (capturado en 1920×1080: "Tocá: banana" sobre "pez").
+
+Fix: se mide el alto real del canvas una vez montado
+(`hostRef.getBoundingClientRect()`) y se calcula `signSafeTopRef`, la banda
+lógica donde un cartel todavía no es seguro mostrar — los carteles quedan
+invisibles (`box.visible=false`) hasta cruzarla. Con un mínimo de ventana de
+lectura garantizado (120px lógicos antes del punto de resolución) para que
+el cálculo nunca devore toda la ventana visible en el canvas ultra-compacto
+de mobile — el primer intento sin ese piso dejaba el cartel invisible
+durante TODA la ronda en 390×844 (ronda perdida siempre, confirmado con una
+serie de capturas de 8s sin un solo cartel visible). Con el piso, en la
+práctica no se observó superposición residual en ningún viewport probado.
+
+### C. Los otros 5 juegos immersive
+
+Los 6 juegos que usan `ArcadeHud overlay` comparten el mismo componente, así
+que el fix de A se aplicó a todos por igual. Revisado con capturas reales
+(no asumido) en 1280×900, 1920×1080 y 390×844:
+
+| Juego | Cartel de objetivo | Notas |
+|---|---|---|
+| Lluvia de Palabras | Bien — pill correcta | Mobile: una palabra recién spawneada (fade-in) aparece pegada al borde del pill sin taparlo; no bloquea lectura |
+| Pesca de Palabras | Bien — pill correcta | Preexistente sin tocar: algún pez queda recortado por el borde del acuario en su nado horizontal (no relacionado al HUD) |
+| Burbujas Mágicas | Bien — pill correcta | Sin superposición en ningún viewport |
+| Salta la Palabra | Bien — pill correcta | Mobile: el cartel que salta roza la esquina de la barra de energía (no el pill de objetivo); texto siempre legible completo |
+| Empareja Palabra-Imagen | Bien | No usa `ArcadeHud` (grid fijo de 4), sin el patrón de bug |
+| Leo Vuela (producción, no pedido pero comparte el componente) | Bien — sin regresión | Verificado para no romper lo que ya está en producción |
+
+Ninguno de los 5 tenía el bug A tan agudo como Leo Corre (su aspecto ancho
+lo hacía el peor caso), y ninguno mostró el problema C de un cartel de
+objetivo tapando una palabra recién spawneada.
+
+### D. Auditoría: cartel visible antes o junto con el audio
+
+Revisado el orden de llamadas en los 6 juegos: en todos, el setter del
+estado de la palabra objetivo (que dispara el render del cartel) se llama
+ANTES que la función que dispara el audio de Sofía, dentro del mismo cuerpo
+de función síncrono. Auditoría cumplida, sin cambios de código necesarios.
+
+### Verificación
+
+- **typecheck**: limpio.
+- **vitest**: 234/234.
+- **Playwright** (`test:qa`): 63/63.
+- **build**: compila limpio.
+- Capturas reales (Playwright) de los 6 juegos immersive + Leo Vuela en
+  1280×900, 1920×1080 y 390×844, más series de gameplay en Leo Corre
+  (desktop y mobile) para cazar el momento de colisión Leo/cartel y el
+  spawn de un cartel nuevo — no sólo el estado inicial.
+
+### Commits de este paso
+
+```
+(pendiente al momento de escribir — ver `git log` de la rama)
+```
+
 ## Cierre
 
 Sin merge a `main`, sin deploy a producción — la rama se pushea para que
