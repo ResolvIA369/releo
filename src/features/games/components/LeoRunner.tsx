@@ -656,22 +656,20 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
   }
 
   return (
-    <GameShell title="Leo Corre" icon="🦁" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})}>
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: spacing.md, paddingTop: spacing.sm }}>
+    <GameShell title="Leo Corre" icon="🦁" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})} contentAlign="top" immersive>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: spacing.md, paddingTop: spacing.xs }}>
         {gamePhase === "intro" && <ArcadeIntro color={GAME_COLOR} />}
-        <ArcadeHud
-          color={GAME_COLOR}
-          targetPrefix="Tocá:"
-          level={level.levelUi}
-          correct={state.correctAttempts}
-          targetWord={targetWord}
-          waveKey={waveIdx}
-          energy={energy.energyUi}
-          energyMax={tuning.energyMax}
-        />
 
-        {/* Pixi canvas + invisible lane tap zones */}
-        <div style={{ position: "relative", width: "100%", maxWidth: "min(760px, calc(100vw - 32px))", borderRadius: radii.xl, overflow: "hidden", border: `2px solid ${colors.border.light}` }}>
+        {/* Pixi canvas + invisible lane tap zones. Mismo patron que Leo
+            Vuela: ancho acotado por vw O por dvh*aspect (lo que de menos),
+            para que el canvas domine la pantalla en vez de un maxWidth fijo
+            en px (~760, pensado para layout no-inmersivo). */}
+        <div style={{
+          position: "relative", width: `min(96vw, calc((100dvh - 16px) * ${W / H}))`,
+          aspectRatio: `${W} / ${H}`,
+          borderRadius: radii.xl, overflow: "hidden", border: `2px solid ${colors.border.light}`,
+          containerType: "size",
+        }}>
           {/* React must never render children inside hostRef — Pixi
               appends its canvas there manually */}
           <div ref={hostRef} style={{ width: "100%", aspectRatio: `${W} / ${H}` }} />
@@ -680,6 +678,17 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
               Cargando a Leo... 🦁
             </div>
           )}
+          <ArcadeHud
+            overlay
+            color={GAME_COLOR}
+            targetPrefix="Tocá:"
+            level={level.levelUi}
+            correct={state.correctAttempts}
+            targetWord={targetWord}
+            waveKey={waveIdx}
+            energy={energy.energyUi}
+            energyMax={tuning.energyMax}
+          />
           {laneWords.map((_, lane) => (
             <button
               key={lane}
