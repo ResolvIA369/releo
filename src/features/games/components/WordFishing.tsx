@@ -63,6 +63,21 @@ export const WordFishing: React.FC<GameProps> = ({ words, phase = 1, onComplete,
   const [feedbackType, setFeedbackType] = useState<"correct" | "wrong" | null>(null);
   const [burstPos, setBurstPos] = useState<{ x: number; y: number } | null>(null);
   const [caughtId, setCaughtId] = useState<string | null>(null);
+  // El area inmersiva ocupa el ancho disponible en vez de un maxWidth fijo
+  // (~620px) — el nado horizontal de los peces (animate x) necesita el
+  // ancho REAL medido, no numeros hardcodeados (ver "areaWidth" abajo).
+  const [areaWidth, setAreaWidth] = useState(620);
+  const areaRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const el = areaRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => {
+      const w = entries[0]?.contentRect.width;
+      if (w) setAreaWidth(w);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   const gamePhaseRef = useRef<Phase>("intro");
   gamePhaseRef.current = gamePhase;
@@ -240,27 +255,31 @@ export const WordFishing: React.FC<GameProps> = ({ words, phase = 1, onComplete,
   }
 
   return (
-    <GameShell title="Pesca de Palabras" icon="🎣" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})}>
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: spacing.md, paddingTop: spacing.sm }}>
+    <GameShell title="Pesca de Palabras" icon="🎣" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})} contentAlign="top" immersive>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: spacing.md, paddingTop: spacing.xs, width: "100%" }}>
         {gamePhase === "intro" && <ArcadeIntro color={GAME_COLOR} />}
-        <ArcadeHud
-          color={GAME_COLOR}
-          targetPrefix="Pescá:"
-          level={levelUi}
-          correct={state.correctAttempts}
-          targetWord={target}
-          waveKey={waveIdx}
-          energy={energy.energyUi}
-          energyMax={tuning.energyMax}
-        />
 
-        {/* Ocean */}
-        <div style={{
-          position: "relative", width: "100%", maxWidth: "min(620px, calc(100vw - 32px))", height: "min(420px, 56vh)",
+        {/* Ocean: mismo patron que Lluvia — alto por calc(100dvh - 16px),
+            NO flex:1/height:100% (ver comentario en WordRain.tsx sobre el
+            wrapper de children de GameShell sin flex-grow). */}
+        <div ref={areaRef} style={{
+          position: "relative", width: "100%", maxWidth: "96vw", height: "calc(100dvh - 16px)",
           borderRadius: radii.xl, overflow: "hidden",
           background: "linear-gradient(180deg, #b3e5fc 0%, #4fc3f7 25%, #0288d1 60%, #01579b 100%)",
           border: `2px solid ${colors.border.light}`,
+          containerType: "size",
         }}>
+          <ArcadeHud
+            overlay
+            color={GAME_COLOR}
+            targetPrefix="Pescá:"
+            level={levelUi}
+            correct={state.correctAttempts}
+            targetWord={target}
+            waveKey={waveIdx}
+            energy={energy.energyUi}
+            energyMax={tuning.energyMax}
+          />
           <UnderwaterAmbience />
           <motion.div animate={{ x: [-30, 30, -30] }}
             transition={{ repeat: Infinity, duration: 5, ease: "easeInOut" }}
@@ -271,10 +290,16 @@ export const WordFishing: React.FC<GameProps> = ({ words, phase = 1, onComplete,
             if (caughtId === fish.word.id) return null;
             const yPos = 24 + i * 18;
             const goesRight = i % 2 === 0;
+            // Off-screen a cada lado del ancho REAL del oceano (antes 560
+            // fijo, calibrado para el maxWidth viejo de 620px — con el area
+            // inmersiva mucho mas ancha en desktop, los peces nadaban solo
+            // por una franja angosta a la izquierda y dejaban el resto del
+            // oceano vacio).
+            const farRight = areaWidth + 160;
             return (
               <motion.button
                 key={`${fish.word.id}-${waveIdx}`}
-                animate={paused ? {} : { x: goesRight ? [-140, 560, -140] : [560, -140, 560] }}
+                animate={paused ? {} : { x: goesRight ? [-140, farRight, -140] : [farRight, -140, farRight] }}
                 transition={{ repeat: Infinity, duration: fish.speed / speedMul, ease: "linear" }}
                 data-word-id={fish.word.id} onClick={(e) => handleTap(fish, e)}
                 style={{
