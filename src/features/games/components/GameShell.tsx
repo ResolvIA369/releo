@@ -112,7 +112,12 @@ export const GameShell: React.FC<GameShellProps> = ({ title, icon, color, sessio
               border: "2px solid #FFD54F",
               boxShadow: "0 2px 6px rgba(218,165,32,0.25)",
             }}>
-              <img src="/images/cofre.png" alt="cofre" style={{ height: 26, width: 55, flexShrink: 0, objectFit: "contain", display: "block" }} />
+              {/* width:height = 500:320 (1.5625), el ratio real del PNG tras
+                  recortarlo al cofre (antes el archivo incluia monedas
+                  desparramadas a los lados, ratio 2.12:1 — con esa caja
+                  angosta el cofre se leia aplastado aunque objectFit:contain
+                  nunca lo deformara de verdad). QA sep-2026. */}
+              <img src="/images/cofre.png" alt="cofre" style={{ height: 26, width: 41, flexShrink: 0, objectFit: "contain", display: "block" }} />
               <span style={{ fontSize: fontSizes.sm, fontWeight: "bold", fontFamily: fonts.display, color: "#F59E0B" }}>
                 {session.correctAttempts}
               </span>

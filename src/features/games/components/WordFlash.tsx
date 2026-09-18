@@ -920,7 +920,7 @@ function moodDeSofia(fase: string): SofiaMood {
                 boxShadow: "0 2px 8px rgba(218,165,32,0.3)",
               }}
             >
-              <img src="/images/cofre.png" alt="cofre" style={{ height: 28, width: 59, flexShrink: 0, objectFit: "contain", display: "block" }} />
+              <img src="/images/cofre.png" alt="cofre" style={{ height: 28, width: 44, flexShrink: 0, objectFit: "contain", display: "block" }} />
               <motion.span
                 key={score}
                 initial={{ scale: 1.4 }}
