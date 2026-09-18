@@ -290,7 +290,7 @@ export const WordRain: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
             overflow:hidden). El header flota ENCIMA (position:absolute),
             no empuja, por eso 100dvh menos un margen chico alcanza. */}
         <div ref={areaRef} style={{
-          position: "relative", width: "100%", maxWidth: "min(720px, 96vw)", height: "calc(100dvh - 16px)",
+          position: "relative", width: "100%", maxWidth: "96vw", height: "calc(100dvh - 16px)",
           borderRadius: radii.xl,
           background: "linear-gradient(180deg, #ebf8ff 0%, #bee3f8 60%, #90cdf4 100%)",
           border: `2px solid ${colors.border.light}`, overflow: "hidden",
