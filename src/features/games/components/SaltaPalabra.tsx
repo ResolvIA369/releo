@@ -66,7 +66,12 @@ const ANTICIPATION = 0.14; // first slice of the jump is a crouch
 const APEX_FRAMES = JUMP_FRAMES * (ANTICIPATION + (1 - ANTICIPATION) * 0.5);
 const CATCH_X = 72; // horizontal catch range at the apex
 const WORD_GAP = 270; // spacing between floating words (los niveles lo achican)
-const BASE_SPEED = 2.1; // px per frame at 60fps (los niveles la multiplican)
+// Antes 2.1 — sin ningun comentario que explicara por que, 40% mas rapido
+// que el mismo Nivel 1 de Leo Corre (BASE_SPEED=1.5) con la misma curva
+// de progresion por nivel (speedMul 1.0→1.25→1.55 en ambos). No se
+// encontro una razon de diseño para la diferencia (QA sep-2026, pedido
+// explicito de emparejar con Leo Corre salvo que hubiera un motivo).
+const BASE_SPEED = 1.5; // px per frame at 60fps (los niveles la multiplican)
 const FADE_RATE = 0.04; // alpha/frame de la tanda anterior al irse
 
 // Intro de Sofia al arrancar (mp3 edge-tts es-AR-ElenaNeural; este
