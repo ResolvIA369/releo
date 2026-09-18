@@ -72,13 +72,31 @@ export const WordImageMatch: React.FC<GameProps> = ({ words, phase = 1, onComple
   // by voice before the choice would let the game be won by ear alone,
   // defeating the whole point of a reading-recognition check. Sofia
   // only confirms the word AFTER a correct answer, in handleSelect.
+  // Una ronda es TODA fotos o TODA emojis, nunca mezcladas — con fotos
+  // reales al lado de emojis el chico puede descartar por estilo visual
+  // en vez de leer la palabra (QA sep-2026, reportado en produccion).
+  // Solo 28 palabras tienen foto real (word-images.ts) y no todos los
+  // bloques de 25 tienen 4 o mas, asi que "ronda de fotos" es la
+  // excepcion, no la regla: se arma SOLO cuando la palabra objetivo tiene
+  // foto Y quedan al menos 3 companeras con foto en este mismo bloque de
+  // palabras para completar las 4 opciones sin repetir. Si no alcanza,
+  // la ronda entera cae a emoji (incluida la palabra objetivo, aunque
+  // tenga foto) en vez de mezclar.
+  const roundIsPhoto = useMemo(() => {
+    if (!currentWord || !WORD_IMAGE_MAP[currentWord.text]) return false;
+    const photoPeers = words.filter((w) => w.id !== currentWord.id && WORD_IMAGE_MAP[w.text]);
+    return photoPeers.length >= OPTIONS_COUNT - 1;
+  }, [currentWord, words]);
+
   // Options
   const options = useMemo(() => {
     if (!currentWord) return [];
-    const others = words.filter((w) => w.id !== currentWord.id);
-    const distractors = shuffle(others).slice(0, OPTIONS_COUNT - 1);
+    const pool = roundIsPhoto
+      ? words.filter((w) => w.id !== currentWord.id && WORD_IMAGE_MAP[w.text])
+      : words.filter((w) => w.id !== currentWord.id);
+    const distractors = shuffle(pool).slice(0, OPTIONS_COUNT - 1);
     return shuffle([currentWord, ...distractors]);
-  }, [currentWord, words]);
+  }, [currentWord, words, roundIsPhoto]);
 
   // Time up
   const handleTimeUp = useCallback(() => {
@@ -233,7 +251,7 @@ export const WordImageMatch: React.FC<GameProps> = ({ words, phase = 1, onComple
                   data-word-id={word.id} onClick={(e) => handleSelect(word, e)}
                   disabled={!!feedbackType}
                   style={{
-                    padding: WORD_IMAGE_MAP[word.text] ? spacing.sm : spacing.lg,
+                    padding: roundIsPhoto ? spacing.sm : spacing.lg,
                     borderRadius: radii.xl,
                     border: `3px solid ${borderColor}`, backgroundColor: bg,
                     fontSize: "clamp(48px, 10vh, 130px)", cursor: feedbackType ? "default" : "pointer",
@@ -243,7 +261,7 @@ export const WordImageMatch: React.FC<GameProps> = ({ words, phase = 1, onComple
                     overflow: "hidden",
                   }}
                 >
-                  {WORD_IMAGE_MAP[word.text] ? (
+                  {roundIsPhoto ? (
                     <img
                       src={WORD_IMAGE_MAP[word.text]}
                       alt={word.text}
