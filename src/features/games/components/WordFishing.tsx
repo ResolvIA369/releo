@@ -296,11 +296,25 @@ export const WordFishing: React.FC<GameProps> = ({ words, phase = 1, onComplete,
             // por una franja angosta a la izquierda y dejaban el resto del
             // oceano vacio).
             const farRight = areaWidth + 160;
+            // `fish.speed` (9-12s) fue calibrado en su momento para el
+            // ancho FIJO viejo (620px, ver comentario de areaWidth arriba)
+            // — cuando el area paso a ser inmersiva y mucho mas ancha, la
+            // distancia real del recorrido crecio pero esta duracion se
+            // dejo igual: mismo tiempo para viajar mas lejos = mas rapido
+            // en pantalla. Regresion de Layout V3, no una decision de
+            // dificultad (QA sep-2026). Se escala la duracion con la
+            // distancia real (ida+vuelta) contra la distancia de
+            // referencia a 620px, para que la velocidad en pantalla
+            // (px/s) quede igual a la que ya estaba calibrada.
+            const REFERENCE_AREA_WIDTH = 620;
+            const travelDistance = 2 * (areaWidth + 300); // ida + vuelta, 140+farRight en cada sentido
+            const referenceDistance = 2 * (REFERENCE_AREA_WIDTH + 300);
+            const scaledDuration = (fish.speed / speedMul) * (travelDistance / referenceDistance);
             return (
               <motion.button
                 key={`${fish.word.id}-${waveIdx}`}
                 animate={paused ? {} : { x: goesRight ? [-140, farRight, -140] : [farRight, -140, farRight] }}
-                transition={{ repeat: Infinity, duration: fish.speed / speedMul, ease: "linear" }}
+                transition={{ repeat: Infinity, duration: scaledDuration, ease: "linear" }}
                 data-word-id={fish.word.id} onClick={(e) => handleTap(fish, e)}
                 style={{
                   position: "absolute", top: `${yPos}%`, left: 0,
