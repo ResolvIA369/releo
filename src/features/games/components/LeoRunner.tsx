@@ -223,7 +223,17 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
       if (disposed || !hostRef.current) return;
 
       app = new PIXI.Application();
-      await app.init({ width: W, height: H, background: "#dcefe2", antialias: true });
+      // El canvas se muestra bastante mas grande que su resolucion logica
+      // (820x420) — sin resolution > 1 en pantallas de alta densidad, Pixi
+      // renderiza a esa resolucion baja y el navegador estira el bitmap por
+      // CSS: ademas de verse borroso, las lineas finas (separadores
+      // punteados, bordes de Graphics superpuestos) pueden mostrar un
+      // artefacto de escalado — costura o linea oscura — donde dos formas
+      // antialiaseadas no coinciden pixel a pixel al ampliarse. Mismo
+      // patron que ya tiene LeoVuela.tsx (tope en 2 por costo de GPU).
+      // QA sep-2026 (reporte: linea vertical negra en el canvas).
+      const dpr = typeof window !== "undefined" ? Math.min(window.devicePixelRatio || 1, 2) : 1;
+      await app.init({ width: W, height: H, background: "#dcefe2", antialias: true, resolution: dpr });
       if (disposed || !hostRef.current) {
         app.destroy(true, { children: true });
         return;

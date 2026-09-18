@@ -181,7 +181,13 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
       if (disposed || !hostRef.current) return;
 
       app = new PIXI.Application();
-      await app.init({ width: W, height: H, background: "#e3f2fd", antialias: true });
+      // Mismo fix que LeoRunner.tsx/LeoVuela.tsx: sin resolution > 1 en
+      // pantallas de alta densidad, Pixi renderiza a la resolucion logica
+      // baja y el navegador estira el bitmap por CSS, lo que puede mostrar
+      // un artefacto de escalado (costura/linea oscura) donde dos formas
+      // antialiaseadas no coinciden pixel a pixel al ampliarse. QA sep-2026.
+      const dpr = typeof window !== "undefined" ? Math.min(window.devicePixelRatio || 1, 2) : 1;
+      await app.init({ width: W, height: H, background: "#e3f2fd", antialias: true, resolution: dpr });
       if (disposed || !hostRef.current) {
         app.destroy(true, { children: true });
         return;
