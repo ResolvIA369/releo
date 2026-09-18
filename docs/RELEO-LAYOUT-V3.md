@@ -198,7 +198,67 @@ de función síncrono. Auditoría cumplida, sin cambios de código necesarios.
 (pendiente al momento de escribir — ver `git log` de la rama)
 ```
 
+## Paso 5 — Falsos positivos por Preview vieja + 4 fixes reales
+
+César reportó 6 bugs sobre lo que creía el Preview actual: cartel roto
+(repetido) en Lluvia, Empareja cortado en el borde, elementos flotantes
+superpuestos, oración de 8 palabras en Construye la Frase, velocidad alta
+en Pesca, y pidió auditar música. Diagnóstico antes de tocar nada (regla
+de 3+ problemas: diagnóstico → opciones → confirmar):
+
+**Los primeros 3 (cartel/Empareja/overlaps) no se pudieron reproducir**
+en el dev server local con el mismo commit que decía estar en el Preview.
+Causa raíz encontrada: **la URL de Preview vive detrás del login de
+Vercel** (un navegador sin sesión cae en la pantalla de Vercel, no en la
+app) y **el service worker de REleo nunca revisaba si había versión
+nueva salvo en una recarga dura** — Next.js navega del lado del cliente,
+así que abrir la app una vez y navegar adentro nunca dispara
+`updatefound`, aunque haya un deploy nuevo hace rato. Esto ya había
+generado los "bugs" falsos de Tren y Salta la Palabra reportados antes.
+César confirmó: descartar esos 3, arreglar la causa raíz (no cada síntoma).
+
+### Fix raíz: chequeo de actualización confiable
+
+`PWARegister.tsx` ya tenía bien resuelto el mecanismo (`skipWaiting` +
+`clients.claim()` recién tras aprobación del usuario — a propósito, para
+no interrumpir a un chico a mitad de sesión). Lo que faltaba era que el
+chequeo se DISPARARA de forma confiable: ahora se fuerza
+`registration.update()` al volver a la pestaña, al recuperar foco, y cada
+60s mientras está abierta. La decisión de cuándo activar sigue siendo del
+usuario (banner "Actualizar"), pero detectar que hay una versión nueva
+ya no depende de un F5 manual.
+
+### Los 3 bugs reales
+
+| Ítem | Diagnóstico | Fix |
+|---|---|---|
+| Construye la Frase, 8 palabras | `sentences` nunca filtraba por `phase` — una frase de Mundo 4 (`PHRASE_EXAMPLES`) podía colarse en Mundo 3 con solo compartir una palabra de vocabulario | Filtro estricto `s.phase === phase` (incluso en el relleno de último recurso) + artículos/conectores/preposiciones fijos (pre-colocados, el chico arrastra solo contenido) configurable por fase vía `MAX_DRAGGABLE_WORDS_BY_PHASE`, con excepción explícita de Mundo 4 (ahí nada viene fijo: los artículos SON el contenido). Límites elegidos: fase 1-2 = 3, fase 3 = 4, fase 4 = sin tope, fase 5 = 4. El juego hoy solo está habilitado en `world_3` (worlds.ts) — no aparece en Mundo 1, 2 ni 4 todavía, así que el tope de fase 1-2 queda listo pero sin efecto visible por ahora. Verificado con Playwright: ronda "_ y _", conector fijo, 2 botones arrastrables. |
+| Pesca de Palabras, velocidad | Regresión de Layout V3: un fix anterior de este mismo branch amplió el rango de nado horizontal (para usar todo el ancho inmersivo) pero no ajustó la duración del recorrido — mismo tiempo, más distancia = más rápido. A ~1800px de ancho (desktop) la velocidad efectiva había pasado de ~175px/s calibrados a ~400px/s | Duración escalada contra la distancia de referencia a 620px (el maxWidth viejo) — la velocidad en pantalla vuelve a ~175px/s sin importar el ancho real, sin tocar `speedMul` ni la curva de progresión |
+| Salta la Palabra, 40% más rápido que Leo Corre | `BASE_SPEED=2.1` sin ningún comentario que explicara el número, misma curva de `speedMul` que Leo Corre (`BASE_SPEED=1.5`) — no se encontró razón de diseño para la diferencia | Emparejado a `BASE_SPEED=1.5`, igual que Leo Corre |
+
+### Música — auditado, sin cambios
+
+Los 11 juegos con música (todos salvo Flash de Palabras, que no tiene por
+diseño) usan `-10dB` (el test exige `>= -14`, cumplido con margen) y
+arrancan recién con la primera acción de juego del chico, nunca antes —
+silencio total durante la intro hablada de Sofía. César confirmó
+explícitamente dejarlo así: que la música no le pise la voz a Sofía es
+lo correcto, no un bug.
+
+### Verificación
+
+typecheck, vitest (234/234), Playwright (`test:qa`, 63/63) y build
+corridos después de cada ítem, no solo al final. Preview fresco:
+
+```
+commit  2da0dd45829cfb800c34534ada069ad52278b85d
+url     https://releo-dv6mp1621-resolvia369s-projects.vercel.app
+```
+
 ## Cierre
 
-Sin merge a `main`, sin deploy a producción — la rama se pushea para que
-Vercel genere el Preview y César lo revise.
+Sin merge a `main`, sin deploy a producción. El Preview NO se regenera
+solo con el push — hace falta `vercel deploy` (sin `--prod`) explícito
+desde `saas-factory/`, igual que la producción real (ver "Deploy — LEER
+ANTES DE TOCAR" en `saas-factory/CLAUDE.md`). Ese es el dato que faltaba
+y generó los falsos positivos de este Paso 5.
