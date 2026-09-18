@@ -172,28 +172,33 @@ export const WordImageMatch: React.FC<GameProps> = ({ words, phase = 1, onComple
 
   return (
     <GameShell title="Empareja Palabra-Imagen" icon="🖼️" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})} contentAlign="top" immersive>
-      <div style={{ display: "flex", gap: spacing.md, paddingTop: IMMERSIVE_HEADER_H + spacing.lg, maxWidth: "min(1100px, 96vw)", width: "100%", margin: "0 auto" }}>
+      <div style={{ display: "flex", gap: spacing.md, paddingTop: IMMERSIVE_HEADER_H + spacing.sm, maxWidth: "min(1100px, 96vw)", width: "100%", margin: "0 auto" }}>
         {/* Main content */}
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: spacing.lg }}>
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: spacing.md }}>
           {/* Counter */}
           <span style={{ fontSize: fontSizes.sm, color: colors.text.placeholder }}>
             {currentIndex + 1} / {totalWords}
           </span>
 
-          {/* Word to match — NO audio, just visual */}
+          {/* Word to match — NO audio, just visual. Dominante pero SIN
+              comerse el alto: antes usaba 9vh/hasta 140px de fuente mas
+              padding spacing.md/xl, y en 1280x900 la segunda fila de
+              opciones terminaba pegada (a veces cortada) contra el borde
+              inferior del canvas immersive, que no scrollea (overflow
+              hidden). QA sep-2026: reportado en produccion. */}
           <motion.div
             key={currentWord.id}
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             style={{
-              padding: `${spacing.md}px ${spacing.xl}px`,
+              padding: `${spacing.sm}px ${spacing.lg}px`,
               backgroundColor: `${GAME_COLOR}10`,
               border: `3px solid ${GAME_COLOR}`,
               borderRadius: radii.xl,
             }}
           >
             <span style={{
-              fontSize: `clamp(${fitWordFontSize(currentWord.text, fontSizes["3xl"])}px, 9vh, ${fitWordFontSize(currentWord.text, 140)}px)`,
+              fontSize: `clamp(${fitWordFontSize(currentWord.text, fontSizes["3xl"])}px, 6vh, ${fitWordFontSize(currentWord.text, 100)}px)`,
               fontWeight: "bold", fontFamily: fonts.display, color: GAME_COLOR, whiteSpace: "nowrap",
             }}>
               {currentWord.text}
@@ -204,7 +209,7 @@ export const WordImageMatch: React.FC<GameProps> = ({ words, phase = 1, onComple
           <motion.div
             variants={staggerContainer} initial="initial" animate="animate"
             key={`opts-${currentWord.id}`}
-            style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: spacing.lg, width: "100%" }}
+            style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: spacing.md, width: "100%" }}
           >
             {options.map((word) => {
               const isSelected = selectedId === word.id;
@@ -231,10 +236,10 @@ export const WordImageMatch: React.FC<GameProps> = ({ words, phase = 1, onComple
                     padding: WORD_IMAGE_MAP[word.text] ? spacing.sm : spacing.lg,
                     borderRadius: radii.xl,
                     border: `3px solid ${borderColor}`, backgroundColor: bg,
-                    fontSize: "clamp(56px, 13vh, 160px)", cursor: feedbackType ? "default" : "pointer",
+                    fontSize: "clamp(48px, 10vh, 130px)", cursor: feedbackType ? "default" : "pointer",
                     display: "flex", alignItems: "center", justifyContent: "center",
                     boxShadow: isSelected && feedbackType === "correct" ? shadows.glow(colors.success) : shadows.sm,
-                    minHeight: "clamp(90px, 30vh, 420px)",
+                    minHeight: "clamp(80px, 22vh, 300px)",
                     overflow: "hidden",
                   }}
                 >
@@ -242,7 +247,7 @@ export const WordImageMatch: React.FC<GameProps> = ({ words, phase = 1, onComple
                     <img
                       src={WORD_IMAGE_MAP[word.text]}
                       alt={word.text}
-                      style={{ width: "100%", height: "clamp(70px, 27vh, 380px)", objectFit: "contain", borderRadius: radii.lg }}
+                      style={{ width: "100%", height: "clamp(60px, 19vh, 260px)", objectFit: "contain", borderRadius: radii.lg }}
                     />
                   ) : (
                     <span>{EMOJI_MAP[word.text] ?? "❓"}</span>
