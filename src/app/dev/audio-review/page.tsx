@@ -6,7 +6,8 @@
 // cada MP3 y marcando lo que suene mal — esta página NO evalúa nada por su
 // cuenta ni arma listas de "sospechosas".
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { PHASE1_WORDS, PHASE2_WORDS, PHASE3_WORDS, PHASE4_WORDS, PHASE5_WORDS } from "@/shared/constants";
 import { WORLDS } from "@/features/progression/config/worlds";
 import { colors, spacing, fonts, fontSizes, radii, shadows } from "@/shared/styles/design-tokens";
@@ -70,8 +71,23 @@ function saveProgress(p: StoredProgress) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(p));
 }
 
-export default function AudioReviewPage() {
-  const initial = useMemo(loadProgress, []);
+function AudioReviewInner() {
+  const searchParams = useSearchParams();
+  const idsParam = searchParams.get("ids");
+
+  // Revisión parcial: /dev/audio-review?ids=p1-10,p1-22,... para escuchar
+  // sólo una tanda (recién regenerada, o una muestra) sin pasar por las 220.
+  // No persiste progreso — son sesiones cortas, de una sola pasada.
+  const words = useMemo(() => {
+    if (!idsParam) return WORDS;
+    const idSet = new Set(idsParam.split(",").map((s) => s.trim()).filter(Boolean));
+    const filtered = WORDS.filter((w) => idSet.has(w.id));
+    return filtered.length > 0 ? filtered : WORDS;
+  }, [idsParam]);
+  const filtered = Boolean(idsParam) && words.length !== WORDS.length;
+  const total = words.length;
+
+  const initial = useMemo(() => (filtered ? { index: 0, bad: [], speed: 1 as Speed } : loadProgress()), [filtered]);
   const [index, setIndex] = useState(initial.index);
   const [bad, setBad] = useState<Set<string>>(new Set(initial.bad));
   const [speed, setSpeed] = useState<Speed>(initial.speed);
@@ -88,30 +104,30 @@ export default function AudioReviewPage() {
   // silencio que se quiere evitar.
   const preloadedRef = useRef<Set<number>>(new Set());
 
-  const current = WORDS[index];
+  const current = words[index];
 
   const preloadAhead = useCallback((from: number) => {
-    for (let i = from; i < Math.min(from + 4, TOTAL); i++) {
+    for (let i = from; i < Math.min(from + 4, total); i++) {
       if (preloadedRef.current.has(i)) continue;
       preloadedRef.current.add(i);
-      const a = new Audio(WORDS[i].mp3);
+      const a = new Audio(words[i].mp3);
       a.preload = "auto";
     }
-  }, []);
+  }, [words, total]);
 
   const playIndex = useCallback((i: number) => {
     const audio = audioRef.current;
     if (!audio) return;
-    audio.src = WORDS[i].mp3;
+    audio.src = words[i].mp3;
     audio.playbackRate = speed;
     audio.onended = () => advance(i + 1);
     audio.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
     preloadAhead(i + 1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [speed, preloadAhead]);
+  }, [words, speed, preloadAhead]);
 
   function advance(nextIndex: number) {
-    if (nextIndex >= TOTAL) {
+    if (nextIndex >= total) {
       setPlaying(false);
       return;
     }
@@ -135,10 +151,12 @@ export default function AudioReviewPage() {
     if (audioRef.current) audioRef.current.playbackRate = speed;
   }, [speed]);
 
-  // Persistencia — si cierra la pestaña, retoma donde quedó
+  // Persistencia — si cierra la pestaña, retoma donde quedó. Las revisiones
+  // parciales (?ids=...) no persisten: son pasadas cortas de una sola vez.
   useEffect(() => {
+    if (filtered) return;
     saveProgress({ index, bad: Array.from(bad), speed });
-  }, [index, bad, speed]);
+  }, [filtered, index, bad, speed]);
 
   const markCorrect = useCallback(() => {
     setBad((prev) => {
@@ -215,7 +233,7 @@ export default function AudioReviewPage() {
   }, [markCorrect, markBad, repeat, goPrevious, togglePause]);
 
   function exportJSON() {
-    const marcadas = WORDS.filter((w) => bad.has(w.id)).map((w) => ({
+    const marcadas = words.filter((w) => bad.has(w.id)).map((w) => ({
       id: w.id,
       texto: w.text,
       mundo: w.worldName,
@@ -230,7 +248,7 @@ export default function AudioReviewPage() {
   }
 
   // Progreso dentro del mundo actual
-  const worldWords = WORDS.filter((w) => w.worldId === current.worldId);
+  const worldWords = words.filter((w) => w.worldId === current.worldId);
   const worldPos = worldWords.findIndex((w) => w.id === current.id) + 1;
 
   const isMarkedBad = bad.has(current.id);
@@ -252,19 +270,27 @@ export default function AudioReviewPage() {
 
       {/* Header: progreso general + por mundo */}
       <div style={{ width: "100%", maxWidth: 720 }}>
+        {filtered && (
+          <p style={{ fontSize: fontSizes.sm, color: colors.brand.primary, fontFamily: fonts.display, fontWeight: "bold", margin: `0 0 ${spacing.xs}px` }}>
+            Revisión parcial — {total} palabra{total === 1 ? "" : "s"} (no las 220){" "}
+            <a href="/dev/audio-review" style={{ color: "inherit", textDecoration: "underline", fontWeight: "normal" }}>
+              ver las 220 →
+            </a>
+          </p>
+        )}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: spacing.xs, gap: spacing.sm, flexWrap: "wrap" }}>
           <h1 style={{ fontFamily: fonts.display, fontSize: "clamp(16px, 4vw, 24px)", color: colors.text.primary, margin: 0, whiteSpace: "nowrap" }}>
             Revisión de pronunciación
           </h1>
           <span style={{ fontFamily: fonts.display, fontSize: fontSizes.lg, fontWeight: "bold", color: colors.text.primary, whiteSpace: "nowrap" }}>
-            {index + 1} / {TOTAL}
+            {index + 1} / {total}
           </span>
         </div>
 
         {/* Franja segmentada por mundo */}
         <div style={{ display: "flex", gap: 2, height: 8, borderRadius: radii.pill, overflow: "hidden" }}>
           {WORLDS.map((w) => {
-            const count = WORDS.filter((word) => word.worldId === w.id).length;
+            const count = words.filter((word) => word.worldId === w.id).length;
             const isActive = w.id === current.worldId;
             return (
               <div
@@ -370,6 +396,14 @@ export default function AudioReviewPage() {
         <ReviewButton onClick={exportJSON} label={`⬇ Exportar marcadas (${bad.size}) como JSON`} />
       </div>
     </div>
+  );
+}
+
+export default function AudioReviewPage() {
+  return (
+    <Suspense fallback={null}>
+      <AudioReviewInner />
+    </Suspense>
   );
 }
 
