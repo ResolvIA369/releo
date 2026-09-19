@@ -1,0 +1,237 @@
+[
+  {
+    "id": "p1-10",
+    "texto": "primo",
+    "mundo": "Isla de las Palabras"
+  },
+  {
+    "id": "p1-22",
+    "texto": "banana",
+    "mundo": "Isla de las Palabras"
+  },
+  {
+    "id": "p1-23",
+    "texto": "uva",
+    "mundo": "Isla de las Palabras"
+  },
+  {
+    "id": "p1-32",
+    "texto": "pie",
+    "mundo": "Isla de las Palabras"
+  },
+  {
+    "id": "p1-43",
+    "texto": "pan",
+    "mundo": "Isla de las Palabras"
+  },
+  {
+    "id": "p1-45",
+    "texto": "huevo",
+    "mundo": "Isla de las Palabras"
+  },
+  {
+    "id": "p1-48",
+    "texto": "silla",
+    "mundo": "Isla de las Palabras"
+  },
+  {
+    "id": "p2-11",
+    "texto": "grande",
+    "mundo": "Bahía de los Pares"
+  },
+  {
+    "id": "p2-13",
+    "texto": "largo",
+    "mundo": "Bahía de los Pares"
+  },
+  {
+    "id": "p2-15",
+    "texto": "alto",
+    "mundo": "Bahía de los Pares"
+  },
+  {
+    "id": "p2-19",
+    "texto": "redondo",
+    "mundo": "Bahía de los Pares"
+  },
+  {
+    "id": "p2-32",
+    "texto": "triste",
+    "mundo": "Bahía de los Pares"
+  },
+  {
+    "id": "p2-40",
+    "texto": "amable",
+    "mundo": "Bahía de los Pares"
+  },
+  {
+    "id": "p2-41",
+    "texto": "sol",
+    "mundo": "Bahía de los Pares"
+  },
+  {
+    "id": "p2-42",
+    "texto": "luna",
+    "mundo": "Bahía de los Pares"
+  },
+  {
+    "id": "p2-45",
+    "texto": "lluvia",
+    "mundo": "Bahía de los Pares"
+  },
+  {
+    "id": "p2-47",
+    "texto": "flor",
+    "mundo": "Bahía de los Pares"
+  },
+  {
+    "id": "p2-49",
+    "texto": "mar",
+    "mundo": "Bahía de los Pares"
+  },
+  {
+    "id": "p3-01",
+    "texto": "come",
+    "mundo": "Valle de las Frases"
+  },
+  {
+    "id": "p3-05",
+    "texto": "corre",
+    "mundo": "Valle de las Frases"
+  },
+  {
+    "id": "p3-07",
+    "texto": "lee",
+    "mundo": "Valle de las Frases"
+  },
+  {
+    "id": "p3-26",
+    "texto": "media",
+    "mundo": "Valle de las Frases"
+  },
+  {
+    "id": "p3-30",
+    "texto": "piyama",
+    "mundo": "Valle de las Frases"
+  },
+  {
+    "id": "p3-35",
+    "texto": "pegamento",
+    "mundo": "Valle de las Frases"
+  },
+  {
+    "id": "p3-40",
+    "texto": "recreo",
+    "mundo": "Valle de las Frases"
+  },
+  {
+    "id": "p3-44",
+    "texto": "hospital",
+    "mundo": "Valle de las Frases"
+  },
+  {
+    "id": "p3-46",
+    "texto": "playa",
+    "mundo": "Valle de las Frases"
+  },
+  {
+    "id": "p3-49",
+    "texto": "calle",
+    "mundo": "Valle de las Frases"
+  },
+  {
+    "id": "p4-01",
+    "texto": "el",
+    "mundo": "Montaña de la Lectura"
+  },
+  {
+    "id": "p4-02",
+    "texto": "la",
+    "mundo": "Montaña de la Lectura"
+  },
+  {
+    "id": "p4-04",
+    "texto": "las",
+    "mundo": "Montaña de la Lectura"
+  },
+  {
+    "id": "p4-05",
+    "texto": "un",
+    "mundo": "Montaña de la Lectura"
+  },
+  {
+    "id": "p4-09",
+    "texto": "y",
+    "mundo": "Montaña de la Lectura"
+  },
+  {
+    "id": "p4-10",
+    "texto": "con",
+    "mundo": "Montaña de la Lectura"
+  },
+  {
+    "id": "p4-11",
+    "texto": "en",
+    "mundo": "Montaña de la Lectura"
+  },
+  {
+    "id": "p4-12",
+    "texto": "de",
+    "mundo": "Montaña de la Lectura"
+  },
+  {
+    "id": "p4-13",
+    "texto": "por",
+    "mundo": "Montaña de la Lectura"
+  },
+  {
+    "id": "p4-16",
+    "texto": "entre",
+    "mundo": "Montaña de la Lectura"
+  },
+  {
+    "id": "p4-19",
+    "texto": "sin",
+    "mundo": "Montaña de la Lectura"
+  },
+  {
+    "id": "p4-22",
+    "texto": "tú",
+    "mundo": "Montaña de la Lectura"
+  },
+  {
+    "id": "p4-27",
+    "texto": "tu",
+    "mundo": "Montaña de la Lectura"
+  },
+  {
+    "id": "p4-28",
+    "texto": "su",
+    "mundo": "Montaña de la Lectura"
+  },
+  {
+    "id": "p4-31",
+    "texto": "hoy",
+    "mundo": "Montaña de la Lectura"
+  },
+  {
+    "id": "p4-39",
+    "texto": "pronto",
+    "mundo": "Montaña de la Lectura"
+  },
+  {
+    "id": "p5-06",
+    "texto": "dice",
+    "mundo": "El Libro Mágico"
+  },
+  {
+    "id": "p5-08",
+    "texto": "sale",
+    "mundo": "El Libro Mágico"
+  },
+  {
+    "id": "p5-19",
+    "texto": "solo",
+    "mundo": "El Libro Mágico"
+  }
+]
