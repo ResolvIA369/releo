@@ -115,7 +115,7 @@ No unificar.**
 
 | Qué genera | Voz | voice_id | Por qué |
 |---|---|---|---|
-| `palabra-*.mp3` (las 220 palabras que el chico lee, Flash de Palabras) | **candB** | `0uHpKhb0ymsdvmCtPV8y` | Jessica es una voz de base en inglés: en pruebas mispronunciaba palabras en español. candB es nativa de español latinoamericano — se eligió tras comparar tres candidatas con material idéntico (ver `muestras-voz/muestras-candidatas-latam.py`). |
+| `palabra-*.mp3` (las 220 palabras que el chico lee, Flash de Palabras) | **candB** | `JddqVF50ZSIR7SRbJE6u` | Jessica es una voz de base en inglés: en pruebas mispronunciaba palabras en español. candB es nativa de español latinoamericano — se eligió tras comparar tres candidatas con material idéntico (ver `muestras-voz/muestras-candidatas-latam.py`). **Ojo:** `0uHpKhb0ymsdvmCtPV8y` es candA, la otra candidata descartada — no confundir (pasó el 19-sep-2026, corregido el mismo día antes de tocar más que 10 palabras). |
 | Todo lo demás — frases, reglas, reacciones, afirmaciones de sesión (~495 archivos) | **Jessica** | `cgSgspJ2msm6clMCkdW9` | Voz canónica desde el 22-ago-2026, sigue siéndolo para todo lo que NO es una palabra suelta que el chico tiene que leer. |
 
 La división es por **función, no por calidad**: candB dice las palabras

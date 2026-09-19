@@ -54,7 +54,7 @@ BACKUP_ROOT = os.path.join(AUDIO_DIR, "_backups")
 WORDS_TS = os.path.join(ROOT, "src", "shared", "constants", "words.ts")
 
 API = "https://api.elevenlabs.io/v1"
-VOZ_CANDB = "0uHpKhb0ymsdvmCtPV8y"
+VOZ_CANDB = "JddqVF50ZSIR7SRbJE6u"  # candB — confirmado contra muestras-voz/muestras-candidatas-latam.py
 MODELO = "eleven_v3"
 TAG_EMOCION = "[gently]"
 ESTILO = 0.35
@@ -173,6 +173,7 @@ def main():
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H-%M-%SZ")
     backup_dir = os.path.join(BACKUP_ROOT, f"{ts}-candB")
 
+    print(f"voice_id a usar: {VOZ_CANDB}  (candB — confirmar contra muestras-voz/muestras-candidatas-latam.py antes de correr)")
     print(f"{len(palabras)} palabra(s) a regenerar con candB/eleven_v3. Backup en: {backup_dir}\n")
 
     total_chars = 0
