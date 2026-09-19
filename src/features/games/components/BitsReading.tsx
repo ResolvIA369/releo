@@ -21,6 +21,7 @@ import { colors, spacing, radii, fontSizes, fonts } from "@/shared/styles/design
 import { sofiaNameWord, sofiaPlayAudio, stopVoice } from "@/shared/services/sofiaVoice";
 import { bubblesTuningForPhase } from "../config/bubbles";
 import { rewardForLevel, createWordBag } from "../config/arcade-tuning";
+import { demoChooseWithHesitation, demoJitter } from "../hooks/useDemoAutoplay";
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -223,15 +224,18 @@ export const BitsReading: React.FC<GameProps> = ({ words, phase = 1, onComplete,
     }
   }, [energy, tuning, recordAttempt, rewardCorrect, speakDucked, spawnWave, flashFeedback, poppedId, levelRef]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Demo: cada tanda, revienta la burbuja correcta
+  // Demo: cada tanda, duda entre burbujas y revienta la correcta
   useEffect(() => {
     if (!isDemo || gamePhase !== "running" || !target) return;
     let done = false;
     const t = setTimeout(() => {
       if (done || resolvedRef.current) return;
-      const btn = document.querySelector(`[data-word-id="${target.id}"]`) as HTMLElement;
-      if (btn) { done = true; btn.click(); }
-    }, 3000);
+      done = true;
+      const allBubbles = Array.from(document.querySelectorAll("[data-word-id]")) as HTMLElement[];
+      const correctEl = allBubbles.find((el) => el.dataset.wordId === target.id) ?? null;
+      const wrongEls = allBubbles.filter((el) => el.dataset.wordId && el.dataset.wordId !== target.id);
+      demoChooseWithHesitation(correctEl, wrongEls);
+    }, demoJitter(3000));
     return () => clearTimeout(t);
   }, [isDemo, gamePhase, waveIdx, target]);
 

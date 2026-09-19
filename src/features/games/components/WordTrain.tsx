@@ -22,6 +22,7 @@ import { colors, spacing, radii, shadows, fontSizes, fonts } from "@/shared/styl
 import { sofiaNameWord, sofiaPlayAudio, stopVoice } from "@/shared/services/sofiaVoice";
 import { wordTrainTuningForPhase } from "../config/word-train";
 import { rewardForLevel, createWordBag } from "../config/arcade-tuning";
+import { demoJitter } from "../hooks/useDemoAutoplay";
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -214,8 +215,10 @@ export const WordTrain: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
     }
   }, [energy, tuning, recordAttempt, rewardCorrect, spawnWave, flashFeedback, levelRef]);
 
-  // Demo: cada tanda, toca el vagon correcto cuando el tren entra en
-  // la ventana visible (polling porque el target se mueve)
+  // Demo: toca el vagon correcto cuando el tren entra en la ventana visible
+  // (polling porque el target se mueve — la precision del click NO lleva
+  // jitter, el tren no espera). La "duda" va aparte, mientras el tren se
+  // acerca y todavia hay margen: resalta un vagon incorrecto sin tocarlo.
   useEffect(() => {
     if (!isDemo || gamePhase !== "running" || !targetWord) return;
     let done = false;
@@ -227,6 +230,21 @@ export const WordTrain: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
       }
     }, 250);
     return () => clearInterval(iv);
+  }, [isDemo, gamePhase, waveIdx, targetWord]);
+
+  useEffect(() => {
+    if (!isDemo || gamePhase !== "running" || !targetWord) return;
+    const t = setTimeout(() => {
+      if (resolvedRef.current) return;
+      const targetId = targetRef.current?.id;
+      const allCars = Array.from(document.querySelectorAll("[data-word-id]")) as HTMLElement[];
+      const wrongEls = allCars.filter((el) => el.dataset.wordId && el.dataset.wordId !== targetId);
+      if (wrongEls.length === 0) return;
+      const wrongEl = wrongEls[Math.floor(Math.random() * wrongEls.length)];
+      wrongEl.classList.add("demo-hesitate");
+      setTimeout(() => wrongEl.classList.remove("demo-hesitate"), demoJitter(500));
+    }, demoJitter(600));
+    return () => clearTimeout(t);
   }, [isDemo, gamePhase, waveIdx, targetWord]);
 
   const handleReplay = useCallback(() => {

@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import type { GameProps } from "../types";
 import type { DomanWord } from "@/shared/types/doman";
 import { useGameState } from "../hooks/useGameState";
-import { useDemoAutoplay } from "../hooks/useDemoAutoplay";
+import { useDemoAutoplay, demoChooseSelectorWithHesitation } from "../hooks/useDemoAutoplay";
 import { GameShell, usePause, IMMERSIVE_HEADER_H } from "./GameShell";
 import { useGameMusic } from "../hooks/useGameMusic";
 import { useRewards } from "@/shared/components/RewardsLayer";
@@ -54,11 +54,16 @@ export const WordImageMatch: React.FC<GameProps> = ({ words, phase = 1, onComple
   const finished = currentIndex >= totalWords;
 
 
-  // Demo: auto-select correct answer
+  // Demo: lee la palabra (tiempo de lectura + jitter, ver useDemoAutoplay),
+  // duda un instante sobre una imagen incorrecta y recién ahí elige la
+  // correcta. Nunca clickea una incorrecta de verdad.
   useDemoAutoplay(isDemo, gamePhase === "playing" && !feedbackType && !!currentWord, () => {
-    const btn = document.querySelector(`[data-word-id="${currentWord?.id}"]`) as HTMLElement;
-    if (btn) btn.click();
-  }, 2500);
+    if (!currentWord) return;
+    demoChooseSelectorWithHesitation(
+      `[data-word-id="${currentWord.id}"]`,
+      options.filter((o) => o.id !== currentWord.id).map((o) => `[data-word-id="${o.id}"]`)
+    );
+  }, 1800);
 
   // Game end
   useEffect(() => {

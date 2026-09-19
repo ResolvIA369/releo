@@ -8,7 +8,7 @@ import { useGameState } from "../hooks/useGameState";
 import { sofiaReads, sofiaCelebrates } from "@/shared/services/sofiaVoice";
 import { GameShell, usePause } from "./GameShell";
 import { useGameMusic } from "../hooks/useGameMusic";
-import { useDemoAutoplay } from "../hooks/useDemoAutoplay";
+import { useDemoAutoplay, demoChooseWithHesitation } from "../hooks/useDemoAutoplay";
 import { useRewards } from "@/shared/components/RewardsLayer";
 import { GameIntro } from "./GameIntro";
 import { GameCompleteScreen } from "@/shared/components/GameCompleteScreen";
@@ -192,20 +192,19 @@ export const BuildSentence: React.FC<GameProps> = ({ words, phase = 1, onComplet
     finish().then(() => onComplete?.(state));
   }, [finished, gamePhase]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Demo: auto-place correct word every 2s for visible pacing
+  // Demo: duda entre fichas visibles antes de elegir la que sigue en la frase.
   useDemoAutoplay(isDemo, gamePhase === "playing" && !feedbackType && !isAdvancing, () => {
     if (!currentSentence) return;
     const tokenIdx = draggableTokenIndices[placed.length];
     const expected = tokenIdx !== undefined ? currentSentence.tokens[tokenIdx].text : undefined;
     if (!expected) return;
-    const btns = document.querySelectorAll("[data-build-word]");
-    for (const b of btns) {
-      if ((b as HTMLElement).dataset.buildWord === expected && (b as HTMLElement).offsetParent !== null) {
-        (b as HTMLElement).click();
-        break;
-      }
-    }
-  }, 2000);
+    const visibleBtns = Array.from(document.querySelectorAll("[data-build-word]")).filter(
+      (b) => (b as HTMLElement).offsetParent !== null
+    ) as HTMLElement[];
+    const correctEl = visibleBtns.find((b) => b.dataset.buildWord === expected) ?? null;
+    const wrongEls = visibleBtns.filter((b) => b.dataset.buildWord !== expected);
+    demoChooseWithHesitation(correctEl, wrongEls);
+  }, 1600);
 
   const advanceRound = useCallback(() => {
     setShowCelebration(false);

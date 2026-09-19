@@ -22,6 +22,7 @@ import { sofiaNameWord, sofiaPlayAudio, stopVoice } from "@/shared/services/sofi
 import { domanCanvasText } from "../config/doman-canvas";
 import { buildLanes, rocksForPhase, runnerTuningForPhase, lanesXForCount } from "../config/leo-runner";
 import { rewardForLevel, createWordBag } from "../config/arcade-tuning";
+import { demoChooseWithHesitation, demoJitter } from "../hooks/useDemoAutoplay";
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -674,15 +675,19 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
     ArrowRight: () => moveLane(1),
   });
 
-  // Demo mode: cada tanda, mueve a Leo al carril correcto mientras los
-  // carteles estan lejos (keyed en waveIdx para re-armarse en cada
-  // tanda del flujo continuo, no solo en la primera)
+  // Demo mode: cada tanda, duda entre carriles y mueve a Leo al correcto
+  // mientras los carteles estan lejos (keyed en waveIdx para re-armarse en
+  // cada tanda del flujo continuo, no solo en la primera)
   useEffect(() => {
     if (!isDemo || gamePhase !== "running" || !targetWord) return;
     const t = setTimeout(() => {
-      const btn = document.querySelector(`[data-word-id="${roundRef.current.target?.id}"]`) as HTMLElement;
-      if (btn) btn.click();
-    }, 1200);
+      const targetId = roundRef.current.target?.id;
+      if (!targetId) return;
+      const allSigns = Array.from(document.querySelectorAll("[data-word-id]")) as HTMLElement[];
+      const correctEl = allSigns.find((el) => el.dataset.wordId === targetId) ?? null;
+      const wrongEls = allSigns.filter((el) => el.dataset.wordId && el.dataset.wordId !== targetId);
+      demoChooseWithHesitation(correctEl, wrongEls);
+    }, demoJitter(1200));
     return () => clearTimeout(t);
   }, [isDemo, gamePhase, waveIdx, targetWord]);
 

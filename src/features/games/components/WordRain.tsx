@@ -23,6 +23,7 @@ import { sofiaNameWord, sofiaPlayAudio, stopVoice } from "@/shared/services/sofi
 import { fitWordFontSize } from "@/shared/utils/fitText";
 import { wordRainTuningForPhase } from "../config/word-rain";
 import { rewardForLevel, createWordBag } from "../config/arcade-tuning";
+import { demoChooseWithHesitation, demoJitter } from "../hooks/useDemoAutoplay";
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -227,16 +228,21 @@ export const WordRain: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
     }
   }, [energy, tuning, recordAttempt, flashFeedback]);
 
-  // Demo: cada tanda, toca la palabra correcta cuando ya esta cayendo
+  // Demo: cada tanda, duda entre las palabras que ya estan cayendo y toca la
+  // correcta. El (targetDrop?.delay ?? 0) * 1000 es fisico (cuando aparece
+  // esa gota) y no lleva jitter; el tiempo de lectura despues de eso si.
   useEffect(() => {
     if (!isDemo || gamePhase !== "running" || !target) return;
     let done = false;
     const targetDrop = drops.find((d) => d.word.id === target.id);
     const t = setTimeout(() => {
       if (done || resolvedRef.current) return;
-      const btn = document.querySelector(`[data-word-id="${target.id}"]`) as HTMLElement;
-      if (btn) { done = true; btn.click(); }
-    }, (targetDrop?.delay ?? 0) * 1000 + 1600);
+      done = true;
+      const allDrops = Array.from(document.querySelectorAll("[data-word-id]")) as HTMLElement[];
+      const correctEl = allDrops.find((el) => el.dataset.wordId === target.id) ?? null;
+      const wrongEls = allDrops.filter((el) => el.dataset.wordId && el.dataset.wordId !== target.id);
+      demoChooseWithHesitation(correctEl, wrongEls);
+    }, (targetDrop?.delay ?? 0) * 1000 + demoJitter(1600));
     return () => clearTimeout(t);
   }, [isDemo, gamePhase, waveIdx, target, drops]);
 

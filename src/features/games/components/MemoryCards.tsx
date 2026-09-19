@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import type { GameProps } from "../types";
 import type { DomanWord } from "@/shared/types/doman";
 import { useGameState } from "../hooks/useGameState";
-import { useDemoAutoplay } from "../hooks/useDemoAutoplay";
+import { useDemoAutoplay, demoChooseSelectorWithHesitation } from "../hooks/useDemoAutoplay";
 import { GameShell, usePause } from "./GameShell";
 import { useGameMusic } from "../hooks/useGameMusic";
 import { useRewards } from "@/shared/components/RewardsLayer";
@@ -164,12 +164,14 @@ export const MemoryCards: React.FC<GameProps> = ({ words, phase = 1, onComplete,
   }, [gamePhase, roundIdx, paused]); // eslint-disable-line react-hooks/exhaustive-deps
 
 
-  // Demo: auto-tap each syllable every 1.5s for quick pacing
+  // Demo: duda un instante entre sílabas antes de tocar la que sigue en orden.
   useDemoAutoplay(isDemo, gamePhase === "playing" && !feedbackType && placed.length < syllables.length, () => {
     const nextIdx = placed.length;
-    const btn = document.querySelector(`[data-piece-idx="${nextIdx}"]`) as HTMLElement;
-    if (btn) btn.click();
-  }, 1500);
+    demoChooseSelectorWithHesitation(
+      `[data-piece-idx="${nextIdx}"]`,
+      remainingPieces.filter((p) => p.index !== nextIdx).map((p) => `[data-piece-idx="${p.index}"]`)
+    );
+  }, 1200);
 
   // ─── Game end ───────────────────────────────────────────────
 

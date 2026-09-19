@@ -392,7 +392,16 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
           }
         }
 
-        // Demo mode: jump when the target is about to be overhead
+        // Demo mode: jump when the target is about to be overhead.
+        // A diferencia de LeoVuela, ACÁ no se agrega demora: la ventana
+        // real entre "ya se puede saltar" y "la palabra ya pasó" es de
+        // unos pocos frames (dist <= lead + 10, con effSpeed de hasta
+        // ~2.8px/frame — 10px de margen), no de cientos de milisegundos.
+        // Cualquier pausa ahí hace que Leo salte tarde y la palabra se
+        // escape, que es la misma falla que el pedido de César prohibe
+        // explícitamente. El "no instantáneo" de este juego ya lo da el
+        // recorrido completo de la palabra en pantalla antes de llegar
+        // al rango de salto — no hace falta agregar más acá.
         if (isDemoRef.current && round.active && !round.resolved && jumpTRef.current >= 1) {
           const targetFw = round.words.find((fw) => fw.word.id === round.target?.id && !fw.caught);
           if (targetFw) {

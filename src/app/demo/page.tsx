@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, Suspense } from "react";
+import React, { useEffect, useState, useMemo, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { DomanDemoPlayer } from "@/features/session/components/DomanDemoPlayer";
@@ -32,6 +32,7 @@ import { colors, spacing, fonts, fontSizes, radii, shadows } from "@/shared/styl
 import { staggerContainer, staggerItem, fadeInUp } from "@/shared/styles/animations";
 import { AnimatedButton } from "@/shared/components/AnimatedButton";
 import { buildBlocks, cantidadDeBloques } from "@/features/games/config/blocks";
+import { setDemoSpeedMul } from "@/features/games/hooks/useDemoAutoplay";
 
 const GAME_COMPONENTS: Partial<Record<GameId, FC<GameProps>>> = {
   "word-image-match": WordImageMatch,
@@ -61,6 +62,14 @@ function DemoContent() {
   const allParam = params.get("all");
   const gameParam = params.get("game") as GameId | null;
   const phaseParam = params.get("phase");
+  const speedParam = params.get("demoSpeed");
+
+  // Velocidad de las decisiones del autoplay (lectura, duda, ritmo) — ver
+  // useDemoAutoplay.ts. 1 = normal. Se setea antes de que los juegos monten
+  // sus timers, así que tiene que ir en el primer render posible.
+  useEffect(() => {
+    setDemoSpeedMul(speedParam ? parseFloat(speedParam) : 1);
+  }, [speedParam]);
 
   // Flash de Palabras sessions
   const sessions = useMemo(() => {
@@ -127,30 +136,38 @@ function DemoContent() {
 
 // ─── Selector screen ─────────────────────────────────────────────────
 
+const DEMO_SPEEDS = [
+  { value: 0.5, label: "0.5x — rápido (probar)" },
+  { value: 1, label: "1x — normal" },
+  { value: 1.5, label: "1.5x — lento (video)" },
+  { value: 2, label: "2x — bien lento (video)" },
+];
+
 function DemoSelector() {
   const router = useRouter();
   const [selectedSession, setSelectedSession] = useState(1);
   const [rangeFrom, setRangeFrom] = useState(1);
   const [rangeTo, setRangeTo] = useState(5);
+  const [demoSpeed, setDemoSpeed] = useState(1);
 
   const startSession = (session: number) => {
-    router.push(`/demo?session=${session}`);
+    router.push(`/demo?session=${session}&demoSpeed=${demoSpeed}`);
   };
 
   const startRange = () => {
-    router.push(`/demo?from=${rangeFrom}&to=${rangeTo}`);
+    router.push(`/demo?from=${rangeFrom}&to=${rangeTo}&demoSpeed=${demoSpeed}`);
   };
 
   const startWorld = (worldNum: number) => {
-    router.push(`/demo?world=${worldNum}`);
+    router.push(`/demo?world=${worldNum}&demoSpeed=${demoSpeed}`);
   };
 
   const startGame = (gameId: string, phaseNum: number, block: number = 0) => {
-    router.push(`/demo?game=${gameId}&phase=${phaseNum}&block=${block}`);
+    router.push(`/demo?game=${gameId}&phase=${phaseNum}&block=${block}&demoSpeed=${demoSpeed}`);
   };
 
   const startAll = () => {
-    router.push(`/demo?all=true`);
+    router.push(`/demo?all=true&demoSpeed=${demoSpeed}`);
   };
 
   return (
@@ -192,6 +209,30 @@ function DemoSelector() {
             {TOTAL_SESSIONS} sesiones disponibles — 5 mundos
           </p>
         </div>
+
+        {/* Velocidad de demo: afecta lectura, duda y ritmo del autoplay */}
+        <Section title="⏱️ Velocidad del demo">
+          <select
+            value={demoSpeed}
+            onChange={(e) => setDemoSpeed(parseFloat(e.target.value))}
+            style={{
+              width: "100%",
+              padding: `${spacing.sm}px ${spacing.md}px`,
+              borderRadius: radii.lg,
+              border: `2px solid ${colors.border.light}`,
+              fontSize: fontSizes.sm,
+              fontFamily: fonts.body,
+              backgroundColor: "#fff", color: "#2d3748",
+            }}
+          >
+            {DEMO_SPEEDS.map((s) => (
+              <option key={s.value} value={s.value}>{s.label}</option>
+            ))}
+          </select>
+          <p style={{ fontSize: fontSizes.xs, color: colors.text.muted, marginTop: spacing.xs }}>
+            Más lento = más tiempo de lectura y de duda antes de cada elección — se nota más al grabar.
+          </p>
+        </Section>
 
         {/* Flash de Palabras */}
         <Section title="⚡ Flash de Palabras">
