@@ -1,0 +1,180 @@
+#!/usr/bin/env python3
+"""
+Regenera palabra-el.mp3, palabra-de.mp3 y palabra-tú.mp3 con el método (d):
+la palabra dentro de una frase corta en español, recortada por silencio
+(ffmpeg) después — sin dejar nada de la frase en el audio final.
+
+Decisión del 19-sep-2026: estas tres NO usan respelling (ver
+scripts/respelling-palabras.json). Se probó forzar la tilde ("él", "dé") o
+alargar la vocal ("túu") y se descartó — "él" y "dé" son otras palabras
+reales del español (y "él" ya existe como palabra propia del corpus, sin
+marcar), y alargar "tú" desdibuja el par tú/tu que el chico tiene que
+distinguir. La solución es darle a la palabra real (sin alterar) contexto de
+frase para que el modelo la lea en español, y quedarnos sólo con esa
+palabra.
+
+Reusa el algoritmo de recorte por silencio de
+muestras-voz/experimento-idioma-candb.py (con el bug de umbral ya corregido
+el 19-sep — antes cortaba fragmentos casi vacíos en palabras sin pausa
+detectable a -30dB).
+
+Uso:
+    python3 scripts/regenerate-palabras-frase-recorte.py
+"""
+
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+import urllib.error
+import urllib.request
+from datetime import datetime, timezone
+
+try:
+    import imageio_ffmpeg
+    FFMPEG = imageio_ffmpeg.get_ffmpeg_exe()
+except ImportError:
+    sys.exit("❌ Falta imageio_ffmpeg. Instalar: pip3 install --user --break-system-packages imageio-ffmpeg")
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+AUDIO_DIR = os.path.join(ROOT, "public", "audio", "sofia")
+BACKUP_ROOT = os.path.join(AUDIO_DIR, "_backups")
+
+API = "https://api.elevenlabs.io/v1"
+VOZ_CANDB = "JddqVF50ZSIR7SRbJE6u"
+MODELO = "eleven_v3"
+TAG_EMOCION = "[gently]"
+ESTILO = 0.35
+ESTABILIDAD = 0.55
+
+# palabra real -> (frase natural en español, posición de la palabra en la frase)
+FRASES = {
+    "el": ("El perro corre.", "start"),
+    "de": ("De pronto, llovió.", "start"),
+    "tú": ("Tú puedes hacerlo.", "start"),
+}
+
+
+def leer_key() -> str:
+    k = os.environ.get("ELEVENLABS_API_KEY", "").strip()
+    if k:
+        return k
+    ruta = os.path.expanduser("~/.elevenlabs-key")
+    if os.path.exists(ruta):
+        return open(ruta).read().strip()
+    sys.exit("❌ Falta la API key. Guardala en ~/.elevenlabs-key")
+
+
+def generar(key: str, texto: str, salida: str) -> int:
+    cuerpo = json.dumps({
+        "text": texto,
+        "model_id": MODELO,
+        "voice_settings": {
+            "stability": ESTABILIDAD,
+            "similarity_boost": 0.75,
+            "style": ESTILO,
+            "use_speaker_boost": True,
+        },
+    }).encode()
+    req = urllib.request.Request(
+        f"{API}/text-to-speech/{VOZ_CANDB}?output_format=mp3_44100_192",
+        data=cuerpo,
+        headers={"xi-api-key": key, "Content-Type": "application/json"},
+    )
+    with urllib.request.urlopen(req, timeout=180) as r:
+        datos = r.read()
+    if len(datos) < 800:
+        raise RuntimeError(f"respuesta sospechosamente corta ({len(datos)} bytes)")
+    with open(salida, "wb") as f:
+        f.write(datos)
+    return len(datos)
+
+
+def duracion(path: str) -> float:
+    out = subprocess.run([FFMPEG, "-i", path], capture_output=True, text=True).stderr
+    m = re.search(r"Duration: (\d+):(\d+):(\d+\.\d+)", out)
+    if not m:
+        raise RuntimeError(f"no pude leer duración de {path}")
+    h, mi, s = m.groups()
+    return int(h) * 3600 + int(mi) * 60 + float(s)
+
+
+def silencios(path: str, noise_db=-22, min_dur=0.04) -> list[tuple[float, float]]:
+    out = subprocess.run(
+        [FFMPEG, "-i", path, "-af", f"silencedetect=noise={noise_db}dB:d={min_dur}", "-f", "null", "-"],
+        capture_output=True, text=True,
+    ).stderr
+    starts = [float(x) for x in re.findall(r"silence_start:\s*([\d.]+)", out)]
+    ends = [float(x) for x in re.findall(r"silence_end:\s*([\d.]+)", out)]
+    return list(zip(starts, ends))
+
+
+def recortar(path_in: str, path_out: str, start: float, end: float):
+    subprocess.run(
+        [FFMPEG, "-y", "-i", path_in, "-ss", f"{start:.3f}", "-to", f"{end:.3f}", "-c", "copy", path_out],
+        capture_output=True, check=True,
+    )
+
+
+def aislar_palabra(path_frase: str, path_out: str, posicion: str, dur_total: float):
+    """Descarta el silencio pegado al borde (arranque/final del archivo) para
+    no confundirlo con la pausa real entre la palabra objetivo y el resto."""
+    pares = silencios(path_frase)
+    PAD = 0.06
+    BORDE = 0.10
+
+    if posicion == "end":
+        contenido = [(s, e) for s, e in pares if e < dur_total - BORDE]
+        start = max(0.0, contenido[-1][1] - PAD) if contenido else 0.0
+        cola = [(s, e) for s, e in pares if e >= dur_total - BORDE]
+        end = min(dur_total, cola[0][0] + 0.12) if cola else dur_total
+    else:  # start
+        contenido = [(s, e) for s, e in pares if s > BORDE]
+        end = min(dur_total, contenido[0][0] + PAD) if contenido else dur_total
+        inicio = [(s, e) for s, e in pares if s <= BORDE]
+        start = max(0.0, inicio[0][1] - PAD) if inicio else 0.0
+
+    recortar(path_frase, path_out, start, end)
+    return start, end
+
+
+def main():
+    key = leer_key()
+    ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H-%M-%SZ")
+    backup_dir = os.path.join(BACKUP_ROOT, f"{ts}-frase-recorte")
+
+    print(f"voice_id a usar: {VOZ_CANDB}  (candB — confirmar contra muestras-voz/muestras-candidatas-latam.py)")
+    print(f"Backup en: {backup_dir}\n")
+
+    total_chars = 0
+    for palabra, (frase, posicion) in FRASES.items():
+        fn = f"palabra-{palabra.lower()}.mp3"
+        destino = os.path.join(AUDIO_DIR, fn)
+
+        if os.path.isfile(destino):
+            os.makedirs(backup_dir, exist_ok=True)
+            shutil.copy2(destino, os.path.join(backup_dir, fn))
+
+        texto_frase = f"{TAG_EMOCION} {frase}"
+        total_chars += len(texto_frase)
+        frase_tmp = os.path.join(BACKUP_ROOT, f"{ts}-frase-recorte", f"{palabra}-frase-completa.mp3")
+        os.makedirs(os.path.dirname(frase_tmp), exist_ok=True)
+
+        try:
+            generar(key, texto_frase, frase_tmp)
+            dur = duracion(frase_tmp)
+            start, end = aislar_palabra(frase_tmp, destino, posicion, dur)
+            print(f"  ✓ {fn} — frase: \"{frase}\" — recorte [{start:.2f}s, {end:.2f}s] de {dur:.2f}s "
+                  f"(frase completa guardada en {frase_tmp} por si hay que reajustar el corte)")
+        except urllib.error.HTTPError as e:
+            print(f"  ✗ {fn} HTTP {e.code}: {e.reason}")
+        except Exception as e:  # noqa: BLE001
+            print(f"  ✗ {fn} {e}")
+
+    print(f"\nCaracteres enviados a la API (las 3 frases completas): {total_chars}")
+
+
+if __name__ == "__main__":
+    main()
