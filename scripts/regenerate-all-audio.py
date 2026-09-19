@@ -1,18 +1,29 @@
 #!/usr/bin/env python3
 """
-Regenerate ALL Sofia audio files with a single consistent voice
-(es-AR-ElenaNeural — Argentine Spanish, friendly female).
+⚠️  OBSOLETO COMO GENERADOR — NO CORRER PARA PRODUCIR AUDIO.
 
-This script:
+Desde el 22-ago-2026 (commit 2e21c29) la voz canónica de la app es
+ElevenLabs "Jessica" (eleven_v3), vía scripts/regenerate-all-elevenlabs.py.
+Este script usaba edge-tts / es-AR-ElenaNeural y generó los 487 MP3
+originales, pero esos 487 (+8 más) ya fueron regenerados con el motor
+nuevo y NO deben volver a pisarse con edge-tts — la app quedaría con dos
+voces mezcladas (ver CLAUDE.md, sección "Voz de Sofía").
+
+Lo que SÍ sigue vivo de este archivo: `load_words()`, `load_stories()` y
+el diccionario `PHRASES` son el corpus de texto — la fuente única que
+regenerate-all-elevenlabs.py importa. Si agregás una frase nueva, se
+agrega ACÁ (a `PHRASES`, o vía curriculum.ts para historias), y de ahí la
+toma el script de ElevenLabs. No dupliques el corpus en otro lado.
+
+Este docstring original describía el motor viejo:
+  Regenerate ALL Sofia audio files with a single consistent voice
+  (es-AR-ElenaNeural — Argentine Spanish, friendly female).
   1. Reads the list of palabra-*.mp3 files currently in the folder
      and regenerates each with the word as text.
   2. Extracts story5 texts from curriculum.ts and generates
      historia-1..historia-44.
   3. Regenerates every phrase MP3 (reactions, tutor, session,
      affirmations, game rules, etc.) from a hardcoded mapping.
-
-Before running: delete the whole /public/audio/sofia/ folder so
-we start from a clean slate.
 """
 
 import asyncio
@@ -192,6 +203,19 @@ PHRASES = {
     "afirmacion-09": "Soy capaz de aprender cosas nuevas",
     "afirmacion-10": "Cada día aprendo algo nuevo",
     "afirmacion-principal": "Yo puedo, yo creo en mí, yo soy inteligente",
+
+    # Afirmación de sesión: una sola, al azar entre estas 8, una vez por
+    # sesión antes del menú de mundos (SofiaAffirmationGate.tsx). Agregadas
+    # el 19-sep-2026 — generar con regenerate-all-elevenlabs.py, no edge-tts.
+    "afirmacion-inicio-01": "¿Listo? Repetí conmigo: yo puedo, yo creo en mí, yo soy inteligente.",
+    "afirmacion-inicio-02": "¿Listo? Repetí conmigo: me esfuerzo, lo intento, y lo consigo.",
+    "afirmacion-inicio-03": "¿Listo? Repetí conmigo: me quiero tal como soy.",
+    "afirmacion-inicio-04": "¿Listo? Repetí conmigo: vine al mundo a hacer cosas hermosas.",
+    "afirmacion-inicio-05": "¿Listo? Repetí conmigo: si me equivoco, lo intento de nuevo.",
+    "afirmacion-inicio-06": "¿Listo? Repetí conmigo: cada día aprendo algo nuevo.",
+    "afirmacion-inicio-07": "¿Listo? Repetí conmigo: soy valiente y no me rindo.",
+    "afirmacion-inicio-08": "¿Listo? Repetí conmigo: leer me hace grande.",
+
     "afirmacion-auto-01": "Yo soy importante",
     "afirmacion-auto-02": "Yo amo quien soy",
     "afirmacion-auto-03": "Soy valioso",

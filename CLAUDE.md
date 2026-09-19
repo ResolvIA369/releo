@@ -108,6 +108,43 @@ para que la landing pública no pague ese costo.
 
 ---
 
+## Voz de Sofía
+
+**La voz canónica es ElevenLabs "Jessica"** (`cgSgspJ2msm6clMCkdW9`, modelo
+`eleven_v3`, salida 192kbps/44.1kHz mono), desde el **22-ago-2026**
+(commit `2e21c29`, rama `main`, ancestro de todas las ramas activas). Ese
+commit regeneró los ~495 MP3 existentes hasta ese momento — no quedó
+ninguno viejo mezclado.
+
+- **Pipeline de generación:** `scripts/regenerate-all-elevenlabs.py`. Usa
+  `[etiquetas]` de estilo entre corchetes (`[gently]`, `[warmly]`,
+  `[excited]`...) que el modelo `eleven_v3` interpreta como dirección de
+  emoción — no es SSML, es una convención propia de ese modelo. La
+  emoción por tipo de archivo (prefijo del nombre) está en el diccionario
+  `EMOCION` del script.
+- **Corpus de texto (fuente única):** `scripts/regenerate-all-audio.py`
+  sigue siendo de dónde sale el texto (`PHRASES`, `load_words()`,
+  `load_stories()`) — `regenerate-all-elevenlabs.py` lo importa. Si se
+  agrega una frase nueva, se agrega ahí. **Pero ese archivo ya NO genera
+  audio**: su propio pipeline (edge-tts / `es-AR-ElenaNeural`) quedó
+  obsoleto el mismo 22-ago y correrlo pisaría los MP3 de Jessica con la
+  voz vieja. Tiene un aviso en su docstring.
+- **`generate-missing-mp3s.py`** y **`generate-audio.mjs`**: motores
+  alternativos viejos, ambos con `es-MX-DaliaNeural` (voz mexicana que
+  nunca fue la elegida) — el segundo además con rate/pitch distinto por
+  frase (`msedge-tts`, Node). Ninguno de los dos generó lo que hoy está
+  en `public/audio/sofia`. Ignorar — no correr bajo ningún concepto.
+- **Antes de asumir qué voz tiene un MP3 existente, verificarlo**, no
+  fiarse del nombre del script que "debería" haberlo generado: `file
+  archivo.mp3` distingue el encoder — Jessica sale como `ID3 v2.4.0 [...]
+  Lavf, 192 kbps, 44.1 kHz`; edge-tts sale como `LAME3.100, 48 kbps, 24
+  kHz` (sin ID3). El 19-sep-2026 una sesión asumió edge-tts como voz
+  canónica (documentación desactualizada) y generó 8 MP3 nuevos con la
+  voz y el bitrate viejos, mezclados con el resto — se detectó y
+  corrigió el mismo día.
+
+---
+
 ## Gotchas conocidos
 
 - **`turbopack.root`** está fijado en `next.config.ts`. Sin eso, Turbopack infiere
@@ -142,9 +179,15 @@ para que la landing pública no pague ese costo.
   Factory (`CLAUDE.md`, `README.md`, `assets/*.png`, etc.) — nada específico
   de REleo, recuperable del repo público
   `saas-factory-community/saas-factory-setup` si hiciera falta.
-- **`muestras-voz/`** (raíz del repo): comparación de voces TTS que llevó a
-  elegir `es-AR-ElenaNeural` — 23 MP3 + 2 scripts Python que los generaron.
-  Material de referencia histórico, no lo usa la app en ningún momento.
+- **`muestras-voz/`** (raíz del repo): dos rondas de comparación de voces,
+  ninguna corrida por la app. La primera (script `generar-muestras.py`,
+  ~abril) comparó voces edge-tts y llevó a elegir `es-AR-ElenaNeural` —
+  la voz que se usó hasta el 22-ago. La segunda (`muestras-elevenlabs.py`,
+  ~agosto) comparó voces de ElevenLabs (Sarah, Matilda, Lily, Alice,
+  Laura, Jessica) y llevó a elegir Jessica — la voz canónica actual, ver
+  "Voz de Sofía" arriba. Las muestras de ambas rondas conviven en la
+  carpeta; el nombre del archivo indica cuál es cuál (`N-nombre.mp3` para
+  edge-tts, `el-N-nombre.mp3` para ElevenLabs).
 - **`_wip-pending/`** (raíz del repo): prototipos de features nunca
   integradas — onboarding, pantalla post-partida, repetición espaciada,
   haptics, una reescritura modular completa de Flash de Palabras
