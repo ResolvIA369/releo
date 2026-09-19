@@ -110,7 +110,35 @@ para que la landing pública no pague ese costo.
 
 ## Voz de Sofía
 
-**La voz canónica es ElevenLabs "Jessica"** (`cgSgspJ2msm6clMCkdW9`, modelo
+**Desde el 19-sep-2026 hay DOS voces, divididas a propósito por función.
+No unificar.**
+
+| Qué genera | Voz | voice_id | Por qué |
+|---|---|---|---|
+| `palabra-*.mp3` (las 220 palabras que el chico lee, Flash de Palabras) | **candB** | `0uHpKhb0ymsdvmCtPV8y` | Jessica es una voz de base en inglés: en pruebas mispronunciaba palabras en español. candB es nativa de español latinoamericano — se eligió tras comparar tres candidatas con material idéntico (ver `muestras-voz/muestras-candidatas-latam.py`). |
+| Todo lo demás — frases, reglas, reacciones, afirmaciones de sesión (~495 archivos) | **Jessica** | `cgSgspJ2msm6clMCkdW9` | Voz canónica desde el 22-ago-2026, sigue siéndolo para todo lo que NO es una palabra suelta que el chico tiene que leer. |
+
+La división es por **función, no por calidad**: candB dice las palabras
+sueltas (necesitan pronunciación nativa exacta, se leen aisladas, sin
+contexto que ayude a desambiguar), Jessica guía la sesión (frases largas,
+tono cálido, ya validada). No reemplazar una por la otra en el resto del
+corpus sin repetir la comparación.
+
+- **Pipeline de las 220 palabras (candB):** `scripts/regenerate-words-candb.py`.
+  Deriva la lista de las 220 palabras reales desde
+  `src/shared/constants/words.ts` vía Node (no desde el disco — hay 7
+  archivos huérfanos en `public/audio/sofia/palabra-*.mp3` que no son del
+  currículum actual: `autos`, `café`, `calcetín`, `chaqueta`, `falda`,
+  `morado`, `pijama` — no tocarlos). Usa la misma etiqueta de emoción
+  `[gently]` que el corpus le asigna hoy al prefijo `"palabra-"`. Reemplaza
+  a `scripts/regenerate-marked-words.py` (borrado el 19-sep-2026: apuntaba
+  a Jessica, ya no corresponde).
+- **Pipeline de afirmaciones de sesión (Jessica):**
+  `scripts/regenerate-afirmaciones-inicio.py`, para las 8
+  `afirmacion-inicio-01..08.mp3` de `SofiaAffirmationGate.tsx`.
+
+**La voz canónica de todo lo que NO es palabra suelta sigue siendo
+ElevenLabs "Jessica"** (`cgSgspJ2msm6clMCkdW9`, modelo
 `eleven_v3`, salida 192kbps/44.1kHz mono), desde el **22-ago-2026**
 (commit `2e21c29`, rama `main`, ancestro de todas las ramas activas). Ese
 commit regeneró los ~495 MP3 existentes hasta ese momento — no quedó
