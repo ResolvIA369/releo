@@ -127,6 +127,20 @@ para que la landing pública no pague ese costo.
   existido. Existían: estaban en el interior. El 19-sep se cortó la anidación
   (ver el resto de esta sección) y `doman-v4.git` quedó congelado como
   respaldo, sin uso futuro.
+- **19-sep-2026 — anidación destrackeada, pero no eliminada.** En el exterior
+  se corrió `git rm -r --cached saas-factory/` y se agregó `saas-factory/` a
+  su `.gitignore`: el exterior ya no ve ni trackea estos archivos, pero la
+  carpeta sigue físicamente anidada (`saas-factory/` adentro de
+  `/home/cesar/proyectos/releo/`, cada una con su propio `.git`). Aplanar la
+  carpeta (mover `saas-factory/` un nivel arriba y reubicar el contenido del
+  exterior a otra ruta) quedó **pendiente como tarea futura** — es la
+  solución definitiva, pero no urgente ahora que el destrackeo cortó el
+  riesgo de volver a commitear en el repo equivocado. El exterior
+  (`doman-v4.git`) tiene contenido real que no está acá y no se migró:
+  `muestras-voz/` (comparación de voces TTS que llevó a elegir
+  `es-AR-ElenaNeural`) y `_wip-pending/` (prototipos sin integrar: onboarding,
+  post-game, spaced repetition, haptics, una reescritura modular de
+  WordFlash). Sigue existiendo, pero en un repo que ya no se mira de rutina.
 - **Al verificar un SHA o una rama, confirmá primero en qué repo estás
   parado** (`git remote -v`, `pwd`). Un commit ausente en el que estás no
   prueba que no exista — puede estar en el otro.
