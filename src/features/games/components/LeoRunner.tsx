@@ -57,11 +57,19 @@ export const LEO_RUNNER_Z = {
 
 // Logical canvas size — CSS scales it to the container width.
 // W es generoso para que aun con 4 carriles las palabras entren
-// completas y grandes (la legibilidad es lo primero).
+// completas y grandes (la legibilidad es lo primero). El alto YA NO es
+// fijo (B3, QA sep-2026, "el canvas no llega hasta abajo"): un aspect
+// 820:420 (~1.95:1) nunca puede llenar tanto un desktop panoramico como
+// un mobile en vertical al mismo tiempo — la cuenta real, medida en los
+// tres viewports pedidos, da franjas de 128 a 644px sin usar. H_DEFAULT
+// es solo el punto de partida (fallback antes de medir, y la base contra
+// la que se escala la velocidad — ver dynBaseSpeed en el init de Pixi)
+// — el alto real se mide del contenedor ya montado y se guarda en
+// dimsRef, para que quede accesible fuera del effect de init (spawnWave,
+// handleResolve).
 const W = 820;
-const H = 420;
+const H_DEFAULT = 420;
 const DEFAULT_LANES_X = lanesXForCount(3, W);
-const LEO_Y = H - 72;
 const SIGN_H = 56;
 const LANE_GAP = 16; // separacion entre carteles vecinos (px logicos)
 const SIGN_PAD = 16; // margen interno del cartel a cada lado del texto
@@ -95,7 +103,7 @@ function separatorXs(lanesX: number[]): number[] {
 
 // (Re)dibuja las lineas punteadas en las X dadas, envueltas en vertical
 // para la ilusion de scroll. Conserva la posicion de scroll del layer.
-function rebuildDashes(PIXI: typeof import("pixi.js"), layer: Container, seps: number[]): void {
+function rebuildDashes(PIXI: typeof import("pixi.js"), layer: Container, seps: number[], H: number): void {
   layer.removeChildren().forEach((c) => c.destroy());
   for (const bx of seps) {
     for (let y = -DASH_PERIOD; y < H + DASH_PERIOD; y += DASH_PERIOD) {
@@ -150,6 +158,10 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
   const dashLayerRef = useRef<Container | null>(null);
   const obstaclesRef = useRef<LaneObstacles | null>(null);
   const invulnUntilRef = useRef(0); // fin de invulnerabilidad (seg de juego)
+  // B3: alto logico real (medido del contenedor, ya no fijo en 420) +
+  // valores derivados, compartidos con spawnWave/handleResolve que viven
+  // fuera del effect de init de Pixi.
+  const dimsRef = useRef({ H: H_DEFAULT, leoY: H_DEFAULT - 72, baseSpeed: BASE_SPEED });
   // Banda logica (0..H) donde un cartel todavia no es seguro mostrar: el
   // cartel de objetivo (ArcadeHud overlay) flota ENCIMA del canvas con un
   // top fijo en px reales (IMMERSIVE_HEADER_H + spacing.sm, para despejar
@@ -228,6 +240,29 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
       if (disposed || !hostRef.current) return;
 
       app = new PIXI.Application();
+
+      // B3 (QA sep-2026, "el canvas no llega hasta abajo"): el wrapper ya
+      // no fuerza un aspect ratio fijo (ver JSX mas abajo) — ocupa el 100%
+      // real disponible, a lo ancho Y a lo alto. Se mide ese rectangulo
+      // real ya montado y se elige un alto logico que reproduzca la MISMA
+      // proporcion (W fijo en 820, H se despeja) — asi el canvas escala
+      // parejo en los dos ejes (canvas.style.width/height en 100% mas
+      // abajo) sin estirar ni recortar nada, y el resto del archivo (Leo,
+      // carteles, obstaculos) sigue trabajando en unidades logicas que
+      // representan honestamente el alto real de cada viewport.
+      const rect = hostRef.current.getBoundingClientRect();
+      const measuredAspect = rect.width > 0 && rect.height > 0 ? rect.height / rect.width : H_DEFAULT / W;
+      const dynH = Math.round(Math.min(2200, Math.max(320, W * measuredAspect)));
+      const dynLeoY = dynH - 72;
+      // La distancia de spawn a resolucion (~H menos las bandas fijas de
+      // arriba/abajo) crece con H — sin escalar la velocidad, un canvas
+      // 4x mas alto (mobile vertical) tardaria ~4x mas en cruzar, un
+      // cambio de ritmo de juego mayor entre viewports. Se escala
+      // proporcional a H/H_DEFAULT para que el tiempo real de cruce (en
+      // segundos) se mantenga aproximadamente igual en los tres viewports.
+      const dynBaseSpeed = BASE_SPEED * (dynH / H_DEFAULT);
+      dimsRef.current = { H: dynH, leoY: dynLeoY, baseSpeed: dynBaseSpeed };
+
       // El canvas se muestra bastante mas grande que su resolucion logica
       // (820x420) — sin resolution > 1 en pantallas de alta densidad, Pixi
       // renderiza a esa resolucion baja y el navegador estira el bitmap por
@@ -238,14 +273,18 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
       // patron que ya tiene LeoVuela.tsx (tope en 2 por costo de GPU).
       // QA sep-2026 (reporte: linea vertical negra en el canvas).
       const dpr = typeof window !== "undefined" ? Math.min(window.devicePixelRatio || 1, 2) : 1;
-      await app.init({ width: W, height: H, background: "#dcefe2", antialias: true, resolution: dpr });
+      await app.init({ width: W, height: dynH, background: "#dcefe2", antialias: true, resolution: dpr });
       if (disposed || !hostRef.current) {
         app.destroy(true, { children: true });
         return;
       }
       appRef.current = app;
+      // width Y height en 100% (no "auto"): dynH ya replica la proporcion
+      // real del wrapper, asi que llenarlo en los dos ejes no distorsiona
+      // nada — y es lo que efectivamente hace que el canvas llegue hasta
+      // el borde inferior real en vez de derivar el alto del ancho.
       app.canvas.style.width = "100%";
-      app.canvas.style.height = "auto";
+      app.canvas.style.height = "100%";
       app.canvas.style.display = "block";
       app.canvas.style.borderRadius = "16px";
       hostRef.current.appendChild(app.canvas);
@@ -290,13 +329,13 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
       // poco del despeje del header en el peor caso — un cartel que asoma
       // ~12px bajo el borde del header durante un instante se lee bastante
       // mejor que un cartel que casi nunca esta.
-      const wrapperH = hostRef.current.getBoundingClientRect().height || H;
+      const wrapperH = hostRef.current.getBoundingClientRect().height || dynH;
       const unsafeTopPx = IMMERSIVE_HEADER_H + spacing.sm;
-      const rawSafeTop = (unsafeTopPx / wrapperH) * H;
-      const resolveAtY = LEO_Y - SIGN_RESOLVE_OFFSET;
+      const rawSafeTop = (unsafeTopPx / wrapperH) * dynH;
+      const resolveAtY = dynLeoY - SIGN_RESOLVE_OFFSET;
       const MIN_VISIBLE_SECONDS = 1.0;
-      const minVisibleLogical = BASE_SPEED * 60 * MIN_VISIBLE_SECONDS;
-      signSafeTopRef.current = Math.min(H * 0.45, rawSafeTop, resolveAtY - minVisibleLogical);
+      const minVisibleLogical = dynBaseSpeed * 60 * MIN_VISIBLE_SECONDS;
+      signSafeTopRef.current = Math.min(dynH * 0.45, rawSafeTop, resolveAtY - minVisibleLogical);
 
       // ARCADE_Z (ver LEO_RUNNER_Z arriba): el zIndex manda, no el orden
       // de addChild().
@@ -304,9 +343,9 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
 
       // Road background: 3 lanes separated by scrolling dashed lines
       const road = new PIXI.Graphics();
-      road.rect(0, 0, W, H).fill("#dcefe2");
-      road.rect(0, 0, 14, H).fill("#a8d5b0");
-      road.rect(W - 14, 0, 14, H).fill("#a8d5b0");
+      road.rect(0, 0, W, dynH).fill("#dcefe2");
+      road.rect(0, 0, 14, dynH).fill("#a8d5b0");
+      road.rect(W - 14, 0, 14, dynH).fill("#a8d5b0");
       road.zIndex = LEO_RUNNER_Z.road;
       app.stage.addChild(road);
 
@@ -314,7 +353,7 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
       // Nivel 3 agrega un cuarto carril
       const dashLayer = new PIXI.Container();
       dashLayer.zIndex = LEO_RUNNER_Z.dashes;
-      rebuildDashes(PIXI, dashLayer, separatorXs(DEFAULT_LANES_X));
+      rebuildDashes(PIXI, dashLayer, separatorXs(DEFAULT_LANES_X), dynH);
       app.stage.addChild(dashLayer);
       dashLayerRef.current = dashLayer;
 
@@ -328,7 +367,7 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
       const obstaclesLayer = new PIXI.Container();
       obstaclesLayer.zIndex = LEO_RUNNER_Z.obstacles;
       app.stage.addChild(obstaclesLayer);
-      obstaclesRef.current = new LaneObstacles(PIXI, obstaclesLayer, { lanesX: DEFAULT_LANES_X, H, leoY: LEO_Y });
+      obstaclesRef.current = new LaneObstacles(PIXI, obstaclesLayer, { lanesX: DEFAULT_LANES_X, H: dynH, leoY: dynLeoY });
 
       // Leo — sprite if the texture loads, emoji fallback otherwise
       const leo = new PIXI.Container();
@@ -352,7 +391,7 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
       shadow.ellipse(0, 0, 34, 9).fill({ color: 0x000000, alpha: 0.15 });
       leo.addChildAt(shadow, 0);
       leo.x = DEFAULT_LANES_X[1];
-      leo.y = LEO_Y;
+      leo.y = dynLeoY;
       app.stage.addChild(leo);
       leoRef.current = leo;
 
@@ -412,7 +451,7 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
           } else if (leoSpriteRef.current && leoSpriteRef.current.tint !== 0xffffff) {
             leoSpriteRef.current.tint = 0xffffff;
           }
-          leoC.y = LEO_Y + offsetY;
+          leoC.y = dynLeoY + offsetY;
 
           // Squash-and-stretch celebration on a correct pass
           if (leoSpriteRef.current && baseScaleRef.current > 0 && squashTRef.current < 1) {
@@ -451,7 +490,7 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
           fadingRef.current = fadingRef.current.filter((box) => {
             box.y += effSpeed * dt;
             box.alpha -= FADE_RATE * dt;
-            if (box.alpha <= 0 || box.y > H + 80) {
+            if (box.alpha <= 0 || box.y > dynH + 80) {
               box.destroy({ children: true });
               return false;
             }
@@ -462,7 +501,7 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
         // Resolver cuando los carteles llegan a Leo
         if (round.active && !round.resolved && round.signs.length > 0) {
           const firstY = round.signs[0].box.y;
-          if (firstY >= LEO_Y - SIGN_RESOLVE_OFFSET) {
+          if (firstY >= dynLeoY - SIGN_RESOLVE_OFFSET) {
             round.resolved = true;
             resolveRef.current();
           }
@@ -541,7 +580,7 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
     // Redibujar los separadores punteados si cambio la cantidad de carriles
     if (laneCount !== dashLaneCountRef.current && dashLayerRef.current) {
       dashLaneCountRef.current = laneCount;
-      rebuildDashes(PIXI, dashLayerRef.current, separatorXs(lanesXRef.current));
+      rebuildDashes(PIXI, dashLayerRef.current, separatorXs(lanesXRef.current), dimsRef.current.H);
     }
     const lanes = buildLanes(target, wordsRef.current, rocksForPhase(phase), laneCount, shuffle);
     const targetLane = lanes.findIndex((l) => l.word?.id === target.id);
@@ -601,7 +640,7 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
       signs,
       targetLane,
       target,
-      speed: BASE_SPEED,
+      speed: dimsRef.current.baseSpeed,
       active: true,
       resolved: false,
     };
@@ -655,7 +694,7 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
       if (canvas) {
         const rect = canvas.getBoundingClientRect();
         const scale = rect.width / W;
-        rewardCorrect(rect.left + lanesXRef.current[round.targetLane] * scale, rect.top + LEO_Y * scale);
+        rewardCorrect(rect.left + lanesXRef.current[round.targetLane] * scale, rect.top + dimsRef.current.leoY * scale);
       }
       jumpTRef.current = 0; // victory hop
       squashTRef.current = 0; // celebration squash-and-stretch
@@ -756,22 +795,30 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
 
   return (
     <GameShell title="Leo Corre" icon="🦁" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})} contentAlign="top" immersive onPauseChange={setPaused}>
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: spacing.md, paddingTop: spacing.xs }}>
+      <div style={{
+        display: "flex", flexDirection: "column", alignItems: "center", gap: spacing.md,
+        paddingTop: spacing.xs, height: "100%", minHeight: 0, boxSizing: "border-box",
+      }}>
         {gamePhase === "intro" && <ArcadeIntro color={GAME_COLOR} />}
 
-        {/* Pixi canvas + invisible lane tap zones. Mismo patron que Leo
-            Vuela: ancho acotado por vw O por dvh*aspect (lo que de menos),
-            para que el canvas domine la pantalla en vez de un maxWidth fijo
-            en px (~760, pensado para layout no-inmersivo). */}
+        {/* Pixi canvas + invisible lane tap zones. B3 (QA sep-2026, "el
+            canvas no llega hasta abajo"): antes el wrapper forzaba el
+            aspect ratio logico 820:420 tambien en CSS (aspectRatio +
+            min(96vw, calc(100dvh*aspect))) — eso garantiza que nunca
+            desborda, pero tambien que casi nunca LLENA: a los tres
+            viewports pedidos sobraba entre 128 y 644px de fondo blanco
+            abajo. Ahora el wrapper ocupa el 100% real disponible (flex:1
+            dentro de una columna ya alta al 100%, ver el effect de init
+            mas abajo) y es el ALTO LOGICO de Pixi el que se adapta a ese
+            rectangulo real, no al reves. */}
         <div style={{
-          position: "relative", width: `min(96vw, calc((100dvh - 16px) * ${W / H}))`,
-          aspectRatio: `${W} / ${H}`,
+          position: "relative", flex: 1, minHeight: 0, width: "100%",
           borderRadius: radii.xl, overflow: "hidden", border: `2px solid ${colors.border.light}`,
           containerType: "size",
         }}>
           {/* React must never render children inside hostRef — Pixi
               appends its canvas there manually */}
-          <div ref={hostRef} style={{ width: "100%", aspectRatio: `${W} / ${H}` }} />
+          <div ref={hostRef} style={{ width: "100%", height: "100%" }} />
           {gamePhase === "loading" && (
             <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: fontSizes.md, color: colors.text.muted, fontFamily: fonts.display }}>
               Cargando a Leo... 🦁

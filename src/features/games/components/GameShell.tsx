@@ -148,7 +148,13 @@ export const GameShell: React.FC<GameShellProps> = ({ title, icon, color, sessio
             justifyContent: contentAlign === "top" ? "flex-start" : "center",
             boxSizing: "border-box",
           }}>
-            <div style={{ width: "100%", maxWidth: 1000 }}>
+            {/* B3 (QA sep-2026, "el canvas no llega hasta abajo"): antes esta
+                caja no tenia altura propia (shrink-wrap al contenido), asi que
+                un juego cuyo canvas quisiera llenar el alto disponible no tenia
+                de donde tomarlo — el padre nunca le pasaba un 100% real. Solo
+                aplica en immersive: los demas juegos ya dependian del
+                shrink-wrap para su propio centrado vertical. */}
+            <div style={{ width: "100%", maxWidth: 1000, height: immersive ? "100%" : undefined }}>
               {children}
             </div>
           </div>
