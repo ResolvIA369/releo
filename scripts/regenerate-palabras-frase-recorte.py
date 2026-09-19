@@ -120,18 +120,27 @@ def recortar(path_in: str, path_out: str, start: float, end: float):
     )
 
 
+DURACION_MINIMA_ESPERADA = 0.15  # por debajo de esto, un recorte casi seguro se comió parte de la palabra
+
+
 def aislar_palabra(path_frase: str, path_out: str, posicion: str, dur_total: float):
     """Descarta el silencio pegado al borde (arranque/final del archivo) para
-    no confundirlo con la pausa real entre la palabra objetivo y el resto."""
+    no confundirlo con la pausa real entre la palabra objetivo y el resto.
+
+    PAD=0.12 (subido de 0.06 el 19-sep-2026): con 0.06, "el" y "tú" quedaron
+    con el arranque del audio pegado literalmente al inicio del habla (cero
+    margen) — cualquier imprecisión de ffmpeg con -c copy corta la primera
+    consonante. Con 0.12 queda colchón real de los dos lados.
+    """
     pares = silencios(path_frase)
-    PAD = 0.06
+    PAD = 0.12
     BORDE = 0.10
 
     if posicion == "end":
         contenido = [(s, e) for s, e in pares if e < dur_total - BORDE]
         start = max(0.0, contenido[-1][1] - PAD) if contenido else 0.0
         cola = [(s, e) for s, e in pares if e >= dur_total - BORDE]
-        end = min(dur_total, cola[0][0] + 0.12) if cola else dur_total
+        end = min(dur_total, cola[0][0] + PAD) if cola else dur_total
     else:  # start
         contenido = [(s, e) for s, e in pares if s > BORDE]
         end = min(dur_total, contenido[0][0] + PAD) if contenido else dur_total
@@ -139,6 +148,11 @@ def aislar_palabra(path_frase: str, path_out: str, posicion: str, dur_total: flo
         start = max(0.0, inicio[0][1] - PAD) if inicio else 0.0
 
     recortar(path_frase, path_out, start, end)
+
+    duracion_recorte = end - start
+    if duracion_recorte < DURACION_MINIMA_ESPERADA:
+        print(f"  ⚠️  recorte de sólo {duracion_recorte:.2f}s — sospechoso, probablemente se comió parte de la palabra. Revisar a mano.")
+
     return start, end
 
 
