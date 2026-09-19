@@ -51,11 +51,15 @@ ESTILO = 0.35
 ESTABILIDAD = 0.55
 
 # palabra real -> (frase natural en español, posición de la palabra en la frase)
+# posición: "start" | "end" | "middle" (la palabra tiene habla real antes Y
+# después dentro de la misma frase — hace falta un silencio detectable de
+# cada lado, si no hay margen suficiente entre palabras esto no sirve)
 FRASES = {
     "el": ("El perro corre.", "start"),
     "de": ("De pronto, llovió.", "start"),
     "tú": ("Tú puedes hacerlo.", "start"),
     "tu": ("Tu turno llegó.", "start"),
+    "silla": ("Silla o mesa.", "start"),
 }
 
 
@@ -141,11 +145,25 @@ def aislar_palabra(path_frase: str, path_out: str, posicion: str, dur_total: flo
         start = max(0.0, contenido[-1][1] - PAD) if contenido else 0.0
         cola = [(s, e) for s, e in pares if e >= dur_total - BORDE]
         end = min(dur_total, cola[0][0] + PAD) if cola else dur_total
-    else:  # start
+    elif posicion == "start":
         contenido = [(s, e) for s, e in pares if s > BORDE]
         end = min(dur_total, contenido[0][0] + PAD) if contenido else dur_total
         inicio = [(s, e) for s, e in pares if s <= BORDE]
         start = max(0.0, inicio[0][1] - PAD) if inicio else 0.0
+    else:  # middle — la palabra tiene habla real antes y después en la
+        # misma frase. Necesita al menos 2 pausas "de contenido" (ni
+        # pegadas al arranque ni a la cola del archivo): la primera marca
+        # el final de la palabra ANTERIOR (arranca la objetivo ahí), la
+        # segunda marca el final de la palabra objetivo (empieza la
+        # siguiente ahí).
+        contenido = [(s, e) for s, e in pares if s > BORDE and e < dur_total - BORDE]
+        if len(contenido) < 2:
+            raise RuntimeError(
+                f"posición 'middle' necesita 2 pausas detectables entre palabras, "
+                f"se encontraron {len(contenido)} — no se puede aislar con confianza"
+            )
+        start = max(0.0, contenido[0][1] - PAD)
+        end = min(dur_total, contenido[1][0] + PAD)
 
     recortar(path_frase, path_out, start, end)
 

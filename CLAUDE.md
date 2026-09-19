@@ -228,6 +228,18 @@ ninguno viejo mezclado.
 
 ## Gotchas conocidos
 
+- **`palabra-silla.mp3` — pendiente conocido, sin confirmar por oído (19-sep-2026).**
+  Es una de las 220 palabras del corpus, voz candB. Se probaron 3 versiones:
+  respelling `"siya"` (descartada — César la escuchó, decía "sha", se comía
+  la primera sílaba: la API generó un pulso de habla de sólo 0.30s seguido
+  de silencio de cola), texto real `"silla"` sin cambios (quedó con cero
+  margen de arranque, riesgo de comerse la "s" inicial — preservada en
+  `_backups/2026-09-19T17-55-21Z-frase-recorte/palabra-silla.mp3` por si
+  hay que retomarla), y **método (d)** con la frase "Silla o mesa." —
+  **esta última es la que quedó en producción**, por tener mejor margen de
+  silencio de los dos lados, pero nadie la escuchó todavía. Si sigue mal,
+  no vale la pena más intentos de tilde — probar otra frase o aceptarla
+  como limitación conocida (es 1 de 220).
 - **`turbopack.root`** está fijado en `next.config.ts`. Sin eso, Turbopack infiere
   la raíz en el directorio padre (que tiene otro `package-lock.json`) y el build
   revienta con *"Next.js package not found"*.
