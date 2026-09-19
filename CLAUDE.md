@@ -135,12 +135,24 @@ para que la landing pública no pague ese costo.
   carpeta (mover `saas-factory/` un nivel arriba y reubicar el contenido del
   exterior a otra ruta) quedó **pendiente como tarea futura** — es la
   solución definitiva, pero no urgente ahora que el destrackeo cortó el
-  riesgo de volver a commitear en el repo equivocado. El exterior
-  (`doman-v4.git`) tiene contenido real que no está acá y no se migró:
-  `muestras-voz/` (comparación de voces TTS que llevó a elegir
-  `es-AR-ElenaNeural`) y `_wip-pending/` (prototipos sin integrar: onboarding,
-  post-game, spaced repetition, haptics, una reescritura modular de
-  WordFlash). Sigue existiendo, pero en un repo que ya no se mira de rutina.
+  riesgo de volver a commitear en el repo equivocado. El único contenido real
+  que tenía el exterior y no estaba acá (`muestras-voz/`, `_wip-pending/`) se
+  migró el mismo día — ver los dos ítems siguientes. Lo que quedó en el
+  exterior después de eso es solo la documentación propia del template SaaS
+  Factory (`CLAUDE.md`, `README.md`, `assets/*.png`, etc.) — nada específico
+  de REleo, recuperable del repo público
+  `saas-factory-community/saas-factory-setup` si hiciera falta.
+- **`muestras-voz/`** (raíz del repo): comparación de voces TTS que llevó a
+  elegir `es-AR-ElenaNeural` — 23 MP3 + 2 scripts Python que los generaron.
+  Material de referencia histórico, no lo usa la app en ningún momento.
+- **`_wip-pending/`** (raíz del repo): prototipos de features nunca
+  integradas — onboarding, pantalla post-partida, repetición espaciada,
+  haptics, una reescritura modular completa de Flash de Palabras
+  (`WordFlash-modular-29abr/`). Tienen imports relativos rotos (asumían una
+  ubicación dentro de `src/` que nunca llegaron a tener) — por eso está
+  **excluida de `tsconfig.json` y de `eslint.config.mjs`**: no participa del
+  build ni del typecheck. Si algún día se retoma algo de acá, hay que
+  arreglar esos imports primero.
 - **Al verificar un SHA o una rama, confirmá primero en qué repo estás
   parado** (`git remote -v`, `pwd`). Un commit ausente en el que estás no
   prueba que no exista — puede estar en el otro.
