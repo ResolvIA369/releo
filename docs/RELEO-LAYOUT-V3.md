@@ -10,6 +10,14 @@ Verificación en los 4 viewports pedidos (390×844, 360×740, 1280×900, 1920×1
 con capturas reales vía Playwright — no análisis estático — para cada juego que
 se tocó.
 
+> **Nota (19-sep-2026):** Esta rama y los commits que cita este documento
+> (`93ca5c0`, `e18fd75`, `2da0dd458...`, y el resto listado más abajo) viven en
+> `releo.git`, el repo interior anidado en `saas-factory/` — no en el repo
+> exterior `doman-v4.git`. Una auditoría del 18-sep que solo miró el repo
+> exterior concluyó erróneamente que ni la rama ni los commits existían, y una
+> versión anterior de este documento llegó a decir eso. Es falso: son reales,
+> verificables con `git log`/`git show` parado en `saas-factory/`.
+
 ## Paso 1 — HUD apretado en mobile (base para todo lo demás)
 
 `ArcadeHud` overlay usaba `top: 52`, que era el borde inferior del **botón**

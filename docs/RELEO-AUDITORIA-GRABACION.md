@@ -6,6 +6,14 @@ un rediseño — es sacar errores, assets rotos y bugs evidentes.
 
 Leo Vuela ya está aprobado y mergeado (V2). Este documento cubre los otros 11.
 
+> **Nota (19-sep-2026):** Los commits que cita este documento (`df3edda`,
+> `1d20fd4`, y otros de la misma rama) viven en `releo.git`, el repo interior
+> anidado en `saas-factory/` — no en el repo exterior `doman-v4.git`. Una
+> auditoría del 18-sep que solo miró el repo exterior concluyó erróneamente
+> que estos commits nunca existieron y una versión anterior de este documento
+> llegó a decir eso. Es falso: son commits reales, verificables con
+> `git log`/`git show` parado en `saas-factory/`.
+
 ---
 
 ## Fase A — Auditoría (read-only)

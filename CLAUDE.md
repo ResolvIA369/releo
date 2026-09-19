@@ -116,6 +116,24 @@ para que la landing pública no pague ese costo.
 - El `experimental.mcpServer` solo se activa fuera de producción.
 - Hay dos carpetas de Sofía: `public/images/Sofía` (con tilde) y
   `public/images/sofia`. Revisar cuál se referencia antes de borrar ninguna.
+- **Este proyecto tuvo dos repos git gobernando la misma carpeta**: `releo.git`
+  (el interior, `saas-factory/.git` — canónico, historia granular completa
+  desde abril) y `doman-v4.git` (el exterior, `/home/cesar/proyectos/releo/.git`,
+  que trackeaba los archivos de `saas-factory/` como si fueran propios, sin
+  saber que había un repo anidado adentro). El 18-sep-2026 una sesión trabajó
+  sin darse cuenta parado en el exterior, y eso llevó a una auditoría que
+  concluyó — erróneamente — que varios commits y una rama citados en
+  `docs/RELEO-AUDITORIA-GRABACION.md` y `docs/RELEO-LAYOUT-V3.md` nunca habían
+  existido. Existían: estaban en el interior. El 19-sep se cortó la anidación
+  (ver el resto de esta sección) y `doman-v4.git` quedó congelado como
+  respaldo, sin uso futuro.
+- **Al verificar un SHA o una rama, confirmá primero en qué repo estás
+  parado** (`git remote -v`, `pwd`). Un commit ausente en el que estás no
+  prueba que no exista — puede estar en el otro.
+- **Un deploy no prueba que el código esté commiteado.** `vercel deploy` (con
+  o sin `--prod`) se corre desde `saas-factory/` y sube el working tree tal
+  cual está en disco — no depende de git ni de qué repo esté activo.
+  Verificar con `git status` aparte.
 
 ---
 
