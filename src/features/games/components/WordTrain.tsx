@@ -313,30 +313,68 @@ export const WordTrain: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
   }
 
   return (
-    <GameShell title="Tren de Palabras" icon="🚂" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})}>
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: spacing.md, paddingTop: spacing.sm }}>
+    <GameShell title="Tren de Palabras" icon="🚂" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})} contentAlign="top" immersive>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: spacing.md, paddingTop: spacing.xs, width: "100%" }}>
         {gamePhase === "intro" && <ArcadeIntro color={GAME_COLOR} />}
-        <ArcadeHud
-          color={GAME_COLOR}
-          targetPrefix="Tocá:"
-          level={level.levelUi}
-          correct={state.correctAttempts}
-          targetWord={targetWord}
-          waveKey={waveIdx}
-          energy={energy.energyUi}
-          energyMax={tuning.energyMax}
-        />
 
-        {/* Track area */}
+        {/* Escena: mismo patron que WordFishing/WordRain — alto por
+            calc(100dvh - 16px), fondo de cielo+pasto llenando la pantalla
+            en vez del panel fijo de 120px de antes (QA sep-2026, B2: quedaba
+            chico, con header apilado y canvas reducido tras la conversion a
+            immersive de los otros 6 juegos arcade — este se habia revertido
+            en su momento y nunca llego a commitearse). La mecanica del tren
+            es horizontal por naturaleza (no necesita una via mas alta), asi
+            que las vias quedan en una franja fija cerca del piso — el resto
+            del alto ganado se usa como fondo escenico (cielo+pajaros
+            arriba), igual que el oceano de WordFishing rellena con burbujas
+            y algas en vez de estirar los peces.
+            Ancho: "96vw" como valor PRINCIPAL, no "100%,maxWidth:96vw" (asi
+            estaba en WordFishing/WordRain) — critico visual (sep-2026)
+            encontro que con width:100% el escenario queda atrapado en el
+            maxWidth:1000 del wrapper de children de GameShell.tsx (franjas
+            vacias de ~220px a cada lado en 1440px, "se ve como una tarjeta
+            flotando, no un escenario que envuelve"). "96vw" es una unidad
+            de viewport: ignora el ancho acotado del ancestro y lo desborda
+            a proposito (mismo truco que ya usa el canvas de Leo Corre/Leo
+            Vuela, confirmado en vivo: con vw llega a ~1380 de 1440px). No
+            se toca GameShell.tsx (comparten wrapper Pesca de Palabras,
+            Lluvia, etc. — ese cap mas generico queda fuera del alcance de
+            este fix puntual del tren). */}
         <div style={{
-          width: "100%", maxWidth: "min(660px, calc(100vw - 32px))",
-          overflow: "hidden", borderRadius: radii.xl,
-          backgroundColor: "#e8f5e9", border: `2px solid ${colors.border.light}`,
-          padding: `${spacing.xl}px 0`, position: "relative", minHeight: 120,
+          position: "relative", width: "96vw", height: "calc(100dvh - 16px)",
+          borderRadius: radii.xl, overflow: "hidden",
+          background: "linear-gradient(180deg, #bfe3f0 0%, #d9f0d4 62%, #a8d5b0 63%, #8fc79c 100%)",
+          border: `2px solid ${colors.border.light}`,
+          containerType: "size",
         }}>
+          <ArcadeHud
+            overlay
+            color={GAME_COLOR}
+            targetPrefix="Tocá:"
+            level={level.levelUi}
+            correct={state.correctAttempts}
+            targetWord={targetWord}
+            waveKey={waveIdx}
+            energy={energy.energyUi}
+            energyMax={tuning.energyMax}
+          />
           <SkyBirds />
-          {/* Rails */}
-          <div style={{ position: "relative", height: 82 }}>
+
+          {/* Rails — franja fija cerca del piso, centrada en el 63% de
+              alto donde el fondo pasa de cielo a pasto. Ancho ACOTADO (no
+              left:0/right:0) — el trainX% se mueve relativo al ancho de
+              ESTE contenedor, y los vagones son de tamano fijo en px (96 +
+              gap + locomotora 50, ~350-450px segun nivel): en un contenedor
+              full-bleed de 1200-1800px (desktop ancho) el tren quedaba
+              reducido a un racimo diminuto pegado a un borde, perdido en el
+              medio de la escena — lo opuesto a "inmersivo" (QA sep-2026, al
+              verificar B2 con video de la ronda completa). Mismo criterio
+              que el canvas de Leo Corre/Leo Vuela: el ancho jugable se
+              acota (aca al viejo maxWidth de 660px, donde el tamano de los
+              vagones ya estaba calibrado) y se centra — el cielo+pasto de
+              fondo sí ocupan todo el ancho real, dando la sensacion
+              inmersiva sin romper la proporcion del tren. */}
+          <div style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", width: "min(660px, 92vw)", top: "58%", height: 82 }}>
             <div style={{ position: "absolute", left: 0, right: 0, top: 18, height: 4, backgroundColor: "#8d6e63" }} />
             <div style={{ position: "absolute", left: 0, right: 0, top: 60, height: 4, backgroundColor: "#8d6e63" }} />
             <div style={{ position: "absolute", left: 0, right: 0, top: 14, height: 52, backgroundImage: "repeating-linear-gradient(90deg, #5d4037 0px, #5d4037 4px, transparent 4px, transparent 20px)", opacity: 0.25 }} />
@@ -362,10 +400,8 @@ export const WordTrain: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
             </div>
           )}
         </div>
-
-
-        <FeedbackFlash type={feedbackType} />
       </div>
+      <FeedbackFlash type={feedbackType} />
     </GameShell>
   );
 };
