@@ -34,3 +34,16 @@ html, body {
   --color-text: 247 250 252;
   --color-text-muted: 203 213 224;
 }
+
+/* ─── Modo demo: "duda" visible antes de acertar ─────────────────────
+   Se aplica un instante a una opción incorrecta (nunca se la clickea —
+   Leo y Sofía no se equivocan leyendo) para que la elección automática
+   del modo demo se vea como alguien pensando, no como un script.
+   Ver src/features/games/hooks/useDemoAutoplay.ts */
+.demo-hesitate {
+  animation: demo-hesitate-pulse 0.6s ease-in-out infinite;
+}
+@keyframes demo-hesitate-pulse {
+  0%, 100% { transform: scale(1); filter: brightness(1); }
+  50% { transform: scale(1.06); filter: brightness(1.08); }
+}

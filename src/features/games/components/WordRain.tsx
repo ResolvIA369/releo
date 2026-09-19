@@ -23,6 +23,7 @@ import { sofiaNameWord, sofiaPlayAudio, stopVoice } from "@/shared/services/sofi
 import { fitWordFontSize } from "@/shared/utils/fitText";
 import { wordRainTuningForPhase } from "../config/word-rain";
 import { rewardForLevel, createWordBag } from "../config/arcade-tuning";
+import { demoChooseWithHesitation, demoJitter } from "../hooks/useDemoAutoplay";
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -65,6 +66,21 @@ export const WordRain: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
   const [feedbackType, setFeedbackType] = useState<"correct" | "wrong" | null>(null);
   const [burstPos, setBurstPos] = useState<{ x: number; y: number } | null>(null);
   const [caughtId, setCaughtId] = useState<string | null>(null);
+  // El area inmersiva ocupa el alto disponible en vez de un h:450 fijo —
+  // la caida de las gotas (animate y) necesita el alto REAL medido, no un
+  // numero hardcodeado (ver mas abajo, "fallDistance").
+  const [areaHeight, setAreaHeight] = useState(450);
+  const areaRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const el = areaRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => {
+      const h = entries[0]?.contentRect.height;
+      if (h) setAreaHeight(h);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   const gamePhaseRef = useRef<Phase>("intro");
   gamePhaseRef.current = gamePhase;
@@ -212,16 +228,21 @@ export const WordRain: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
     }
   }, [energy, tuning, recordAttempt, flashFeedback]);
 
-  // Demo: cada tanda, toca la palabra correcta cuando ya esta cayendo
+  // Demo: cada tanda, duda entre las palabras que ya estan cayendo y toca la
+  // correcta. El (targetDrop?.delay ?? 0) * 1000 es fisico (cuando aparece
+  // esa gota) y no lleva jitter; el tiempo de lectura despues de eso si.
   useEffect(() => {
     if (!isDemo || gamePhase !== "running" || !target) return;
     let done = false;
     const targetDrop = drops.find((d) => d.word.id === target.id);
     const t = setTimeout(() => {
       if (done || resolvedRef.current) return;
-      const btn = document.querySelector(`[data-word-id="${target.id}"]`) as HTMLElement;
-      if (btn) { done = true; btn.click(); }
-    }, (targetDrop?.delay ?? 0) * 1000 + 1600);
+      done = true;
+      const allDrops = Array.from(document.querySelectorAll("[data-word-id]")) as HTMLElement[];
+      const correctEl = allDrops.find((el) => el.dataset.wordId === target.id) ?? null;
+      const wrongEls = allDrops.filter((el) => el.dataset.wordId && el.dataset.wordId !== target.id);
+      demoChooseWithHesitation(correctEl, wrongEls);
+    }, (targetDrop?.delay ?? 0) * 1000 + demoJitter(1600));
     return () => clearTimeout(t);
   }, [isDemo, gamePhase, waveIdx, target, drops]);
 
@@ -259,27 +280,39 @@ export const WordRain: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
   }
 
   return (
-    <GameShell title="Lluvia de Palabras" icon="🌧️" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})}>
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: spacing.md, paddingTop: spacing.sm }}>
+    <GameShell title="Lluvia de Palabras" icon="🌧️" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})} contentAlign="top" immersive>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: spacing.md, paddingTop: spacing.xs, width: "100%" }}>
         {gamePhase === "intro" && <ArcadeIntro color={GAME_COLOR} />}
-        <ArcadeHud
-          color={GAME_COLOR}
-          targetPrefix="Atrapá:"
-          level={level.levelUi}
-          correct={state.correctAttempts}
-          targetWord={target}
-          waveKey={waveIdx}
-          energy={energy.energyUi}
-          energyMax={tuning.energyMax}
-        />
 
-        {/* Rain area */}
-        <div style={{
-          position: "relative", width: "100%", maxWidth: "min(600px, calc(100vw - 32px))", height: "min(450px, 60vh)",
+        {/* Rain area: la nube cae ocupando el alto disponible (antes h fijo
+            min(450px,60vh)) — el area es ahora el elemento dominante, con
+            el HUD flotando encima (mismo patron que Leo Vuela). Alto por
+            calc(100dvh - ...) y NO flex:1/height:100%: el wrapper de
+            GameShell que envuelve a los children ("children" de
+            GameShellProps) no tiene flex-grow, asi que un height:100% ahi
+            resuelve a auto — exactamente el bug que ya documenta el
+            comentario de Leo Vuela sobre containerType:size con alto 0
+            (visto en pantalla: el area quedaba invisible, recortada por
+            overflow:hidden). El header flota ENCIMA (position:absolute),
+            no empuja, por eso 100dvh menos un margen chico alcanza. */}
+        <div ref={areaRef} style={{
+          position: "relative", width: "100%", maxWidth: "96vw", height: "calc(100dvh - 16px)",
           borderRadius: radii.xl,
           background: "linear-gradient(180deg, #ebf8ff 0%, #bee3f8 60%, #90cdf4 100%)",
           border: `2px solid ${colors.border.light}`, overflow: "hidden",
+          containerType: "size",
         }}>
+          <ArcadeHud
+            overlay
+            color={GAME_COLOR}
+            targetPrefix="Atrapá:"
+            level={level.levelUi}
+            correct={state.correctAttempts}
+            targetWord={target}
+            waveKey={waveIdx}
+            energy={energy.energyUi}
+            energyMax={tuning.energyMax}
+          />
           <RainAndThunder />
           <div style={{ position: "absolute", top: 8, left: "10%", fontSize: 36, opacity: 0.4 }}>☁️</div>
           <div style={{ position: "absolute", top: 4, right: "15%", fontSize: 28, opacity: 0.3 }}>☁️</div>
@@ -296,7 +329,7 @@ export const WordRain: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
                   <motion.button
                     key={drop.key}
                     initial={{ y: -80, opacity: 0 }}
-                    animate={paused ? {} : { y: 450, opacity: 1 }}
+                    animate={paused ? {} : { y: areaHeight, opacity: 1 }}
                     transition={{ duration: fallSeconds, delay: drop.delay, ease: "linear" }}
                     onAnimationComplete={() => onDropLand(drop.word.id === targetRef.current?.id)}
                     data-word-id={drop.word.id} onClick={(e) => handleTap(drop, e)}

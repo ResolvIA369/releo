@@ -43,6 +43,15 @@ interface GameShellProps {
   immersive?: boolean;
 }
 
+// Alto real (px) de la barra flotante en modo immersive: boton 44px +
+// spacing.sm (8) de padding arriba y abajo = 60. Fuente unica: quien
+// necesite esquivar el header (ArcadeHud overlay, MoveButtons) importa
+// esto en vez de remedir a mano. Antes ArcadeHud tenia su propio 52 —
+// el borde inferior del BOTON, no el borde real del header (que sigue
+// 8px de padding mas abajo) — y quedaba pegado, casi tocando el HUD de
+// abajo (QA mobile 390x844/360x740, sep-2026).
+export const IMMERSIVE_HEADER_H = 44 + spacing.sm * 2;
+
 export const GameShell: React.FC<GameShellProps> = ({ title, icon, color, session, onBack, children, contentAlign = "center", immersive = false }) => {
   const [showMenu, setShowMenu] = useState(false);
   const [paused, setPaused] = useState(false);
@@ -103,7 +112,12 @@ export const GameShell: React.FC<GameShellProps> = ({ title, icon, color, sessio
               border: "2px solid #FFD54F",
               boxShadow: "0 2px 6px rgba(218,165,32,0.25)",
             }}>
-              <img src="/images/cofre.png" alt="cofre" style={{ height: 26, width: 55, flexShrink: 0, objectFit: "contain", display: "block" }} />
+              {/* width:height = 500:320 (1.5625), el ratio real del PNG tras
+                  recortarlo al cofre (antes el archivo incluia monedas
+                  desparramadas a los lados, ratio 2.12:1 — con esa caja
+                  angosta el cofre se leia aplastado aunque objectFit:contain
+                  nunca lo deformara de verdad). QA sep-2026. */}
+              <img src="/images/cofre.png" alt="cofre" style={{ height: 26, width: 41, flexShrink: 0, objectFit: "contain", display: "block" }} />
               <span style={{ fontSize: fontSizes.sm, fontWeight: "bold", fontFamily: fonts.display, color: "#F59E0B" }}>
                 {session.correctAttempts}
               </span>

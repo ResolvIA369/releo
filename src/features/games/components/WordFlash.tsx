@@ -27,6 +27,7 @@ import { recAudio } from "@/shared/utils/recorder";
 import { CelebrationGif } from "@/shared/components/CelebrationGif";
 import { LeoCompanion } from "@/shared/components/LeoCompanion";
 import { DEFAULT_SESSION_SCRIPT, fillScript } from "@/features/session/config/session-scripts";
+import { demoJitter } from "../hooks/useDemoAutoplay";
 
 // ═══════════════════════════════════════════════════════════════════════
 // WordFlash — Definitive Doman Session
@@ -363,7 +364,7 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
   useEffect(() => {
     if (!isDemo) return;
     if (ph === "ready") {
-      const t = setTimeout(() => handleStart(), 400);
+      const t = setTimeout(() => handleStart(), demoJitter(400));
       return () => clearTimeout(t);
     }
   }, [isDemo, ph]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -371,11 +372,11 @@ export function WordFlash({ words, phase, onComplete, onBack, isDemo = false }: 
   useEffect(() => {
     if (!isDemo) return;
     if (ph === "repeat" && showRepeatWord && !repeatResolvingRef.current) {
-      // 3.5 seconds: gives ~2s of suspense with the timer bar visible
-      // before the "child" taps the correct answer
+      // ~3.5s base, con jitter y velocidad de demo: da tiempo de lectura
+      // con el timer bar visible antes de que el "chico" responda.
       const t = setTimeout(() => {
         if (!repeatResolvingRef.current) handleCardTap();
-      }, 3500);
+      }, demoJitter(3500));
       return () => clearTimeout(t);
     }
   }, [isDemo, ph, showRepeatWord, handleCardTap]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -920,7 +921,7 @@ function moodDeSofia(fase: string): SofiaMood {
                 boxShadow: "0 2px 8px rgba(218,165,32,0.3)",
               }}
             >
-              <img src="/images/cofre.png" alt="cofre" style={{ height: 28, width: 59, flexShrink: 0, objectFit: "contain", display: "block" }} />
+              <img src="/images/cofre.png" alt="cofre" style={{ height: 28, width: 44, flexShrink: 0, objectFit: "contain", display: "block" }} />
               <motion.span
                 key={score}
                 initial={{ scale: 1.4 }}

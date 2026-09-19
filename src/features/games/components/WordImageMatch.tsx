@@ -5,8 +5,8 @@ import { motion } from "framer-motion";
 import type { GameProps } from "../types";
 import type { DomanWord } from "@/shared/types/doman";
 import { useGameState } from "../hooks/useGameState";
-import { useDemoAutoplay } from "../hooks/useDemoAutoplay";
-import { GameShell, usePause } from "./GameShell";
+import { useDemoAutoplay, demoChooseSelectorWithHesitation } from "../hooks/useDemoAutoplay";
+import { GameShell, usePause, IMMERSIVE_HEADER_H } from "./GameShell";
 import { useGameMusic } from "../hooks/useGameMusic";
 import { useRewards } from "@/shared/components/RewardsLayer";
 import { GameIntro } from "./GameIntro";
@@ -54,11 +54,16 @@ export const WordImageMatch: React.FC<GameProps> = ({ words, phase = 1, onComple
   const finished = currentIndex >= totalWords;
 
 
-  // Demo: auto-select correct answer
+  // Demo: lee la palabra (tiempo de lectura + jitter, ver useDemoAutoplay),
+  // duda un instante sobre una imagen incorrecta y recién ahí elige la
+  // correcta. Nunca clickea una incorrecta de verdad.
   useDemoAutoplay(isDemo, gamePhase === "playing" && !feedbackType && !!currentWord, () => {
-    const btn = document.querySelector(`[data-word-id="${currentWord?.id}"]`) as HTMLElement;
-    if (btn) btn.click();
-  }, 2500);
+    if (!currentWord) return;
+    demoChooseSelectorWithHesitation(
+      `[data-word-id="${currentWord.id}"]`,
+      options.filter((o) => o.id !== currentWord.id).map((o) => `[data-word-id="${o.id}"]`)
+    );
+  }, 1800);
 
   // Game end
   useEffect(() => {
@@ -72,13 +77,31 @@ export const WordImageMatch: React.FC<GameProps> = ({ words, phase = 1, onComple
   // by voice before the choice would let the game be won by ear alone,
   // defeating the whole point of a reading-recognition check. Sofia
   // only confirms the word AFTER a correct answer, in handleSelect.
+  // Una ronda es TODA fotos o TODA emojis, nunca mezcladas — con fotos
+  // reales al lado de emojis el chico puede descartar por estilo visual
+  // en vez de leer la palabra (QA sep-2026, reportado en produccion).
+  // Solo 28 palabras tienen foto real (word-images.ts) y no todos los
+  // bloques de 25 tienen 4 o mas, asi que "ronda de fotos" es la
+  // excepcion, no la regla: se arma SOLO cuando la palabra objetivo tiene
+  // foto Y quedan al menos 3 companeras con foto en este mismo bloque de
+  // palabras para completar las 4 opciones sin repetir. Si no alcanza,
+  // la ronda entera cae a emoji (incluida la palabra objetivo, aunque
+  // tenga foto) en vez de mezclar.
+  const roundIsPhoto = useMemo(() => {
+    if (!currentWord || !WORD_IMAGE_MAP[currentWord.text]) return false;
+    const photoPeers = words.filter((w) => w.id !== currentWord.id && WORD_IMAGE_MAP[w.text]);
+    return photoPeers.length >= OPTIONS_COUNT - 1;
+  }, [currentWord, words]);
+
   // Options
   const options = useMemo(() => {
     if (!currentWord) return [];
-    const others = words.filter((w) => w.id !== currentWord.id);
-    const distractors = shuffle(others).slice(0, OPTIONS_COUNT - 1);
+    const pool = roundIsPhoto
+      ? words.filter((w) => w.id !== currentWord.id && WORD_IMAGE_MAP[w.text])
+      : words.filter((w) => w.id !== currentWord.id);
+    const distractors = shuffle(pool).slice(0, OPTIONS_COUNT - 1);
     return shuffle([currentWord, ...distractors]);
-  }, [currentWord, words]);
+  }, [currentWord, words, roundIsPhoto]);
 
   // Time up
   const handleTimeUp = useCallback(() => {
@@ -171,28 +194,36 @@ export const WordImageMatch: React.FC<GameProps> = ({ words, phase = 1, onComple
   if (!currentWord) return null;
 
   return (
-    <GameShell title="Empareja Palabra-Imagen" icon="🖼️" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})}>
-      <div style={{ display: "flex", gap: spacing.md, paddingTop: spacing.md, maxWidth: "min(620px, calc(100vw - 32px))", margin: "0 auto" }}>
+    <GameShell title="Empareja Palabra-Imagen" icon="🖼️" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})} contentAlign="top" immersive>
+      <div style={{ display: "flex", gap: spacing.md, paddingTop: IMMERSIVE_HEADER_H + spacing.sm, maxWidth: "min(1100px, 96vw)", width: "100%", margin: "0 auto" }}>
         {/* Main content */}
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: spacing.lg }}>
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: spacing.md }}>
           {/* Counter */}
           <span style={{ fontSize: fontSizes.sm, color: colors.text.placeholder }}>
             {currentIndex + 1} / {totalWords}
           </span>
 
-          {/* Word to match — NO audio, just visual */}
+          {/* Word to match — NO audio, just visual. Dominante pero SIN
+              comerse el alto: antes usaba 9vh/hasta 140px de fuente mas
+              padding spacing.md/xl, y en 1280x900 la segunda fila de
+              opciones terminaba pegada (a veces cortada) contra el borde
+              inferior del canvas immersive, que no scrollea (overflow
+              hidden). QA sep-2026: reportado en produccion. */}
           <motion.div
             key={currentWord.id}
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             style={{
-              padding: `${spacing.md}px ${spacing.xl}px`,
+              padding: `${spacing.sm}px ${spacing.lg}px`,
               backgroundColor: `${GAME_COLOR}10`,
               border: `3px solid ${GAME_COLOR}`,
               borderRadius: radii.xl,
             }}
           >
-            <span style={{ fontSize: fitWordFontSize(currentWord.text, fontSizes["3xl"]), fontWeight: "bold", fontFamily: fonts.display, color: GAME_COLOR, whiteSpace: "nowrap" }}>
+            <span style={{
+              fontSize: `clamp(${fitWordFontSize(currentWord.text, fontSizes["3xl"])}px, 6vh, ${fitWordFontSize(currentWord.text, 100)}px)`,
+              fontWeight: "bold", fontFamily: fonts.display, color: GAME_COLOR, whiteSpace: "nowrap",
+            }}>
               {currentWord.text}
             </span>
           </motion.div>
@@ -225,21 +256,21 @@ export const WordImageMatch: React.FC<GameProps> = ({ words, phase = 1, onComple
                   data-word-id={word.id} onClick={(e) => handleSelect(word, e)}
                   disabled={!!feedbackType}
                   style={{
-                    padding: WORD_IMAGE_MAP[word.text] ? spacing.sm : spacing.lg,
+                    padding: roundIsPhoto ? spacing.sm : spacing.lg,
                     borderRadius: radii.xl,
                     border: `3px solid ${borderColor}`, backgroundColor: bg,
-                    fontSize: 56, cursor: feedbackType ? "default" : "pointer",
+                    fontSize: "clamp(48px, 10vh, 130px)", cursor: feedbackType ? "default" : "pointer",
                     display: "flex", alignItems: "center", justifyContent: "center",
                     boxShadow: isSelected && feedbackType === "correct" ? shadows.glow(colors.success) : shadows.sm,
-                    minHeight: 90,
+                    minHeight: "clamp(80px, 22vh, 300px)",
                     overflow: "hidden",
                   }}
                 >
-                  {WORD_IMAGE_MAP[word.text] ? (
+                  {roundIsPhoto ? (
                     <img
                       src={WORD_IMAGE_MAP[word.text]}
                       alt={word.text}
-                      style={{ width: "100%", height: 80, objectFit: "contain", borderRadius: radii.lg }}
+                      style={{ width: "100%", height: "clamp(60px, 19vh, 260px)", objectFit: "contain", borderRadius: radii.lg }}
                     />
                   ) : (
                     <span>{EMOJI_MAP[word.text] ?? "❓"}</span>

@@ -22,6 +22,7 @@ import { colors, spacing, radii, fontSizes, fonts } from "@/shared/styles/design
 import { sofiaNameWord, sofiaPlayAudio, stopVoice } from "@/shared/services/sofiaVoice";
 import { wordFishingTuningForPhase } from "../config/word-fishing";
 import { rewardForLevel, createWordBag } from "../config/arcade-tuning";
+import { demoChooseWithHesitation, demoJitter } from "../hooks/useDemoAutoplay";
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -63,6 +64,21 @@ export const WordFishing: React.FC<GameProps> = ({ words, phase = 1, onComplete,
   const [feedbackType, setFeedbackType] = useState<"correct" | "wrong" | null>(null);
   const [burstPos, setBurstPos] = useState<{ x: number; y: number } | null>(null);
   const [caughtId, setCaughtId] = useState<string | null>(null);
+  // El area inmersiva ocupa el ancho disponible en vez de un maxWidth fijo
+  // (~620px) — el nado horizontal de los peces (animate x) necesita el
+  // ancho REAL medido, no numeros hardcodeados (ver "areaWidth" abajo).
+  const [areaWidth, setAreaWidth] = useState(620);
+  const areaRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const el = areaRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => {
+      const w = entries[0]?.contentRect.width;
+      if (w) setAreaWidth(w);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   const gamePhaseRef = useRef<Phase>("intro");
   gamePhaseRef.current = gamePhase;
@@ -194,15 +210,18 @@ export const WordFishing: React.FC<GameProps> = ({ words, phase = 1, onComplete,
     }
   }, [energy, tuning, recordAttempt, rewardCorrect, speakDucked, spawnWave, flashFeedback, levelRef]);
 
-  // Demo: cada tanda, toca el pez correcto
+  // Demo: cada tanda, duda entre peces y toca el correcto
   useEffect(() => {
     if (!isDemo || gamePhase !== "running" || !target) return;
     let done = false;
     const t = setTimeout(() => {
       if (done || resolvedRef.current) return;
-      const btn = document.querySelector(`[data-word-id="${target.id}"]`) as HTMLElement;
-      if (btn) { done = true; btn.click(); }
-    }, 3000);
+      done = true;
+      const allFish = Array.from(document.querySelectorAll("[data-word-id]")) as HTMLElement[];
+      const correctEl = allFish.find((el) => el.dataset.wordId === target.id) ?? null;
+      const wrongEls = allFish.filter((el) => el.dataset.wordId && el.dataset.wordId !== target.id);
+      demoChooseWithHesitation(correctEl, wrongEls);
+    }, demoJitter(3000));
     return () => clearTimeout(t);
   }, [isDemo, gamePhase, waveIdx, target]);
 
@@ -240,27 +259,31 @@ export const WordFishing: React.FC<GameProps> = ({ words, phase = 1, onComplete,
   }
 
   return (
-    <GameShell title="Pesca de Palabras" icon="🎣" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})}>
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: spacing.md, paddingTop: spacing.sm }}>
+    <GameShell title="Pesca de Palabras" icon="🎣" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})} contentAlign="top" immersive>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: spacing.md, paddingTop: spacing.xs, width: "100%" }}>
         {gamePhase === "intro" && <ArcadeIntro color={GAME_COLOR} />}
-        <ArcadeHud
-          color={GAME_COLOR}
-          targetPrefix="Pescá:"
-          level={levelUi}
-          correct={state.correctAttempts}
-          targetWord={target}
-          waveKey={waveIdx}
-          energy={energy.energyUi}
-          energyMax={tuning.energyMax}
-        />
 
-        {/* Ocean */}
-        <div style={{
-          position: "relative", width: "100%", maxWidth: "min(620px, calc(100vw - 32px))", height: "min(420px, 56vh)",
+        {/* Ocean: mismo patron que Lluvia — alto por calc(100dvh - 16px),
+            NO flex:1/height:100% (ver comentario en WordRain.tsx sobre el
+            wrapper de children de GameShell sin flex-grow). */}
+        <div ref={areaRef} style={{
+          position: "relative", width: "100%", maxWidth: "96vw", height: "calc(100dvh - 16px)",
           borderRadius: radii.xl, overflow: "hidden",
           background: "linear-gradient(180deg, #b3e5fc 0%, #4fc3f7 25%, #0288d1 60%, #01579b 100%)",
           border: `2px solid ${colors.border.light}`,
+          containerType: "size",
         }}>
+          <ArcadeHud
+            overlay
+            color={GAME_COLOR}
+            targetPrefix="Pescá:"
+            level={levelUi}
+            correct={state.correctAttempts}
+            targetWord={target}
+            waveKey={waveIdx}
+            energy={energy.energyUi}
+            energyMax={tuning.energyMax}
+          />
           <UnderwaterAmbience />
           <motion.div animate={{ x: [-30, 30, -30] }}
             transition={{ repeat: Infinity, duration: 5, ease: "easeInOut" }}
@@ -271,11 +294,31 @@ export const WordFishing: React.FC<GameProps> = ({ words, phase = 1, onComplete,
             if (caughtId === fish.word.id) return null;
             const yPos = 24 + i * 18;
             const goesRight = i % 2 === 0;
+            // Off-screen a cada lado del ancho REAL del oceano (antes 560
+            // fijo, calibrado para el maxWidth viejo de 620px — con el area
+            // inmersiva mucho mas ancha en desktop, los peces nadaban solo
+            // por una franja angosta a la izquierda y dejaban el resto del
+            // oceano vacio).
+            const farRight = areaWidth + 160;
+            // `fish.speed` (9-12s) fue calibrado en su momento para el
+            // ancho FIJO viejo (620px, ver comentario de areaWidth arriba)
+            // — cuando el area paso a ser inmersiva y mucho mas ancha, la
+            // distancia real del recorrido crecio pero esta duracion se
+            // dejo igual: mismo tiempo para viajar mas lejos = mas rapido
+            // en pantalla. Regresion de Layout V3, no una decision de
+            // dificultad (QA sep-2026). Se escala la duracion con la
+            // distancia real (ida+vuelta) contra la distancia de
+            // referencia a 620px, para que la velocidad en pantalla
+            // (px/s) quede igual a la que ya estaba calibrada.
+            const REFERENCE_AREA_WIDTH = 620;
+            const travelDistance = 2 * (areaWidth + 300); // ida + vuelta, 140+farRight en cada sentido
+            const referenceDistance = 2 * (REFERENCE_AREA_WIDTH + 300);
+            const scaledDuration = (fish.speed / speedMul) * (travelDistance / referenceDistance);
             return (
               <motion.button
                 key={`${fish.word.id}-${waveIdx}`}
-                animate={paused ? {} : { x: goesRight ? [-140, 560, -140] : [560, -140, 560] }}
-                transition={{ repeat: Infinity, duration: fish.speed / speedMul, ease: "linear" }}
+                animate={paused ? {} : { x: goesRight ? [-140, farRight, -140] : [farRight, -140, farRight] }}
+                transition={{ repeat: Infinity, duration: scaledDuration, ease: "linear" }}
                 data-word-id={fish.word.id} onClick={(e) => handleTap(fish, e)}
                 style={{
                   position: "absolute", top: `${yPos}%`, left: 0,

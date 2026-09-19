@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>candA vs candB — comparación</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 640px; margin: 2rem auto; padding: 0 1rem; }
+  h1 { font-size: 1.1rem; }
+  table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+  th, td { text-align: left; padding: 0.5rem; border-bottom: 1px solid #ddd; }
+  th { font-size: 0.85rem; color: #666; }
+  audio { width: 200px; height: 32px; }
+  .word { font-weight: 600; }
+  .note { color: #666; font-size: 0.85rem; margin-top: 1.5rem; }
+</style>
+</head>
+<body>
+<h1>candA (descartada) vs candB (elegida) — 10 palabras de muestra</h1>
+<table>
+  <tr><th>Palabra</th><th>candA (backup)</th><th>candB (producción actual)</th></tr>
+  <tr><td class="word">primo</td><td><audio controls src="/audio/sofia/_backups/2026-09-19T15-00-15Z-candB/palabra-primo.mp3?v=1"></audio></td><td><audio controls src="/audio/sofia/palabra-primo.mp3?v=1"></audio></td></tr>
+  <tr><td class="word">banana</td><td><audio controls src="/audio/sofia/_backups/2026-09-19T15-00-15Z-candB/palabra-banana.mp3?v=1"></audio></td><td><audio controls src="/audio/sofia/palabra-banana.mp3?v=1"></audio></td></tr>
+  <tr><td class="word">piyama</td><td><audio controls src="/audio/sofia/_backups/2026-09-19T15-00-15Z-candB/palabra-piyama.mp3?v=1"></audio></td><td><audio controls src="/audio/sofia/palabra-piyama.mp3?v=1"></audio></td></tr>
+  <tr><td class="word">hospital</td><td><audio controls src="/audio/sofia/_backups/2026-09-19T15-00-15Z-candB/palabra-hospital.mp3?v=1"></audio></td><td><audio controls src="/audio/sofia/palabra-hospital.mp3?v=1"></audio></td></tr>
+  <tr><td class="word">tú</td><td><audio controls src="/audio/sofia/_backups/2026-09-19T15-00-15Z-candB/palabra-t%C3%BA.mp3?v=1"></audio></td><td><audio controls src="/audio/sofia/palabra-t%C3%BA.mp3?v=1"></audio></td></tr>
+  <tr><td class="word">mamá</td><td><audio controls src="/audio/sofia/_backups/2026-09-19T15-00-15Z-candB/palabra-mam%C3%A1.mp3?v=1"></audio></td><td><audio controls src="/audio/sofia/palabra-mam%C3%A1.mp3?v=1"></audio></td></tr>
+  <tr><td class="word">papá</td><td><audio controls src="/audio/sofia/_backups/2026-09-19T15-00-15Z-candB/palabra-pap%C3%A1.mp3?v=1"></audio></td><td><audio controls src="/audio/sofia/palabra-pap%C3%A1.mp3?v=1"></audio></td></tr>
+  <tr><td class="word">gato</td><td><audio controls src="/audio/sofia/_backups/2026-09-19T15-00-15Z-candB/palabra-gato.mp3?v=1"></audio></td><td><audio controls src="/audio/sofia/palabra-gato.mp3?v=1"></audio></td></tr>
+  <tr><td class="word">azul</td><td><audio controls src="/audio/sofia/_backups/2026-09-19T15-00-15Z-candB/palabra-azul.mp3?v=1"></audio></td><td><audio controls src="/audio/sofia/palabra-azul.mp3?v=1"></audio></td></tr>
+  <tr><td class="word">sol</td><td><audio controls src="/audio/sofia/_backups/2026-09-19T15-00-15Z-candB/palabra-sol.mp3?v=1"></audio></td><td><audio controls src="/audio/sofia/palabra-sol.mp3?v=1"></audio></td></tr>
+</table>
+<p class="note">Columna izquierda = lo que había quedado mal (candA, id 0uHpKhb0ymsdvmCtPV8y), sólo vive en el backup.
+Columna derecha = lo que hay hoy en producción (candB, id JddqVF50ZSIR7SRbJE6u).
+El <code>?v=1</code> en cada URL evita que el navegador sirva una versión cacheada de una corrida anterior con el mismo nombre de archivo.</p>
+</body>
+</html>

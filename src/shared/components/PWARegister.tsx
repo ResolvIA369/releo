@@ -16,6 +16,9 @@ export function PWARegister() {
     if (!("serviceWorker" in navigator)) return;
 
     let registration: ServiceWorkerRegistration | null = null;
+    const checkForUpdate = () => { void registration?.update(); };
+    const onVisible = () => { if (document.visibilityState === "visible") checkForUpdate(); };
+    let intervalId: number | undefined;
 
     navigator.serviceWorker
       .register("/service-worker.js")
@@ -41,6 +44,21 @@ export function PWARegister() {
             }
           });
         });
+
+        // El navegador SOLO revisa si hay una version nueva del SW en una
+        // navegacion real (recarga dura) — Next.js navega del lado del
+        // cliente, asi que alguien que abre la app una vez y navega adentro
+        // sin recargar jamas dispara "updatefound", aunque haya un deploy
+        // nuevo hace rato. Esto genero varios reportes de "bug" que en
+        // realidad eran la version vieja cacheada (sep-2026). Forzamos el
+        // chequeo de update() nosotros: al volver a la pestaña, al
+        // recuperar foco, y cada 60s mientras la pestaña este abierta —
+        // no reemplaza el control del usuario sobre CUANDO activar (sigue
+        // pidiendo "Actualizar"), solo hace que DETECTAR que hay una nueva
+        // version sea confiable en vez de depender de un F5 manual.
+        document.addEventListener("visibilitychange", onVisible);
+        window.addEventListener("focus", checkForUpdate);
+        intervalId = window.setInterval(checkForUpdate, 60_000);
       })
       .catch(() => {
         // SW registration failed — app still works
@@ -58,6 +76,9 @@ export function PWARegister() {
 
     return () => {
       navigator.serviceWorker.removeEventListener("controllerchange", onControllerChange);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", checkForUpdate);
+      if (intervalId !== undefined) window.clearInterval(intervalId);
     };
   }, []);
 

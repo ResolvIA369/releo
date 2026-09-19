@@ -167,6 +167,15 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, worldId, onCom
   const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cancelledRef = useRef(false);
   const sessionStartRef = useRef(0); // Date.now() al arrancar la primera tanda
+  // Demo: "duda" segura para este juego. Nunca aima a una nube incorrecta
+  // (el atrape es por colision fisica contra CUALQUIER nube — ver el loop
+  // mas abajo — asi que apuntar a una equivocada de verdad la atraparia).
+  // En cambio, retrasa el momento en que Leo empieza a subir hacia la
+  // correcta: sigue crucero neutral un rato despues de que la nube entra en
+  // rango, como si estuviera leyendola, y recien despues decide.
+  const demoTargetIdRef = useRef<string | null>(null);
+  const demoNoticedAtRef = useRef(0);
+  const demoReactionMsRef = useRef(0);
 
   gamePhaseRef.current = gamePhase;
   isDemoRef.current = isDemo;
@@ -557,12 +566,34 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, worldId, onCom
         }
 
         // Demo mode: flap toward the target cloud's altitude when it
-        // gets close; otherwise cruise at mid-sky
+        // gets close; otherwise cruise at mid-sky. La nube objetivo entra
+        // en rango (dist < 280) bastante antes de que haga falta actuar —
+        // ese margen es lo que se usa como "tiempo de lectura": recien
+        // se empieza a subir despues de demoReactionMsRef, no apenas entra.
         if (isDemoRef.current && round.active && !round.resolved) {
           const targetFc = round.clouds.find((fc) => fc.word.id === round.target?.id && !fc.caught);
           if (targetFc) {
+            if (demoTargetIdRef.current !== targetFc.word.id) {
+              demoTargetIdRef.current = targetFc.word.id;
+              demoNoticedAtRef.current = 0;
+              // 150-300ms, SIN multiplicador de velocidad de demo: a diferencia
+              // de los timeouts de los otros juegos, esto compite con tiempo
+              // real de vuelo (la nube sigue avanzando durante la pausa). En la
+              // fase/nivel mas dificil el margen entre "entra en rango" y "hay
+              // que estar arriba" es de menos de 1s — una pausa larga hace que
+              // Leo llegue tarde y la nube se escape, que es la misma falla que
+              // el pedido de César prohibe explicitamente (aunque no sea leer
+              // mal, se ve como un fallo). Por eso el techo es chico y fijo.
+              demoReactionMsRef.current = 150 + Math.random() * 150;
+            }
             const dist = targetFc.box.x - leoXRef.current;
-            const aimY = dist < 280 ? targetFc.box.y + LEO_CENTER_OFFSET : H * 0.55;
+            const inRange = dist < 280;
+            if (inRange && demoNoticedAtRef.current === 0) {
+              demoNoticedAtRef.current = performance.now();
+            }
+            const reacted = inRange && demoNoticedAtRef.current > 0 &&
+              performance.now() - demoNoticedAtRef.current >= demoReactionMsRef.current;
+            const aimY = reacted ? targetFc.box.y + LEO_CENTER_OFFSET : H * 0.55;
             if (leoYRef.current > aimY + 10 && vyRef.current >= 0) {
               vyRef.current = -physicsRef.current.impulse;
             }

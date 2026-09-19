@@ -69,7 +69,10 @@ Cada sesion de ~5 minutos:
 
 ## Audio
 
-- **487 archivos MP3** generados con voz Elena (es-AR-ElenaNeural via edge-tts)
+- **~500 archivos MP3** generados con voz Jessica (ElevenLabs, modelo `eleven_v3`,
+  192kbps/44.1kHz) via `scripts/regenerate-all-elevenlabs.py`. Reemplazó a la voz
+  Elena (es-AR-ElenaNeural via edge-tts) el 22-ago-2026 — ver CLAUDE.md, seccion
+  "Voz de Sofia".
 - 220 palabras individuales + frases de sesion + reglas de juegos + reacciones + afirmaciones
 - Un solo elemento de audio compartido para evitar superposiciones
 - Todo pre-generado, sin TTS en tiempo real
@@ -98,7 +101,7 @@ Cada sesion de ~5 minutos:
 Next.js 16 + React 19 + TypeScript
 Zustand v5 — Estado global
 Framer Motion — Animaciones
-edge-tts (es-AR-ElenaNeural) — Generacion de MP3s
+ElevenLabs (voz Jessica, eleven_v3) — Generacion de MP3s
 canvas-confetti — Efectos de celebracion
 PWA — Instalable, actualizacion controlada por el usuario
 ```

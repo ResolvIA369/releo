@@ -66,7 +66,12 @@ const ANTICIPATION = 0.14; // first slice of the jump is a crouch
 const APEX_FRAMES = JUMP_FRAMES * (ANTICIPATION + (1 - ANTICIPATION) * 0.5);
 const CATCH_X = 72; // horizontal catch range at the apex
 const WORD_GAP = 270; // spacing between floating words (los niveles lo achican)
-const BASE_SPEED = 2.1; // px per frame at 60fps (los niveles la multiplican)
+// Antes 2.1 — sin ningun comentario que explicara por que, 40% mas rapido
+// que el mismo Nivel 1 de Leo Corre (BASE_SPEED=1.5) con la misma curva
+// de progresion por nivel (speedMul 1.0→1.25→1.55 en ambos). No se
+// encontro una razon de diseño para la diferencia (QA sep-2026, pedido
+// explicito de emparejar con Leo Corre salvo que hubiera un motivo).
+const BASE_SPEED = 1.5; // px per frame at 60fps (los niveles la multiplican)
 const FADE_RATE = 0.04; // alpha/frame de la tanda anterior al irse
 
 // Intro de Sofia al arrancar (mp3 edge-tts es-AR-ElenaNeural; este
@@ -176,7 +181,13 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
       if (disposed || !hostRef.current) return;
 
       app = new PIXI.Application();
-      await app.init({ width: W, height: H, background: "#e3f2fd", antialias: true });
+      // Mismo fix que LeoRunner.tsx/LeoVuela.tsx: sin resolution > 1 en
+      // pantallas de alta densidad, Pixi renderiza a la resolucion logica
+      // baja y el navegador estira el bitmap por CSS, lo que puede mostrar
+      // un artefacto de escalado (costura/linea oscura) donde dos formas
+      // antialiaseadas no coinciden pixel a pixel al ampliarse. QA sep-2026.
+      const dpr = typeof window !== "undefined" ? Math.min(window.devicePixelRatio || 1, 2) : 1;
+      await app.init({ width: W, height: H, background: "#e3f2fd", antialias: true, resolution: dpr });
       if (disposed || !hostRef.current) {
         app.destroy(true, { children: true });
         return;
@@ -381,7 +392,16 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
           }
         }
 
-        // Demo mode: jump when the target is about to be overhead
+        // Demo mode: jump when the target is about to be overhead.
+        // A diferencia de LeoVuela, ACÁ no se agrega demora: la ventana
+        // real entre "ya se puede saltar" y "la palabra ya pasó" es de
+        // unos pocos frames (dist <= lead + 10, con effSpeed de hasta
+        // ~2.8px/frame — 10px de margen), no de cientos de milisegundos.
+        // Cualquier pausa ahí hace que Leo salte tarde y la palabra se
+        // escape, que es la misma falla que el pedido de César prohibe
+        // explícitamente. El "no instantáneo" de este juego ya lo da el
+        // recorrido completo de la palabra en pantalla antes de llegar
+        // al rango de salto — no hace falta agregar más acá.
         if (isDemoRef.current && round.active && !round.resolved && jumpTRef.current >= 1) {
           const targetFw = round.words.find((fw) => fw.word.id === round.target?.id && !fw.caught);
           if (targetFw) {
@@ -660,22 +680,18 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
   }
 
   return (
-    <GameShell title="Salta la Palabra" icon="🦘" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})}>
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: spacing.md, paddingTop: spacing.sm }}>
+    <GameShell title="Salta la Palabra" icon="🦘" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})} contentAlign="top" immersive>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: spacing.md, paddingTop: spacing.xs }}>
         {gamePhase === "intro" && <ArcadeIntro color={GAME_COLOR} />}
-        <ArcadeHud
-          color={GAME_COLOR}
-          targetPrefix="Saltá a:"
-          level={level.levelUi}
-          correct={state.correctAttempts}
-          targetWord={targetWord}
-          waveKey={waveIdx}
-          energy={energy.energyUi}
-          energyMax={tuning.energyMax}
-        />
 
-        {/* Pixi canvas + full-surface jump tap zone */}
-        <div style={{ position: "relative", width: "100%", maxWidth: "min(640px, calc(100vw - 32px))", borderRadius: radii.xl, overflow: "hidden", border: `2px solid ${colors.border.light}` }}>
+        {/* Pixi canvas + full-surface jump tap zone. Mismo patron que Leo
+            Vuela/Leo Corre: ancho acotado por vw O por dvh*aspect. */}
+        <div style={{
+          position: "relative", width: `min(96vw, calc((100dvh - 16px) * ${W / H}))`,
+          aspectRatio: `${W} / ${H}`,
+          borderRadius: radii.xl, overflow: "hidden", border: `2px solid ${colors.border.light}`,
+          containerType: "size",
+        }}>
           {/* React must never render children inside hostRef — Pixi
               appends its canvas there manually */}
           <div ref={hostRef} style={{ width: "100%", aspectRatio: `${W} / ${H}` }} />
@@ -694,6 +710,17 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
               background: "transparent", border: "none", padding: 0,
               cursor: gamePhase === "running" ? "pointer" : "default",
             }}
+          />
+          <ArcadeHud
+            overlay
+            color={GAME_COLOR}
+            targetPrefix="Saltá a:"
+            level={level.levelUi}
+            correct={state.correctAttempts}
+            targetWord={targetWord}
+            waveKey={waveIdx}
+            energy={energy.energyUi}
+            energyMax={tuning.energyMax}
           />
           <MoveButtons color={GAME_COLOR} active={gamePhase === "running"} onDir={handleMoveDir} />
         </div>

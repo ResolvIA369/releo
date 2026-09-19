@@ -108,14 +108,194 @@ para que la landing pública no pague ese costo.
 
 ---
 
+## Voz de Sofía
+
+**Desde el 19-sep-2026 hay DOS voces, divididas a propósito por función.
+No unificar.** Confirmado por César el mismo día tras escuchar Jessica CON
+respelling en las mismas 6 palabras de prueba: Jessica sigue sonando mal en
+palabras sueltas incluso con el respelling que sí funciona con candB — no es
+sólo el texto, la voz de base importa. **candB queda para las 220 palabras,
+punto, no es una decisión provisoria.**
+
+| Qué genera | Voz | voice_id | Por qué |
+|---|---|---|---|
+| `palabra-*.mp3` (las 220 palabras que el chico lee, Flash de Palabras) | **candB** | `JddqVF50ZSIR7SRbJE6u` | Jessica es una voz de base en inglés: en pruebas mispronunciaba palabras en español. candB es nativa de español latinoamericano — se eligió tras comparar tres candidatas con material idéntico (ver `muestras-voz/muestras-candidatas-latam.py`). **Ojo:** `0uHpKhb0ymsdvmCtPV8y` es candA, la otra candidata descartada — no confundir (pasó el 19-sep-2026, corregido el mismo día antes de tocar más que 10 palabras). |
+| Todo lo demás — frases, reglas, reacciones, afirmaciones de sesión (~495 archivos) | **Jessica** | `cgSgspJ2msm6clMCkdW9` | Voz canónica desde el 22-ago-2026, sigue siéndolo para todo lo que NO es una palabra suelta que el chico tiene que leer. |
+
+La división es por **función, no por calidad**: candB dice las palabras
+sueltas (necesitan pronunciación nativa exacta, se leen aisladas, sin
+contexto que ayude a desambiguar), Jessica guía la sesión (frases largas,
+tono cálido, ya validada). No reemplazar una por la otra en el resto del
+corpus sin repetir la comparación.
+
+- **Pipeline de las 220 palabras (candB):** `scripts/regenerate-words-candb.py`.
+  Deriva la lista de las 220 palabras reales desde
+  `src/shared/constants/words.ts` vía Node (no desde el disco — hay 7
+  archivos huérfanos en `public/audio/sofia/palabra-*.mp3` que no son del
+  currículum actual: `autos`, `café`, `calcetín`, `chaqueta`, `falda`,
+  `morado`, `pijama` — no tocarlos). Usa la misma etiqueta de emoción
+  `[gently]` que el corpus le asigna hoy al prefijo `"palabra-"`. Reemplaza
+  a `scripts/regenerate-marked-words.py` (borrado el 19-sep-2026: apuntaba
+  a Jessica, ya no corresponde).
+- **Pipeline de afirmaciones de sesión (Jessica):**
+  `scripts/regenerate-afirmaciones-inicio.py`, para las 8
+  `afirmacion-inicio-01..08.mp3` de `SofiaAffirmationGate.tsx`.
+
+### Respelling fonético (19-sep-2026)
+
+Diagnóstico del 19-sep: el problema con palabras como "hospital" no era
+timbre de voz, era **detección de idioma** — una palabra suelta que también
+existe en inglés (homógrafa: `hospital`, `pan`, `come`, `sin`...) o de una
+sola letra (`y`, que dispara la lectura "why") no le da al modelo contexto
+para leerla en español. Confirmado con un cruce estadístico contra listas de
+frecuencia de inglés: las 47 palabras que César marcó como mal
+pronunciadas tienen una tasa de homografía con el inglés muchísimo más alta
+que las que no marcó (hasta 30x en el corte más estricto). Se probaron 4
+soluciones (`language_code=es` forzado, respelling fonético, frase con
+contexto y recorte, control) — **ganó el respelling fonético**.
+
+**Mecanismo:**
+- **`scripts/respelling-palabras.json`** es la fuente única. Cada clave es
+  la palabra real (la que está en `words.ts` y el chico ve en pantalla);
+  cada valor es la grafía que se le manda a la API de TTS en su lugar —
+  **sólo para generar el MP3, nunca se muestra**. Ej.: `"hospital":
+  "ospital"` (la h es muda en español igual, sacarla saca el gatillo de
+  lectura inglesa), `"y": "i"` (evita que lea "why").
+- `scripts/regenerate-words-candb.py` lo carga con `cargar_respelling()` —
+  no hay ninguna copia paralela del diccionario en otro lado.
+- **Garantía de que no se filtra a la UI:**
+  `src/shared/__tests__/audio-respelling-integrity.test.ts` — corre en
+  `npm test`, revienta si alguna grafía respelled apareciera como texto de
+  una palabra en `ALL_WORDS` (words.ts). Si algún día alguien "corrige" a
+  mano `words.ts` para que coincida con el respelling pensando que es el
+  texto correcto, este test lo agarra. Esta garantía es estructural, no de
+  buena fe: el respelling vive en `scripts/`, fuera de `src/`, y ningún
+  componente de la app lo importa — no hay ningún camino de código por el
+  que pueda llegar a pantalla.
+- **Excepción: `el`, `de`, `tú`, `tu` NO usan respelling.** Se probó
+  forzarles tilde (`él`, `dé`, `túu`) y se descartó — `él` y `dé` son otras
+  palabras reales del español (`él` ya existe sin marcar como palabra
+  propia del corpus), y alargar `tú` desdibuja el par `tú`/`tu` que el
+  chico tiene que distinguir. Estas cuatro usan **método (d): frase +
+  recorte** —
+  `scripts/regenerate-palabras-frase-recorte.py` genera la palabra dentro de
+  una frase corta y natural en español y recorta el resto por silencio
+  (`ffmpeg silencedetect`, umbral `-22dB`/`0.04s` — el umbral más laxo de
+  `-30dB`/`0.12s` fallaba en palabras sin pausa detectable, cortaba
+  fragmentos casi vacíos; corregido el 19-sep). El texto real de la palabra
+  nunca se altera en estos casos, así que ni siquiera aplica la pregunta de
+  filtrado a UI — el respelling es exclusivamente el mecanismo de arriba.
+- Antes de generar una tanda, correr `--palabras <lista corta>` primero
+  (nunca `--todas` directo) y escuchar. El respelling es una heurística por
+  palabra, no una fórmula: lo que funciona para una no garantiza que
+  funcione para otra.
+
+**La voz canónica de todo lo que NO es palabra suelta sigue siendo
+ElevenLabs "Jessica"** (`cgSgspJ2msm6clMCkdW9`, modelo
+`eleven_v3`, salida 192kbps/44.1kHz mono), desde el **22-ago-2026**
+(commit `2e21c29`, rama `main`, ancestro de todas las ramas activas). Ese
+commit regeneró los ~495 MP3 existentes hasta ese momento — no quedó
+ninguno viejo mezclado.
+
+- **Pipeline de generación:** `scripts/regenerate-all-elevenlabs.py`. Usa
+  `[etiquetas]` de estilo entre corchetes (`[gently]`, `[warmly]`,
+  `[excited]`...) que el modelo `eleven_v3` interpreta como dirección de
+  emoción — no es SSML, es una convención propia de ese modelo. La
+  emoción por tipo de archivo (prefijo del nombre) está en el diccionario
+  `EMOCION` del script.
+- **Corpus de texto (fuente única):** `scripts/regenerate-all-audio.py`
+  sigue siendo de dónde sale el texto (`PHRASES`, `load_words()`,
+  `load_stories()`) — `regenerate-all-elevenlabs.py` lo importa. Si se
+  agrega una frase nueva, se agrega ahí. **Pero ese archivo ya NO genera
+  audio**: su propio pipeline (edge-tts / `es-AR-ElenaNeural`) quedó
+  obsoleto el mismo 22-ago y correrlo pisaría los MP3 de Jessica con la
+  voz vieja. Tiene un aviso en su docstring.
+- **`generate-missing-mp3s.py`** y **`generate-audio.mjs`**: motores
+  alternativos viejos, ambos con `es-MX-DaliaNeural` (voz mexicana que
+  nunca fue la elegida) — el segundo además con rate/pitch distinto por
+  frase (`msedge-tts`, Node). Ninguno de los dos generó lo que hoy está
+  en `public/audio/sofia`. Ignorar — no correr bajo ningún concepto.
+- **Antes de asumir qué voz tiene un MP3 existente, verificarlo**, no
+  fiarse del nombre del script que "debería" haberlo generado: `file
+  archivo.mp3` distingue el encoder — Jessica sale como `ID3 v2.4.0 [...]
+  Lavf, 192 kbps, 44.1 kHz`; edge-tts sale como `LAME3.100, 48 kbps, 24
+  kHz` (sin ID3). El 19-sep-2026 una sesión asumió edge-tts como voz
+  canónica (documentación desactualizada) y generó 8 MP3 nuevos con la
+  voz y el bitrate viejos, mezclados con el resto — se detectó y
+  corrigió el mismo día.
+
+---
+
 ## Gotchas conocidos
 
+- **`palabra-silla.mp3` — pendiente conocido, sin confirmar por oído (19-sep-2026).**
+  Es una de las 220 palabras del corpus, voz candB. Se probaron 3 versiones:
+  respelling `"siya"` (descartada — César la escuchó, decía "sha", se comía
+  la primera sílaba: la API generó un pulso de habla de sólo 0.30s seguido
+  de silencio de cola), texto real `"silla"` sin cambios (quedó con cero
+  margen de arranque, riesgo de comerse la "s" inicial — preservada en
+  `_backups/2026-09-19T17-55-21Z-frase-recorte/palabra-silla.mp3` por si
+  hay que retomarla), y **método (d)** con la frase "Silla o mesa." —
+  **esta última es la que quedó en producción**, por tener mejor margen de
+  silencio de los dos lados, pero nadie la escuchó todavía. Si sigue mal,
+  no vale la pena más intentos de tilde — probar otra frase o aceptarla
+  como limitación conocida (es 1 de 220).
 - **`turbopack.root`** está fijado en `next.config.ts`. Sin eso, Turbopack infiere
   la raíz en el directorio padre (que tiene otro `package-lock.json`) y el build
   revienta con *"Next.js package not found"*.
 - El `experimental.mcpServer` solo se activa fuera de producción.
 - Hay dos carpetas de Sofía: `public/images/Sofía` (con tilde) y
   `public/images/sofia`. Revisar cuál se referencia antes de borrar ninguna.
+- **Este proyecto tuvo dos repos git gobernando la misma carpeta**: `releo.git`
+  (el interior, `saas-factory/.git` — canónico, historia granular completa
+  desde abril) y `doman-v4.git` (el exterior, `/home/cesar/proyectos/releo/.git`,
+  que trackeaba los archivos de `saas-factory/` como si fueran propios, sin
+  saber que había un repo anidado adentro). El 18-sep-2026 una sesión trabajó
+  sin darse cuenta parado en el exterior, y eso llevó a una auditoría que
+  concluyó — erróneamente — que varios commits y una rama citados en
+  `docs/RELEO-AUDITORIA-GRABACION.md` y `docs/RELEO-LAYOUT-V3.md` nunca habían
+  existido. Existían: estaban en el interior. El 19-sep se cortó la anidación
+  (ver el resto de esta sección) y `doman-v4.git` quedó congelado como
+  respaldo, sin uso futuro.
+- **19-sep-2026 — anidación destrackeada, pero no eliminada.** En el exterior
+  se corrió `git rm -r --cached saas-factory/` y se agregó `saas-factory/` a
+  su `.gitignore`: el exterior ya no ve ni trackea estos archivos, pero la
+  carpeta sigue físicamente anidada (`saas-factory/` adentro de
+  `/home/cesar/proyectos/releo/`, cada una con su propio `.git`). Aplanar la
+  carpeta (mover `saas-factory/` un nivel arriba y reubicar el contenido del
+  exterior a otra ruta) quedó **pendiente como tarea futura** — es la
+  solución definitiva, pero no urgente ahora que el destrackeo cortó el
+  riesgo de volver a commitear en el repo equivocado. El único contenido real
+  que tenía el exterior y no estaba acá (`muestras-voz/`, `_wip-pending/`) se
+  migró el mismo día — ver los dos ítems siguientes. Lo que quedó en el
+  exterior después de eso es solo la documentación propia del template SaaS
+  Factory (`CLAUDE.md`, `README.md`, `assets/*.png`, etc.) — nada específico
+  de REleo, recuperable del repo público
+  `saas-factory-community/saas-factory-setup` si hiciera falta.
+- **`muestras-voz/`** (raíz del repo): dos rondas de comparación de voces,
+  ninguna corrida por la app. La primera (script `generar-muestras.py`,
+  ~abril) comparó voces edge-tts y llevó a elegir `es-AR-ElenaNeural` —
+  la voz que se usó hasta el 22-ago. La segunda (`muestras-elevenlabs.py`,
+  ~agosto) comparó voces de ElevenLabs (Sarah, Matilda, Lily, Alice,
+  Laura, Jessica) y llevó a elegir Jessica — la voz canónica actual, ver
+  "Voz de Sofía" arriba. Las muestras de ambas rondas conviven en la
+  carpeta; el nombre del archivo indica cuál es cuál (`N-nombre.mp3` para
+  edge-tts, `el-N-nombre.mp3` para ElevenLabs).
+- **`_wip-pending/`** (raíz del repo): prototipos de features nunca
+  integradas — onboarding, pantalla post-partida, repetición espaciada,
+  haptics, una reescritura modular completa de Flash de Palabras
+  (`WordFlash-modular-29abr/`). Tienen imports relativos rotos (asumían una
+  ubicación dentro de `src/` que nunca llegaron a tener) — por eso está
+  **excluida de `tsconfig.json` y de `eslint.config.mjs`**: no participa del
+  build ni del typecheck. Si algún día se retoma algo de acá, hay que
+  arreglar esos imports primero.
+- **Al verificar un SHA o una rama, confirmá primero en qué repo estás
+  parado** (`git remote -v`, `pwd`). Un commit ausente en el que estás no
+  prueba que no exista — puede estar en el otro.
+- **Un deploy no prueba que el código esté commiteado.** `vercel deploy` (con
+  o sin `--prod`) se corre desde `saas-factory/` y sube el working tree tal
+  cual está en disco — no depende de git ni de qué repo esté activo.
+  Verificar con `git status` aparte.
 
 ---
 

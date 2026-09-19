@@ -8,7 +8,7 @@ import { useGameState } from "../hooks/useGameState";
 import { sofiaReads, sofiaCelebrates } from "@/shared/services/sofiaVoice";
 import { GameShell, usePause } from "./GameShell";
 import { useGameMusic } from "../hooks/useGameMusic";
-import { useDemoAutoplay } from "../hooks/useDemoAutoplay";
+import { useDemoAutoplay, demoChooseWithHesitation } from "../hooks/useDemoAutoplay";
 import { useRewards } from "@/shared/components/RewardsLayer";
 import { GameIntro } from "./GameIntro";
 import { GameCompleteScreen } from "@/shared/components/GameCompleteScreen";
@@ -30,10 +30,49 @@ function shuffle<T>(arr: T[]): T[] {
 
 // ─── Sentence generation from words prop ────────────────────────────
 
+interface SentenceToken {
+  text: string;
+  fixed: boolean; // pre-colocado en la oracion; el chico no lo arrastra
+}
+
 interface Sentence {
   text: string;
-  words: string[];
+  tokens: SentenceToken[];
 }
+
+// Articulos, conectores y preposiciones que vienen FIJOS en la oracion —
+// el chico arrastra solo las palabras de contenido (sustantivos, verbos,
+// adjetivos). EXCEPCION Mundo 4 (fase 4): ahi los articulos/preposiciones/
+// pronombres SON el contenido que se enseña (ver categoria
+// "articulos_y_conectores, preposiciones, pronombres" en worlds.ts) — ahi
+// nada viene fijo. Configurable por fase, no hardcodeado al juego entero
+// (QA sep-2026: pedido explicito de César).
+const FIXED_TOKEN_WORDS = new Set([
+  "el", "la", "los", "las", "un", "una", "unos", "unas",
+  "y", "en", "con", "para", "de", "del", "sobre", "entre", "sin",
+]);
+
+function tokenize(fullText: string, phase: number): SentenceToken[] {
+  return fullText.split(" ").map((text) => ({
+    text,
+    fixed: phase !== 4 && FIXED_TOKEN_WORDS.has(text.toLowerCase()),
+  }));
+}
+
+// Tope de palabras ARRASTRABLES (no fijas) por fase — pedido explicito:
+// Mundo 1-2 (fase 1-2) maximo 2-3. Mundo 3 (fase 3, donde vive el juego
+// hoy) ya esta en ese rango en los datos curados. Mundo 4 sin tope: ahi
+// las oraciones largas (hasta 8 palabras) son la dificultad intencional
+// del mundo, no un descuido. Hoy el juego solo esta habilitado en
+// world_3 (ver worlds.ts) — el tope de fase 1/2 queda listo para cuando
+// se habilite ahi, no tiene efecto visible todavia.
+const MAX_DRAGGABLE_WORDS_BY_PHASE: Record<number, number | null> = {
+  1: 3,
+  2: 3,
+  3: 4,
+  4: null,
+  5: 4,
+};
 
 const CONNECTORS = ["y", "con", "para"];
 const ARTICLES = ["el", "la", "un", "una"];
@@ -49,7 +88,7 @@ function buildSentencesFromWords(domanWords: DomanWord[], count: number): Senten
   for (let i = 0; i + 1 < shuffled.length && sentences.length < count; i += 2) {
     const connector = CONNECTORS[Math.floor(Math.random() * CONNECTORS.length)];
     const phrase = `${shuffled[i]} ${connector} ${shuffled[i + 1]}`;
-    sentences.push({ text: phrase, words: phrase.split(" ") });
+    sentences.push({ text: phrase, tokens: phrase.split(" ").map((text) => ({ text, fixed: false })) });
   }
 
   // Strategy 2: "article + word" (e.g. "el bebé", "la mamá")
@@ -57,7 +96,7 @@ function buildSentencesFromWords(domanWords: DomanWord[], count: number): Senten
     if (sentences.length >= count) break;
     const art = ARTICLES[Math.floor(Math.random() * ARTICLES.length)];
     const phrase = `${art} ${word}`;
-    sentences.push({ text: phrase, words: phrase.split(" ") });
+    sentences.push({ text: phrase, tokens: phrase.split(" ").map((text) => ({ text, fixed: false })) });
   }
 
   // Strategy 3: "word + verb + word" (e.g. "mamá come pan")
@@ -65,7 +104,7 @@ function buildSentencesFromWords(domanWords: DomanWord[], count: number): Senten
   for (let i = 0; i + 1 < shuffled2.length && sentences.length < count; i += 2) {
     const verb = SIMPLE_VERBS[Math.floor(Math.random() * SIMPLE_VERBS.length)];
     const phrase = `${shuffled2[i]} ${verb} ${shuffled2[i + 1]}`;
-    sentences.push({ text: phrase, words: phrase.split(" ") });
+    sentences.push({ text: phrase, tokens: phrase.split(" ").map((text) => ({ text, fixed: false })) });
   }
 
   return shuffle(sentences).slice(0, count);
@@ -91,29 +130,38 @@ export const BuildSentence: React.FC<GameProps> = ({ words, phase = 1, onComplet
   const [timerKey, setTimerKey] = useState(0);
   const [isAdvancing, setIsAdvancing] = useState(false);
 
-  // Pick sentences: prefer SENTENCE_EXAMPLES that use words from props,
-  // then fill remaining rounds from generated sentences
+  // Pick sentences: SIEMPRE de la fase actual — una frase de Mundo 4
+  // (PHRASE_EXAMPLES, hasta 8 palabras, articulos como contenido) no puede
+  // aparecer en otro mundo (QA sep-2026: exactamente ese bug reportado).
+  // Antes el filtro sólo exigia coincidencia de vocabulario, sin mirar
+  // `phase`, asi que cualquier frase larga de Mundo 4 podia colarse en
+  // Mundo 3 con solo compartir UNA palabra comun ("mamá", "y", etc).
   const sentences = useMemo(() => {
     const wordTexts = new Set(words.map((w) => w.text.toLowerCase()));
+    const maxDraggable = MAX_DRAGGABLE_WORDS_BY_PHASE[phase] ?? null;
 
-    // Use ALL curated examples (both sentence and phrase)
     const allExamples = [...SENTENCE_EXAMPLES, ...PHRASE_EXAMPLES];
+    const samePhase = allExamples.filter((s) => s.phase === phase);
+
+    const toSentence = (s: (typeof samePhase)[number]): Sentence => ({
+      text: s.fullText,
+      tokens: tokenize(s.fullText, s.phase),
+    });
+    const withinCap = (s: Sentence) =>
+      maxDraggable === null || s.tokens.filter((t) => !t.fixed).length <= maxDraggable;
 
     // Prefer sentences that use words from the current set
-    const relevant = allExamples.filter((s) =>
-      s.fullText.split(" ").some((w) => wordTexts.has(w.toLowerCase()))
-    ).map((s) => ({
-      text: s.fullText,
-      words: s.fullText.split(" "),
-    }));
+    const relevant = samePhase
+      .filter((s) => s.fullText.split(" ").some((w) => wordTexts.has(w.toLowerCase())))
+      .map(toSentence)
+      .filter(withinCap);
 
     const picked = shuffle(relevant).slice(0, TOTAL_ROUNDS);
 
-    // Fill remaining with any curated sentence (never random generation)
+    // Fill remaining with any curated sentence DE LA MISMA FASE (nunca
+    // cruza a otro mundo, ni siquiera como relleno de ultimo recurso)
     if (picked.length < TOTAL_ROUNDS) {
-      const fallback = shuffle(
-        allExamples.map((s) => ({ text: s.fullText, words: s.fullText.split(" ") }))
-      );
+      const fallback = shuffle(samePhase.map(toSentence)).filter(withinCap);
       for (const fb of fallback) {
         if (picked.length >= TOTAL_ROUNDS) break;
         if (!picked.some((p) => p.text === fb.text)) picked.push(fb);
@@ -121,11 +169,17 @@ export const BuildSentence: React.FC<GameProps> = ({ words, phase = 1, onComplet
     }
 
     return picked.slice(0, TOTAL_ROUNDS);
-  }, [words]);
+  }, [words, phase]);
 
   const currentSentence = sentences[roundIdx];
+  // Posiciones (indices dentro de tokens) que el chico realmente arrastra
+  // — las fijas quedan pre-colocadas y no entran en esta lista.
+  const draggableTokenIndices = useMemo(
+    () => (currentSentence ? currentSentence.tokens.map((t, i) => (t.fixed ? -1 : i)).filter((i) => i >= 0) : []),
+    [currentSentence]
+  );
   const shuffledWords = useMemo(
-    () => (currentSentence ? shuffle(currentSentence.words) : []),
+    () => (currentSentence ? shuffle(draggableTokenIndices.map((i) => currentSentence.tokens[i].text)) : []),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [currentSentence, roundIdx]
   );
@@ -138,19 +192,19 @@ export const BuildSentence: React.FC<GameProps> = ({ words, phase = 1, onComplet
     finish().then(() => onComplete?.(state));
   }, [finished, gamePhase]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Demo: auto-place correct word every 2s for visible pacing
+  // Demo: duda entre fichas visibles antes de elegir la que sigue en la frase.
   useDemoAutoplay(isDemo, gamePhase === "playing" && !feedbackType && !isAdvancing, () => {
     if (!currentSentence) return;
-    const expected = currentSentence.words[placed.length];
+    const tokenIdx = draggableTokenIndices[placed.length];
+    const expected = tokenIdx !== undefined ? currentSentence.tokens[tokenIdx].text : undefined;
     if (!expected) return;
-    const btns = document.querySelectorAll("[data-build-word]");
-    for (const b of btns) {
-      if ((b as HTMLElement).dataset.buildWord === expected && (b as HTMLElement).offsetParent !== null) {
-        (b as HTMLElement).click();
-        break;
-      }
-    }
-  }, 2000);
+    const visibleBtns = Array.from(document.querySelectorAll("[data-build-word]")).filter(
+      (b) => (b as HTMLElement).offsetParent !== null
+    ) as HTMLElement[];
+    const correctEl = visibleBtns.find((b) => b.dataset.buildWord === expected) ?? null;
+    const wrongEls = visibleBtns.filter((b) => b.dataset.buildWord !== expected);
+    demoChooseWithHesitation(correctEl, wrongEls);
+  }, 1600);
 
   const advanceRound = useCallback(() => {
     setShowCelebration(false);
@@ -168,14 +222,16 @@ export const BuildSentence: React.FC<GameProps> = ({ words, phase = 1, onComplet
 
       const word = shuffledWords[tappedIndex];
       const nextIdx = placed.length;
-      const expected = currentSentence.words[nextIdx];
+      const tokenIdx = draggableTokenIndices[nextIdx];
+      const expected = tokenIdx !== undefined ? currentSentence.tokens[tokenIdx].text : undefined;
 
       if (word === expected) {
         const newPlaced = [...placed, word];
         setPlaced(newPlaced);
 
-        // Check if sentence complete
-        if (newPlaced.length === currentSentence.words.length) {
+        // Check if sentence complete (todas las posiciones arrastrables
+        // llenas — las fijas ya estan pre-colocadas desde el arranque)
+        if (newPlaced.length === draggableTokenIndices.length) {
           recordAttempt(true);
           setShowCelebration(true);
           setFeedbackType("correct");
@@ -194,7 +250,7 @@ export const BuildSentence: React.FC<GameProps> = ({ words, phase = 1, onComplet
         setTimeout(() => setFeedbackType(null), 600);
       }
     },
-    [placed, currentSentence, feedbackType, isAdvancing, shuffledWords, recordAttempt, advanceRound]
+    [placed, currentSentence, feedbackType, isAdvancing, shuffledWords, draggableTokenIndices, recordAttempt, advanceRound]
   );
 
   const handleTimeUp = useCallback(() => {
@@ -284,28 +340,59 @@ export const BuildSentence: React.FC<GameProps> = ({ words, phase = 1, onComplet
             position: "relative",
           }}
         >
-          {currentSentence?.words.map((_, i) => (
-            <div
-              key={i}
-              style={{
-                minWidth: 60,
-                height: 40,
-                borderRadius: radii.md,
-                border: `2px dashed ${i < placed.length ? colors.success : colors.border.light}`,
-                backgroundColor: i < placed.length ? `${colors.success}15` : colors.bg.card,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: fontSizes.md,
-                fontWeight: "bold",
-                fontFamily: fonts.display,
-                color: colors.text.primary,
-                padding: `0 ${spacing.sm}px`,
-              }}
-            >
-              {placed[i] ?? ""}
-            </div>
-          ))}
+          {currentSentence?.tokens.map((token, i) => {
+            // Fijo: pre-colocado desde el arranque de la ronda, con su
+            // propio tratamiento visual (solido, sin borde punteado) para
+            // que se lea claramente distinto de un hueco por completar.
+            if (token.fixed) {
+              return (
+                <div
+                  key={i}
+                  style={{
+                    minWidth: 60,
+                    height: 40,
+                    borderRadius: radii.md,
+                    border: `2px solid ${colors.border.light}`,
+                    backgroundColor: colors.bg.card,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: fontSizes.md,
+                    fontWeight: "bold",
+                    fontFamily: fonts.display,
+                    color: colors.text.placeholder,
+                    padding: `0 ${spacing.sm}px`,
+                  }}
+                >
+                  {token.text}
+                </div>
+              );
+            }
+            const posInDraggable = draggableTokenIndices.indexOf(i);
+            const isFilled = posInDraggable < placed.length;
+            return (
+              <div
+                key={i}
+                style={{
+                  minWidth: 60,
+                  height: 40,
+                  borderRadius: radii.md,
+                  border: `2px dashed ${isFilled ? colors.success : colors.border.light}`,
+                  backgroundColor: isFilled ? `${colors.success}15` : colors.bg.card,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: fontSizes.md,
+                  fontWeight: "bold",
+                  fontFamily: fonts.display,
+                  color: colors.text.primary,
+                  padding: `0 ${spacing.sm}px`,
+                }}
+              >
+                {isFilled ? placed[posInDraggable] : ""}
+              </div>
+            );
+          })}
           <QuickCelebration active={showCelebration} />
         </div>
 

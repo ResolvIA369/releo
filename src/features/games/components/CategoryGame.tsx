@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import type { GameProps } from "../types";
 import type { DomanWord } from "@/shared/types/doman";
 import { useGameState } from "../hooks/useGameState";
-import { useDemoAutoplay } from "../hooks/useDemoAutoplay";
+import { useDemoAutoplay, demoChooseSelectorWithHesitation } from "../hooks/useDemoAutoplay";
 import { GameShell, usePause } from "./GameShell";
 import { useRewards } from "@/shared/components/RewardsLayer";
 import { GameIntro } from "./GameIntro";
@@ -94,13 +94,15 @@ export const CategoryGame: React.FC<GameProps> = ({ words, phase = 1, onComplete
   // alone. Sofia only speaks the word AFTER a correct answer, in
   // handleCategoryTap.
 
-  // Demo: auto-select correct answer
+  // Demo: duda entre categorías antes de elegir la correcta.
   useDemoAutoplay(isDemo, gamePhase === "playing" && !feedbackType && !!currentWord, () => {
     const cat = currentWord?.categoryDisplay;
     if (!cat) return;
-    const btn = document.querySelector(`[data-category="${cat}"]`) as HTMLElement;
-    if (btn) btn.click();
-  }, 1500);
+    demoChooseSelectorWithHesitation(
+      `[data-category="${cat}"]`,
+      categories.filter((c) => c !== cat).map((c) => `[data-category="${c}"]`)
+    );
+  }, 1300);
 
   // Game end
   useEffect(() => {

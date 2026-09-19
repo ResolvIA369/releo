@@ -197,6 +197,16 @@ const PHRASE_TO_MP3: Record<string, string> = {
   "Soy un gran lector": "afirmacion-lect-08",
   "Los errores me ayudan a mejorar": "afirmacion-lect-09",
 
+  // Affirmations (una vez por sesión, al entrar a REleo — SofiaAffirmationGate)
+  "¿Listo? Repetí conmigo: yo puedo, yo creo en mí, yo soy inteligente.": "afirmacion-inicio-01",
+  "¿Listo? Repetí conmigo: me esfuerzo, lo intento, y lo consigo.": "afirmacion-inicio-02",
+  "¿Listo? Repetí conmigo: me quiero tal como soy.": "afirmacion-inicio-03",
+  "¿Listo? Repetí conmigo: vine al mundo a hacer cosas hermosas.": "afirmacion-inicio-04",
+  "¿Listo? Repetí conmigo: si me equivoco, lo intento de nuevo.": "afirmacion-inicio-05",
+  "¿Listo? Repetí conmigo: cada día aprendo algo nuevo.": "afirmacion-inicio-06",
+  "¿Listo? Repetí conmigo: soy valiente y no me rindo.": "afirmacion-inicio-07",
+  "¿Listo? Repetí conmigo: leer me hace grande.": "afirmacion-inicio-08",
+
   // Multiplayer rules
   "Sofia dice una palabra y muestra 4 emojis. El jugador que toque el emoji correcto gana un punto.": "reglas-multijugador",
 };
