@@ -4,6 +4,7 @@ import Link from "next/link";
 import { preload } from "react-dom";
 import { usePathname } from "next/navigation";
 import { ProfileGuard } from "@/features/onboarding/components/ProfileGuard";
+import { SofiaAffirmationGate } from "@/features/tutor/components/SofiaAffirmationGate";
 import { useAppStore } from "@/shared/store/useAppStore";
 import { SofiaAvatar } from "@/shared/components/SofiaAvatar";
 import { colors, spacing, fonts, fontSizes, shadows, radii } from "@/shared/styles/design-tokens";
@@ -130,10 +131,12 @@ export default function MainLayout({
 
   return (
     <ProfileGuard>
-      <div style={{ minHeight: "100vh" }}>
-        <AppHeader />
-        <main>{children}</main>
-      </div>
+      <SofiaAffirmationGate>
+        <div style={{ minHeight: "100vh" }}>
+          <AppHeader />
+          <main>{children}</main>
+        </div>
+      </SofiaAffirmationGate>
     </ProfileGuard>
   );
 }
