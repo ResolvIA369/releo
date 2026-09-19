@@ -67,6 +67,13 @@ export const WordTrain: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
   const targetRef = useRef<DomanWord | null>(null);
   const trainXRef = useRef(-110);
   const resolvedRef = useRef(false);
+  // Franja de rieles: referencia para medir, AL MOMENTO DEL TOQUE, si el
+  // vagon tocado esta 100% adentro de sus bordes (ver handleTap). Con 4
+  // vagones el ensamble entero (458px) es mas ancho que la franja en
+  // mobile (~359px a 390 de viewport) — nunca entra completo a la vez, asi
+  // que la garantia tiene que ser POR VAGON (su propio rect vs. el de la
+  // franja), no "todo el tren adentro al mismo tiempo".
+  const bandRef = useRef<HTMLDivElement>(null);
   const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cancelledRef = useRef(false);
 
@@ -183,6 +190,23 @@ export const WordTrain: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
   // ─── Tap de un vagon ─────────────────────────────────────────────
   const handleTap = useCallback((word: DomanWord, e: React.MouseEvent) => {
     if (gamePhaseRef.current !== "running" || resolvedRef.current) return;
+    // B2, segunda vuelta (QA sep-2026): un vagon quedaba tocable durante
+    // TODO su recorrido, incluida la franja donde entra/sale a medio
+    // cortar contra el borde de la via ("primo" se leia "rimo"). Con 4
+    // vagones el ensamble entero nunca entra completo en la franja en
+    // mobile (458px de tren contra ~359px de franja a 390 de viewport), asi
+    // que la garantia no puede ser "todo el tren adentro a la vez": es
+    // POR VAGON — se mide en vivo, en el momento exacto del toque, si ESE
+    // boton en particular esta 100% dentro del borde de la franja. Si esta
+    // aunque sea un poco cortado, el toque no cuenta (igual que si no
+    // existiera todavia).
+    const bandEl = bandRef.current;
+    if (bandEl) {
+      const bandRect = bandEl.getBoundingClientRect();
+      const wagonRect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+      const fullyInside = wagonRect.left >= bandRect.left - 0.5 && wagonRect.right <= bandRect.right + 0.5;
+      if (!fullyInside) return;
+    }
     void musicRef.current?.ensureStarted(levelRef.current);
     setTappedId(word.id);
     const correct = word.id === targetRef.current?.id;
@@ -215,18 +239,22 @@ export const WordTrain: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
     }
   }, [energy, tuning, recordAttempt, rewardCorrect, spawnWave, flashFeedback, levelRef]);
 
-  // Demo: toca el vagon correcto cuando el tren entra en la ventana visible
+  // Demo: toca el vagon correcto cuando esta 100% adentro de la franja
   // (polling porque el target se mueve — la precision del click NO lleva
-  // jitter, el tren no espera). La "duda" va aparte, mientras el tren se
-  // acerca y todavia hay margen: resalta un vagon incorrecto sin tocarlo.
+  // jitter, el tren no espera). Mismo criterio que handleTap: rect real del
+  // boton contra rect real de la franja, no una ventana de trainX% asumida.
   useEffect(() => {
     if (!isDemo || gamePhase !== "running" || !targetWord) return;
     let done = false;
     const iv = setInterval(() => {
       if (done || resolvedRef.current) return;
-      if (trainXRef.current > -5 && trainXRef.current < 70) {
-        const btn = document.querySelector(`[data-word-id="${targetRef.current?.id}"]`) as HTMLElement;
-        if (btn) { done = true; btn.click(); }
+      const bandEl = bandRef.current;
+      const btn = document.querySelector(`[data-word-id="${targetRef.current?.id}"]`) as HTMLElement | null;
+      if (!bandEl || !btn) return;
+      const bandRect = bandEl.getBoundingClientRect();
+      const btnRect = btn.getBoundingClientRect();
+      if (btnRect.left >= bandRect.left - 0.5 && btnRect.right <= bandRect.right + 0.5) {
+        done = true; btn.click();
       }
     }, 250);
     return () => clearInterval(iv);
@@ -373,8 +401,22 @@ export const WordTrain: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
               acota (aca al viejo maxWidth de 660px, donde el tamano de los
               vagones ya estaba calibrado) y se centra — el cielo+pasto de
               fondo sí ocupan todo el ancho real, dando la sensacion
-              inmersiva sin romper la proporcion del tren. */}
-          <div style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", width: "min(660px, 92vw)", top: "58%", height: 82 }}>
+              inmersiva sin romper la proporcion del tren.
+              overflow:hidden ACA (no solo en la escena exterior, mucho mas
+              ancha) es lo que hace que el recorte de entrada/salida del tren
+              coincida con el mismo ancho que usa trainX% (B2, segunda vuelta,
+              QA sep-2026: "primo" se leia "rimo" cortado contra el borde
+              izquierdo). Antes solo la escena exterior (96vw) recortaba, y
+              como la franja de 660px queda centrada con ~270px de aire a
+              cada lado en desktop ancho, el tren -que mide su posicion en %
+              de ESTOS 660px, no de la escena- se volvia visible/se ocultaba
+              cruzando el borde de la escena, bien lejos de donde trainX%
+              decia que "entraba" o "salia" — un vagon de palabra (no solo la
+              locomotora) podia terminar exactamente partido por ese borde
+              ajeno. Con el recorte alineado al mismo ancho de la formula, un
+              vagon solo puede aparecer cortado mientras esta fuera del 0%-100%
+              (fuera de juego, esperado), nunca en el medio del cruce. */}
+          <div ref={bandRef} style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", width: "min(660px, 92vw)", top: "58%", height: 82, overflow: "hidden" }}>
             <div style={{ position: "absolute", left: 0, right: 0, top: 18, height: 4, backgroundColor: "#8d6e63" }} />
             <div style={{ position: "absolute", left: 0, right: 0, top: 60, height: 4, backgroundColor: "#8d6e63" }} />
             <div style={{ position: "absolute", left: 0, right: 0, top: 14, height: 52, backgroundImage: "repeating-linear-gradient(90deg, #5d4037 0px, #5d4037 4px, transparent 4px, transparent 20px)", opacity: 0.25 }} />
