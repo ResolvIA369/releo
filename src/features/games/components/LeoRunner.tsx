@@ -255,20 +255,32 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
       const pillAllowancePx = 0.0445 * wrapperH + 24; // pill + margen de aire
       const unsafeTopPx = IMMERSIVE_HEADER_H + spacing.sm + pillAllowancePx;
       const rawSafeTop = (unsafeTopPx / wrapperH) * H;
-      // En canvases muy chicos (mobile portrait: Leo Corre ya mide ~190px
-      // reales de alto ahi, aceptado en RELEO-LAYOUT-V3.md) el offset fijo
-      // del header pesa una fraccion enorme del canvas logico — el calculo
-      // "de arriba" solo daba ~178 de 420, dejando practicamente CERO
-      // ventana visible antes de SIGN_RESOLVE_OFFSET (214): en la practica
-      // el cartel nunca aparecia y la ronda se perdia siempre (QA sep-2026,
-      // capturas mobile sin un solo cartel visible en 8s de juego real). Se
-      // prioriza una ventana minima jugable por sobre evitar el solape al
-      // 100% en ese caso extremo — puede quedar un solape breve con el
-      // cartel de objetivo en mobile, pero es acotado y el juego vuelve a
-      // ser jugable (antes del fix de banda segura el solape ya cubria TODO
-      // el recorrido, no solo una franja).
-      const MIN_SIGN_VISIBLE_WINDOW = 120;
-      signSafeTopRef.current = Math.min(H * 0.45, rawSafeTop, LEO_Y - SIGN_RESOLVE_OFFSET - MIN_SIGN_VISIBLE_WINDOW);
+      // BUG B1 (QA sep-2026, "el canvas se renderiza vacio"): el fix anterior
+      // (banda segura de arriba) resolvio el solape con el cartel de
+      // objetivo escondiendo el cartel-palabra hasta cruzar rawSafeTop — pero
+      // ese calculo, al convertir un offset fijo en px reales (header+pill)
+      // a unidades logicas, da un numero ENORME en canvases chicos (mobile:
+      // ~222 de 420, mas de la mitad del recorrido total). El piso de
+      // MIN_SIGN_VISIBLE_WINDOW (120) evitaba que llegara a tapar el punto
+      // de resolucion, pero no evitaba que se comiera la mayor parte de la
+      // ventana de LECTURA: medido en vivo (DIAG temporal, ver historial),
+      // el cartel quedaba invisible 47% de la ronda en 1280x900 y 58% en
+      // 390x844 — bastante como para que un chico mire la pantalla justo
+      // cuando Sofia nombra la palabra (el disparo es simultaneo, ver
+      // speakDucked mas abajo) y no vea ningun cartel todavia.
+      // El solape que esto evitaba es, ademas, puramente cosmetico: el
+      // cartel de objetivo es DOM con zIndex 15 por ENCIMA del <canvas>
+      // (ArcadeHud.tsx, overlay) — nada del juego puede taparlo visualmente
+      // aunque coincidan en posicion, "solo importa la banda para que no se
+      // vean pegados" (comentario original de ArcadeHud.tsx). No hay
+      // necesidad funcional de esconder medio recorrido para lograr eso.
+      // Nuevo criterio: tapar como maximo el primer tercio del recorrido
+      // total (spawn → resolucion), nunca mas — así, aun en el canvas mas
+      // chico, dos tercios de la ronda quedan con el cartel visible.
+      const TOTAL_TRAVEL = (LEO_Y - SIGN_RESOLVE_OFFSET) - SIGN_SPAWN_Y;
+      const MAX_HIDDEN_FRACTION = 1 / 3;
+      const maxSafeTop = SIGN_SPAWN_Y + TOTAL_TRAVEL * MAX_HIDDEN_FRACTION;
+      signSafeTopRef.current = Math.min(rawSafeTop, maxSafeTop);
 
       // ARCADE_Z (ver LEO_RUNNER_Z arriba): el zIndex manda, no el orden
       // de addChild().
