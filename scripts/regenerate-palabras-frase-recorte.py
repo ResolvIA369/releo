@@ -22,6 +22,7 @@ Uso:
     python3 scripts/regenerate-palabras-frase-recorte.py
 """
 
+import argparse
 import json
 import os
 import re
@@ -54,6 +55,7 @@ FRASES = {
     "el": ("El perro corre.", "start"),
     "de": ("De pronto, llovió.", "start"),
     "tú": ("Tú puedes hacerlo.", "start"),
+    "tu": ("Tu turno llegó.", "start"),
 }
 
 
@@ -141,6 +143,19 @@ def aislar_palabra(path_frase: str, path_out: str, posicion: str, dur_total: flo
 
 
 def main():
+    p = argparse.ArgumentParser()
+    p.add_argument("--palabras", help="lista separada por comas (subconjunto de FRASES); por defecto, todas")
+    args = p.parse_args()
+
+    if args.palabras:
+        pedidas = {w.strip().lower() for w in args.palabras.split(",") if w.strip()}
+        desconocidas = pedidas - set(FRASES.keys())
+        if desconocidas:
+            sys.exit(f"❌ No tienen frase definida en FRASES: {sorted(desconocidas)}")
+        frases_a_correr = {k: v for k, v in FRASES.items() if k in pedidas}
+    else:
+        frases_a_correr = FRASES
+
     key = leer_key()
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H-%M-%SZ")
     backup_dir = os.path.join(BACKUP_ROOT, f"{ts}-frase-recorte")
@@ -149,7 +164,7 @@ def main():
     print(f"Backup en: {backup_dir}\n")
 
     total_chars = 0
-    for palabra, (frase, posicion) in FRASES.items():
+    for palabra, (frase, posicion) in frases_a_correr.items():
         fn = f"palabra-{palabra.lower()}.mp3"
         destino = os.path.join(AUDIO_DIR, fn)
 
@@ -173,7 +188,7 @@ def main():
         except Exception as e:  # noqa: BLE001
             print(f"  ✗ {fn} {e}")
 
-    print(f"\nCaracteres enviados a la API (las 3 frases completas): {total_chars}")
+    print(f"\nCaracteres enviados a la API ({len(frases_a_correr)} frase(s) completa(s)): {total_chars}")
 
 
 if __name__ == "__main__":

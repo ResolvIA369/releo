@@ -111,7 +111,11 @@ para que la landing pública no pague ese costo.
 ## Voz de Sofía
 
 **Desde el 19-sep-2026 hay DOS voces, divididas a propósito por función.
-No unificar.**
+No unificar.** Confirmado por César el mismo día tras escuchar Jessica CON
+respelling en las mismas 6 palabras de prueba: Jessica sigue sonando mal en
+palabras sueltas incluso con el respelling que sí funciona con candB — no es
+sólo el texto, la voz de base importa. **candB queda para las 220 palabras,
+punto, no es una decisión provisoria.**
 
 | Qué genera | Voz | voice_id | Por qué |
 |---|---|---|---|
@@ -164,7 +168,23 @@ contexto y recorte, control) — **ganó el respelling fonético**.
   `npm test`, revienta si alguna grafía respelled apareciera como texto de
   una palabra en `ALL_WORDS` (words.ts). Si algún día alguien "corrige" a
   mano `words.ts` para que coincida con el respelling pensando que es el
-  texto correcto, este test lo agarra.
+  texto correcto, este test lo agarra. Esta garantía es estructural, no de
+  buena fe: el respelling vive en `scripts/`, fuera de `src/`, y ningún
+  componente de la app lo importa — no hay ningún camino de código por el
+  que pueda llegar a pantalla.
+- **Excepción: `el`, `de`, `tú`, `tu` NO usan respelling.** Se probó
+  forzarles tilde (`él`, `dé`, `túu`) y se descartó — `él` y `dé` son otras
+  palabras reales del español (`él` ya existe sin marcar como palabra
+  propia del corpus), y alargar `tú` desdibuja el par `tú`/`tu` que el
+  chico tiene que distinguir. Estas cuatro usan **método (d): frase +
+  recorte** —
+  `scripts/regenerate-palabras-frase-recorte.py` genera la palabra dentro de
+  una frase corta y natural en español y recorta el resto por silencio
+  (`ffmpeg silencedetect`, umbral `-22dB`/`0.04s` — el umbral más laxo de
+  `-30dB`/`0.12s` fallaba en palabras sin pausa detectable, cortaba
+  fragmentos casi vacíos; corregido el 19-sep). El texto real de la palabra
+  nunca se altera en estos casos, así que ni siquiera aplica la pregunta de
+  filtrado a UI — el respelling es exclusivamente el mecanismo de arriba.
 - Antes de generar una tanda, correr `--palabras <lista corta>` primero
   (nunca `--todas` directo) y escuchar. El respelling es una heurística por
   palabra, no una fórmula: lo que funciona para una no garantiza que
