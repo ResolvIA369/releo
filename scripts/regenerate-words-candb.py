@@ -32,9 +32,10 @@ Qué hace:
   2. Regenera con candB, eleven_v3, 192kbps/44.1kHz, la misma etiqueta de
      emoción "[gently]" que usa hoy el corpus para "palabra-*"
      (regenerate-all-elevenlabs.py, prefijo "palabra-").
-  3. Si la palabra está en ACCENT_FIXES, sintetiza esa variante (tilde no
-     ortográfica para forzar acentuación — el texto no se muestra en
-     pantalla, sólo genera audio).
+  3. Si la palabra está en respelling-palabras.json, sintetiza esa variante
+     fonética en vez del texto real (decisión del 19-sep-2026, ver CLAUDE.md
+     "Voz de Sofía > Respelling fonético") — el respelling NUNCA se muestra
+     en pantalla, sólo se usa para generar el MP3.
   4. Imprime caracteres totales enviados a la API.
 """
 
@@ -60,10 +61,24 @@ TAG_EMOCION = "[gently]"
 ESTILO = 0.35
 ESTABILIDAD = 0.55
 
-# Completar acá según lo que se escuche en cada intento.
-ACCENT_FIXES: dict[str, str] = {
-    # "banana": "banána",
-}
+RESPELLING_JSON = os.path.join(ROOT, "scripts", "respelling-palabras.json")
+
+
+def cargar_respelling() -> dict[str, str]:
+    """
+    Fuente única del respelling fonético — la misma que consume el test
+    src/shared/__tests__/audio-respelling-integrity.test.ts para garantizar
+    que esto nunca se filtre a la UI. No duplicar esta tabla a mano acá.
+    """
+    if not os.path.exists(RESPELLING_JSON):
+        return {}
+    with open(RESPELLING_JSON, encoding="utf-8") as f:
+        d = json.load(f)
+    d.pop("_comentario", None)
+    return d
+
+
+RESPELLING = cargar_respelling()
 
 # Extrae los objetos { text: "...", category: ... } de words.ts vía node,
 # en vez de mantener una copia estática que se puede desincronizar del
@@ -115,7 +130,7 @@ def backup_existing(fn: str, backup_dir: str) -> str | None:
 
 
 def generar(key: str, texto: str, salida: str) -> int:
-    synth_text = ACCENT_FIXES.get(texto.lower(), texto)
+    synth_text = RESPELLING.get(texto.lower(), texto)
     cuerpo = json.dumps({
         "text": f"{TAG_EMOCION} {synth_text}",
         "model_id": MODELO,
@@ -181,9 +196,9 @@ def main():
     for texto in palabras:
         fn = mp3_filename(texto)
         backed_up = backup_existing(fn, backup_dir)
-        override = ACCENT_FIXES.get(texto.lower())
+        override = RESPELLING.get(texto.lower())
         override_note = f" (variante forzada: '{override}')" if override else ""
-        final = f"{TAG_EMOCION} {ACCENT_FIXES.get(texto.lower(), texto)}"
+        final = f"{TAG_EMOCION} {RESPELLING.get(texto.lower(), texto)}"
         total_chars += len(final)
         salida = os.path.join(AUDIO_DIR, fn)
         try:

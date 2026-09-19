@@ -137,6 +137,39 @@ corpus sin repetir la comparación.
   `scripts/regenerate-afirmaciones-inicio.py`, para las 8
   `afirmacion-inicio-01..08.mp3` de `SofiaAffirmationGate.tsx`.
 
+### Respelling fonético (19-sep-2026)
+
+Diagnóstico del 19-sep: el problema con palabras como "hospital" no era
+timbre de voz, era **detección de idioma** — una palabra suelta que también
+existe en inglés (homógrafa: `hospital`, `pan`, `come`, `sin`...) o de una
+sola letra (`y`, que dispara la lectura "why") no le da al modelo contexto
+para leerla en español. Confirmado con un cruce estadístico contra listas de
+frecuencia de inglés: las 47 palabras que César marcó como mal
+pronunciadas tienen una tasa de homografía con el inglés muchísimo más alta
+que las que no marcó (hasta 30x en el corte más estricto). Se probaron 4
+soluciones (`language_code=es` forzado, respelling fonético, frase con
+contexto y recorte, control) — **ganó el respelling fonético**.
+
+**Mecanismo:**
+- **`scripts/respelling-palabras.json`** es la fuente única. Cada clave es
+  la palabra real (la que está en `words.ts` y el chico ve en pantalla);
+  cada valor es la grafía que se le manda a la API de TTS en su lugar —
+  **sólo para generar el MP3, nunca se muestra**. Ej.: `"hospital":
+  "ospital"` (la h es muda en español igual, sacarla saca el gatillo de
+  lectura inglesa), `"y": "i"` (evita que lea "why").
+- `scripts/regenerate-words-candb.py` lo carga con `cargar_respelling()` —
+  no hay ninguna copia paralela del diccionario en otro lado.
+- **Garantía de que no se filtra a la UI:**
+  `src/shared/__tests__/audio-respelling-integrity.test.ts` — corre en
+  `npm test`, revienta si alguna grafía respelled apareciera como texto de
+  una palabra en `ALL_WORDS` (words.ts). Si algún día alguien "corrige" a
+  mano `words.ts` para que coincida con el respelling pensando que es el
+  texto correcto, este test lo agarra.
+- Antes de generar una tanda, correr `--palabras <lista corta>` primero
+  (nunca `--todas` directo) y escuchar. El respelling es una heurística por
+  palabra, no una fórmula: lo que funciona para una no garantiza que
+  funcione para otra.
+
 **La voz canónica de todo lo que NO es palabra suelta sigue siendo
 ElevenLabs "Jessica"** (`cgSgspJ2msm6clMCkdW9`, modelo
 `eleven_v3`, salida 192kbps/44.1kHz mono), desde el **22-ago-2026**

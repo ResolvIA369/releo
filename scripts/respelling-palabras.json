@@ -1,0 +1,9 @@
+{
+  "_comentario": "Fuente única del respelling fonético para audio. Cada clave es la palabra REAL (la que se muestra en pantalla, tal como está en words.ts). Cada valor es SOLO para generar el MP3 — nunca se muestra al chico. Ver CLAUDE.md, sección 'Voz de Sofía > Respelling fonético'.",
+  "hospital": "ospital",
+  "pie": "pié",
+  "pan": "pán",
+  "come": "cóme",
+  "sin": "sín",
+  "y": "i"
+}
