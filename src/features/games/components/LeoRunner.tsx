@@ -246,41 +246,53 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
       app.canvas.style.borderRadius = "16px";
       hostRef.current.appendChild(app.canvas);
 
-      // Alto real del cartel de objetivo: IMMERSIVE_HEADER_H+spacing.sm de
-      // offset fijo (68px) mas una estimacion generosa de su propio alto
-      // (fontSize 3cqh + padding + borde, redondeado para arriba con
-      // margen — no hace falta medir el DOM del pill, un numero conservador
-      // alcanza porque de todos modos se pisa contra el canvas completo).
+      // BUG B1, segunda vuelta (QA sep-2026, "el canvas se renderiza vacio"
+      // otra vez tras el primer fix): el primer intento acoto la banda
+      // escondida a lo sumo a 1/3 del recorrido — matematicamente sano,
+      // pero en la practica hizo que los carteles se volvieran visibles
+      // MUY temprano (cerca de SIGN_SPAWN_Y) en canvas mobile compactos,
+      // es decir, literalmente DEBAJO de la barra flotante del header
+      // (pausa/titulo/cofre, 60px reales + 8 de aire): capturas de
+      // produccion muestran "larg" y "neg" (largo/negro) cortados contra
+      // el boton de pausa y el cofre — el cartel SI se dibuja, pero queda
+      // ilegible, superpuesto con controles reales. Confirmado midiendo
+      // en vivo contra produccion (390x844): el punto donde se volvia
+      // visible caia varios px POR ENCIMA del borde inferior del header.
+      //
+      // La cuenta real: en un canvas mobile de ~190px reales de alto, el
+      // header (68px reales = ~150 unidades logicas) + el cartel de
+      // objetivo (pill "Tocá: X", otros ~72 logicas) suman MAS que todo
+      // el recorrido disponible entre spawn y resolucion (284 logicas) —
+      // no hay forma de esquivar AMBOS y encima dejar una ventana de
+      // lectura real. Algo tiene que ceder. El header tiene controles
+      // funcionales (pausa) — superponerse ahi se lee como bug. El pill
+      // de objetivo, en cambio, ya esta documentado en ArcadeHud.tsx como
+      // solape aceptable a proposito ("es DOM con zIndex por encima del
+      // canvas... solo importa la banda para que no se vean pegados"), y
+      // dcb09e0 ya acepto explicitamente un "solape breve" con el ahi
+      // mismo para mobile. Se pide clearance SOLO para el header, no para
+      // el pill — eso alcanza para que el cartel jamas aparezca detras de
+      // un boton real, y de paso deja una ventana de lectura mucho mas
+      // grande en los tres viewports. PERO en el canvas mobile mas chico
+      // (390x844, ~190px reales de alto) despejar el header COMPLETO deja
+      // solo ~0.7s de ventana visible antes de resolver (22% de la ronda,
+      // medido con video) — tecnicamente sin overlap, pero tan poco tiempo
+      // que en la practica sigue siendo casi tan invisible como antes del
+      // fix (el disparo de Sofia nombrando la palabra es simultaneo al
+      // spawn — ver speakDucked mas abajo — así que el momento en que el
+      // chico mira la pantalla coincide justo con la parte SIN cartel).
+      // Piso adicional: garantizar un minimo de tiempo de lectura en
+      // SEGUNDOS (no en fraccion de banda), aunque eso implique ceder un
+      // poco del despeje del header en el peor caso — un cartel que asoma
+      // ~12px bajo el borde del header durante un instante se lee bastante
+      // mejor que un cartel que casi nunca esta.
       const wrapperH = hostRef.current.getBoundingClientRect().height || H;
-      const pillAllowancePx = 0.0445 * wrapperH + 24; // pill + margen de aire
-      const unsafeTopPx = IMMERSIVE_HEADER_H + spacing.sm + pillAllowancePx;
+      const unsafeTopPx = IMMERSIVE_HEADER_H + spacing.sm;
       const rawSafeTop = (unsafeTopPx / wrapperH) * H;
-      // BUG B1 (QA sep-2026, "el canvas se renderiza vacio"): el fix anterior
-      // (banda segura de arriba) resolvio el solape con el cartel de
-      // objetivo escondiendo el cartel-palabra hasta cruzar rawSafeTop — pero
-      // ese calculo, al convertir un offset fijo en px reales (header+pill)
-      // a unidades logicas, da un numero ENORME en canvases chicos (mobile:
-      // ~222 de 420, mas de la mitad del recorrido total). El piso de
-      // MIN_SIGN_VISIBLE_WINDOW (120) evitaba que llegara a tapar el punto
-      // de resolucion, pero no evitaba que se comiera la mayor parte de la
-      // ventana de LECTURA: medido en vivo (DIAG temporal, ver historial),
-      // el cartel quedaba invisible 47% de la ronda en 1280x900 y 58% en
-      // 390x844 — bastante como para que un chico mire la pantalla justo
-      // cuando Sofia nombra la palabra (el disparo es simultaneo, ver
-      // speakDucked mas abajo) y no vea ningun cartel todavia.
-      // El solape que esto evitaba es, ademas, puramente cosmetico: el
-      // cartel de objetivo es DOM con zIndex 15 por ENCIMA del <canvas>
-      // (ArcadeHud.tsx, overlay) — nada del juego puede taparlo visualmente
-      // aunque coincidan en posicion, "solo importa la banda para que no se
-      // vean pegados" (comentario original de ArcadeHud.tsx). No hay
-      // necesidad funcional de esconder medio recorrido para lograr eso.
-      // Nuevo criterio: tapar como maximo el primer tercio del recorrido
-      // total (spawn → resolucion), nunca mas — así, aun en el canvas mas
-      // chico, dos tercios de la ronda quedan con el cartel visible.
-      const TOTAL_TRAVEL = (LEO_Y - SIGN_RESOLVE_OFFSET) - SIGN_SPAWN_Y;
-      const MAX_HIDDEN_FRACTION = 1 / 3;
-      const maxSafeTop = SIGN_SPAWN_Y + TOTAL_TRAVEL * MAX_HIDDEN_FRACTION;
-      signSafeTopRef.current = Math.min(rawSafeTop, maxSafeTop);
+      const resolveAtY = LEO_Y - SIGN_RESOLVE_OFFSET;
+      const MIN_VISIBLE_SECONDS = 1.0;
+      const minVisibleLogical = BASE_SPEED * 60 * MIN_VISIBLE_SECONDS;
+      signSafeTopRef.current = Math.min(H * 0.45, rawSafeTop, resolveAtY - minVisibleLogical);
 
       // ARCADE_Z (ver LEO_RUNNER_Z arriba): el zIndex manda, no el orden
       // de addChild().
