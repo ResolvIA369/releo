@@ -8,10 +8,6 @@ import { fadeInUp } from "@/shared/styles/animations";
 import { SofiaAvatar } from "@/shared/components/SofiaAvatar";
 import { LeoCompanion, useLeo } from "@/shared/components/LeoCompanion";
 
-// Pause context so child games can react to pause state
-const PauseContext = createContext({ paused: false, pause: () => {}, resume: () => {} });
-export const usePause = () => useContext(PauseContext);
-
 // Leo context so games can trigger Leo's reactions
 type LeoActions = ReturnType<typeof useLeo>;
 const LeoContext = createContext<LeoActions>({ mood: "idle", cheer: () => {}, celebrate: () => {}, encourage: () => {}, clap: () => {}, think: () => {} });
@@ -41,6 +37,17 @@ interface GameShellProps {
   // preserva el comportamiento exacto de los otros 11 juegos: no cambia
   // nada para ellos a menos que un juego lo pida explicitamente.
   immersive?: boolean;
+  // B4 (QA sep-2026, "la pausa no pausa"): antes el juego leia el estado
+  // de pausa con un Context (`usePause`) que ESTE MISMO componente
+  // creaba — pero el juego es quien RENDERIZA <GameShell>, no al reves,
+  // asi que el juego queda arriba del Provider en el arbol, nunca
+  // adentro. Cada `usePause()` devolvia siempre el valor por defecto
+  // (paused=false, fijo), asi que ningun juego se enteraba jamas de la
+  // pausa real: el modal "Pausado" se mostraba pero el ticker/reloj de
+  // abajo seguia corriendo sin frenar. Reemplazado por un callback
+  // controlado: el juego guarda su propio estado local y lo actualiza
+  // aca — sin Context, sin la trampa de nesting invertido.
+  onPauseChange?: (paused: boolean) => void;
 }
 
 // Alto real (px) de la barra flotante en modo immersive: boton 44px +
@@ -52,29 +59,24 @@ interface GameShellProps {
 // abajo (QA mobile 390x844/360x740, sep-2026).
 export const IMMERSIVE_HEADER_H = 44 + spacing.sm * 2;
 
-export const GameShell: React.FC<GameShellProps> = ({ title, icon, color, session, onBack, children, contentAlign = "center", immersive = false }) => {
+export const GameShell: React.FC<GameShellProps> = ({ title, icon, color, session, onBack, children, contentAlign = "center", immersive = false, onPauseChange }) => {
   const [showMenu, setShowMenu] = useState(false);
-  const [paused, setPaused] = useState(false);
   const leo = useLeo();
 
   const handlePause = useCallback(() => {
-    setPaused(true);
     setShowMenu(true);
-  }, []);
+    onPauseChange?.(true);
+  }, [onPauseChange]);
 
   const handleResume = useCallback(() => {
-    setPaused(false);
     setShowMenu(false);
-  }, []);
-
-  const pause = useCallback(() => setPaused(true), []);
-  const resume = useCallback(() => { setPaused(false); setShowMenu(false); }, []);
+    onPauseChange?.(false);
+  }, [onPauseChange]);
 
   // Scroll to top when a game mounts so the "Empezar" button is visible
   useEffect(() => { window.scrollTo(0, 0); }, []);
 
   return (
-    <PauseContext.Provider value={{ paused, pause, resume }}>
     <LeoContext.Provider value={leo}>
       <div style={{ minHeight: "100vh", height: "100vh", backgroundColor: colors.bg.primary, fontFamily: fonts.body, position: "relative", display: "flex", flexDirection: "column", overflow: "hidden" }}>
         {/* Header — overlay flotante en modo immersive, barra solida normal si no */}
@@ -228,7 +230,6 @@ export const GameShell: React.FC<GameShellProps> = ({ title, icon, color, sessio
         {!showMenu && !immersive && <LeoCompanion mood={leo.mood} size="md" position="right" />}
       </div>
     </LeoContext.Provider>
-    </PauseContext.Provider>
   );
 };
 

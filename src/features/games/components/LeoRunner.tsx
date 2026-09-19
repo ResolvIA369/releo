@@ -9,7 +9,7 @@ import { useGameKeys } from "../hooks/useGameKeys";
 import { useArcadeEnergy } from "../hooks/useArcadeEnergy";
 import { useArcadeLevel } from "../hooks/useArcadeLevel";
 import { useSofiaIntro } from "../hooks/useSofiaIntro";
-import { GameShell, usePause, IMMERSIVE_HEADER_H } from "./GameShell";
+import { GameShell, IMMERSIVE_HEADER_H } from "./GameShell";
 import { ArcadeHud } from "./ArcadeHud";
 import { ArcadeIntro } from "./ArcadeIntro";
 import { ArcadeMusic } from "./arcade-music";
@@ -130,7 +130,11 @@ interface RoundData {
 export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, onBack, isDemo = false }) => {
   const { state, recordAttempt, finish, reset } = useGameState("leo-runner", { phase });
   const { rewardCorrect } = useRewards();
-  const { paused } = usePause();
+  // B4 (QA sep-2026): usePause() del Context vivia en GameShell, que ESTE
+  // componente renderiza como hijo — el Provider quedaba abajo del punto
+  // donde se leia el hook, asi que paused era siempre false. Ahora
+  // GameShell avisa por callback y el estado vive aca.
+  const [paused, setPaused] = useState(false);
 
   const [gamePhase, setGamePhase] = useState<Phase>("loading");
   const [waveIdx, setWaveIdx] = useState(0);
@@ -751,7 +755,7 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
   }
 
   return (
-    <GameShell title="Leo Corre" icon="🦁" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})} contentAlign="top" immersive>
+    <GameShell title="Leo Corre" icon="🦁" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})} contentAlign="top" immersive onPauseChange={setPaused}>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: spacing.md, paddingTop: spacing.xs }}>
         {gamePhase === "intro" && <ArcadeIntro color={GAME_COLOR} />}
 

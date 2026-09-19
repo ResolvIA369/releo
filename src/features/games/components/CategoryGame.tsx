@@ -6,7 +6,7 @@ import type { GameProps } from "../types";
 import type { DomanWord } from "@/shared/types/doman";
 import { useGameState } from "../hooks/useGameState";
 import { useDemoAutoplay, demoChooseSelectorWithHesitation } from "../hooks/useDemoAutoplay";
-import { GameShell, usePause } from "./GameShell";
+import { GameShell } from "./GameShell";
 import { useRewards } from "@/shared/components/RewardsLayer";
 import { GameIntro } from "./GameIntro";
 import { GameCompleteScreen } from "@/shared/components/GameCompleteScreen";
@@ -46,7 +46,11 @@ const WORDS_BY_PHASE = [PHASE1_WORDS, PHASE2_WORDS, PHASE3_WORDS, PHASE4_WORDS, 
 export const CategoryGame: React.FC<GameProps> = ({ words, phase = 1, onComplete, onBack, isDemo = false }) => {
   const { state, recordAttempt, finish, reset } = useGameState("category-sort", { phase });
   const { rewardCorrect } = useRewards();
-  const { paused } = usePause();
+  // B4 (QA sep-2026): usePause() leia un Context creado DENTRO de
+  // GameShell, que este componente renderiza como hijo — el Provider
+  // quedaba abajo del punto donde se leia el hook, asi que paused era
+  // siempre false. GameShell ahora avisa por callback.
+  const [paused, setPaused] = useState(false);
 
   // Musica de selva (loop suave); arranca tras el primer gesto
   const musicRef = useRef<ArcadeMusic | null>(null);
@@ -186,7 +190,7 @@ export const CategoryGame: React.FC<GameProps> = ({ words, phase = 1, onComplete
   }
 
   return (
-    <GameShell title="Categorias" icon="🗂️" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})}>
+    <GameShell title="Categorias" icon="🗂️" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})} onPauseChange={setPaused}>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: spacing.lg, paddingTop: spacing.md }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", maxWidth: "min(600px, calc(100vw - 32px))" }}>
           <span style={{ fontSize: fontSizes.sm, color: colors.text.placeholder }}>{roundIdx + 1} / {roundWords.length}</span>

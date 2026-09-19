@@ -6,7 +6,7 @@ import type { GameProps } from "../types";
 import type { DomanWord } from "@/shared/types/doman";
 import { useGameState } from "../hooks/useGameState";
 import { useDemoAutoplay, demoChooseSelectorWithHesitation } from "../hooks/useDemoAutoplay";
-import { GameShell, usePause, IMMERSIVE_HEADER_H } from "./GameShell";
+import { GameShell, IMMERSIVE_HEADER_H } from "./GameShell";
 import { useGameMusic } from "../hooks/useGameMusic";
 import { useRewards } from "@/shared/components/RewardsLayer";
 import { GameIntro } from "./GameIntro";
@@ -39,7 +39,11 @@ type Phase = "intro" | "playing" | "feedback" | "finished";
 export const WordImageMatch: React.FC<GameProps> = ({ words, phase = 1, onComplete, onBack, isDemo = false }) => {
   const { state, recordAttempt, finish, reset } = useGameState("word-image-match", { phase });
   const { rewardCorrect } = useRewards();
-  const { paused } = usePause();
+  // B4 (QA sep-2026): usePause() leia un Context creado DENTRO de
+  // GameShell, que este componente renderiza como hijo — el Provider
+  // quedaba abajo del punto donde se leia el hook, asi que paused era
+  // siempre false. GameShell ahora avisa por callback.
+  const [paused, setPaused] = useState(false);
   const music = useGameMusic(paused);
 
   const [gamePhase, setGamePhase] = useState<Phase>("intro");
@@ -194,7 +198,7 @@ export const WordImageMatch: React.FC<GameProps> = ({ words, phase = 1, onComple
   if (!currentWord) return null;
 
   return (
-    <GameShell title="Empareja Palabra-Imagen" icon="🖼️" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})} contentAlign="top" immersive>
+    <GameShell title="Empareja Palabra-Imagen" icon="🖼️" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})} contentAlign="top" immersive onPauseChange={setPaused}>
       <div style={{ display: "flex", gap: spacing.md, paddingTop: IMMERSIVE_HEADER_H + spacing.sm, maxWidth: "min(1100px, 96vw)", width: "100%", margin: "0 auto" }}>
         {/* Main content */}
         <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: spacing.md }}>

@@ -10,7 +10,7 @@ import { useArcadeEnergy } from "../hooks/useArcadeEnergy";
 import { useArcadeLevel } from "../hooks/useArcadeLevel";
 import { useSofiaIntro } from "../hooks/useSofiaIntro";
 import { useQualityTier } from "../hooks/useQualityTier";
-import { GameShell, usePause } from "./GameShell";
+import { GameShell } from "./GameShell";
 import { useRewards } from "@/shared/components/RewardsLayer";
 import { FeedbackFlash } from "@/shared/components/FeedbackFlash";
 import { GameCompleteScreen } from "@/shared/components/GameCompleteScreen";
@@ -98,7 +98,11 @@ interface RoundData {
 export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, worldId, onComplete, onBack, isDemo = false }) => {
   const { state, recordAttempt, finish, reset } = useGameState("leo-vuela", { phase });
   const { rewardCorrect } = useRewards();
-  const { paused } = usePause();
+  // B4 (QA sep-2026): usePause() leia un Context creado DENTRO de
+  // GameShell, que este componente renderiza como hijo — el Provider
+  // quedaba abajo del punto donde se leia el hook, asi que paused era
+  // siempre false. GameShell ahora avisa por callback.
+  const [paused, setPaused] = useState(false);
   const qualityTier = useQualityTier();
   const qualityTierRef = useRef(qualityTier);
   qualityTierRef.current = qualityTier;
@@ -969,7 +973,7 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, worldId, onCom
   }
 
   return (
-    <GameShell title="Leo Vuela" icon="🪁" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})} contentAlign="top" immersive>
+    <GameShell title="Leo Vuela" icon="🪁" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})} contentAlign="top" immersive onPauseChange={setPaused}>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: spacing.md, paddingTop: spacing.xs }}>
         {gamePhase === "story-intro" && (
           <MissionNarrative

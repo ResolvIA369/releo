@@ -6,7 +6,7 @@ import type { GameProps } from "../types";
 import type { DomanWord } from "@/shared/types/doman";
 import { useGameState } from "../hooks/useGameState";
 import { sofiaReads, sofiaCelebrates } from "@/shared/services/sofiaVoice";
-import { GameShell, usePause } from "./GameShell";
+import { GameShell } from "./GameShell";
 import { useGameMusic } from "../hooks/useGameMusic";
 import { useDemoAutoplay, demoChooseWithHesitation } from "../hooks/useDemoAutoplay";
 import { useRewards } from "@/shared/components/RewardsLayer";
@@ -119,7 +119,11 @@ type Phase = "intro" | "playing" | "finished";
 export const BuildSentence: React.FC<GameProps> = ({ words, phase = 1, onComplete, onBack, isDemo = false }) => {
   const { state, recordAttempt, finish, reset } = useGameState("phrase-builder", { phase });
   const { rewardCorrect } = useRewards();
-  const { paused } = usePause();
+  // B4 (QA sep-2026): usePause() leia un Context creado DENTRO de
+  // GameShell, que este componente renderiza como hijo — el Provider
+  // quedaba abajo del punto donde se leia el hook, asi que paused era
+  // siempre false. GameShell ahora avisa por callback.
+  const [paused, setPaused] = useState(false);
   const music = useGameMusic(paused);
 
   const [gamePhase, setGamePhase] = useState<Phase>("intro");
@@ -316,7 +320,7 @@ export const BuildSentence: React.FC<GameProps> = ({ words, phase = 1, onComplet
   }
 
   return (
-    <GameShell title="Construye la Frase" icon="🧱" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})}>
+    <GameShell title="Construye la Frase" icon="🧱" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})} onPauseChange={setPaused}>
       <div style={{ display: "flex", gap: spacing.md, paddingTop: spacing.md, maxWidth: "min(620px, calc(100vw - 32px))", margin: "0 auto" }}>
         <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: spacing.lg }}>
         {/* Header: round */}
@@ -435,7 +439,12 @@ export const BuildSentence: React.FC<GameProps> = ({ words, phase = 1, onComplet
         </div>
         {/* Time bar on the right */}
         <div style={{ display: "flex", alignItems: "stretch", paddingTop: 30, paddingBottom: 20 }}>
-          <TimeBar key={timerKey} seconds={SECONDS_PER_PHRASE} onTimeUp={handleTimeUp} color={GAME_COLOR} paused={!!feedbackType || isAdvancing} resetKey={timerKey} />
+          {/* B4 (QA sep-2026): "paused" del contexto de GameShell (boton de
+              pausa del header) nunca llegaba aca — el TimeBar solo miraba
+              feedbackType/isAdvancing, asi que el cartel "Pausado" tapaba la
+              pantalla pero el reloj seguia corriendo atras y podia perder la
+              ronda (handleTimeUp) sin que el chico hubiera tocado nada. */}
+          <TimeBar key={timerKey} seconds={SECONDS_PER_PHRASE} onTimeUp={handleTimeUp} color={GAME_COLOR} paused={paused || !!feedbackType || isAdvancing} resetKey={timerKey} />
         </div>
       </div>
       <FeedbackFlash type={feedbackType} />

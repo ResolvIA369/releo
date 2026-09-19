@@ -6,7 +6,7 @@ import type { GameProps } from "../types";
 import type { DomanWord } from "@/shared/types/doman";
 import { useGameState } from "../hooks/useGameState";
 import { useDemoAutoplay, demoChooseSelectorWithHesitation } from "../hooks/useDemoAutoplay";
-import { GameShell, usePause } from "./GameShell";
+import { GameShell } from "./GameShell";
 import { useGameMusic } from "../hooks/useGameMusic";
 import { useRewards } from "@/shared/components/RewardsLayer";
 import { GameIntro } from "./GameIntro";
@@ -110,7 +110,11 @@ type Phase = "intro" | "announcing" | "playing" | "feedback" | "finished";
 export const MemoryCards: React.FC<GameProps> = ({ words, phase = 1, onComplete, onBack, isDemo = false }) => {
   const { state, recordAttempt, finish, reset } = useGameState("memory-cards", { phase });
   const { rewardCorrect } = useRewards();
-  const { paused } = usePause();
+  // B4 (QA sep-2026): usePause() leia un Context creado DENTRO de
+  // GameShell, que este componente renderiza como hijo — el Provider
+  // quedaba abajo del punto donde se leia el hook, asi que paused era
+  // siempre false. GameShell ahora avisa por callback.
+  const [paused, setPaused] = useState(false);
   const music = useGameMusic(paused);
 
   const [gamePhase, setGamePhase] = useState<Phase>("intro");
@@ -292,7 +296,7 @@ export const MemoryCards: React.FC<GameProps> = ({ words, phase = 1, onComplete,
   const PIECE_COLORS = ["#805ad5", "#e53e3e", "#38a169", "#d69e2e", "#3182ce"];
 
   return (
-    <GameShell title="Rompecabezas" icon="🧩" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})}>
+    <GameShell title="Rompecabezas" icon="🧩" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})} onPauseChange={setPaused}>
       <div style={{ display: "flex", gap: spacing.md, paddingTop: spacing.md, maxWidth: "min(620px, calc(100vw - 32px))", margin: "0 auto" }}>
         <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: spacing.lg }}>
           {/* Counter */}
