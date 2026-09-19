@@ -11,6 +11,7 @@ export default [
       "playwright-report/**",
       "test-results/**",
       "scripts/**",
+      "_wip-pending/**",
     ],
   },
   ...nextCoreWebVitals,
