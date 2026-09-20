@@ -37,6 +37,17 @@ export class ArcadeMusic {
 
   // Llamar SIEMPRE desde un handler de gesto (tap/tecla): ahi el
   // navegador permite crear/destrabar el AudioContext.
+  //
+  // B5 (QA sep-2026, "la musica no suena nunca"): esto antes esperaba
+  // Promise.all de los 3 loops completos (~2.5-3MB, ~230s cada uno,
+  // ~8MB en total) ANTES de reproducir el primer sonido. En localhost
+  // eso es instantaneo y no se nota; contra la red real (probado en
+  // produccion, 2.5MB tardaron ~8s a velocidad de conexion normal) el
+  // primer sonido podia demorar mas que toda una sesion corta de
+  // juego — y como `starting` bloquea llamadas repetidas, ningun toque
+  // posterior lo destrababa antes. Ahora solo el loop del nivel de
+  // arranque bloquea el primer sonido; los demas se cargan en segundo
+  // plano para cuando `setLevel` los necesite.
   async ensureStarted(level: number): Promise<void> {
     if (this.started || this.starting || this.disposed) return;
     if (typeof window === "undefined" || !("AudioContext" in window)) return;
@@ -53,26 +64,35 @@ export class ArcadeMusic {
       this.master.gain.value = dbToGain(this.baseDb);
       this.master.connect(ctx.destination);
 
-      this.buffers = await Promise.all(
-        this.tracks.map(async (url) => {
-          try {
-            const res = await fetch(url);
-            if (!res.ok) return null;
-            return await ctx.decodeAudioData(await res.arrayBuffer());
-          } catch {
-            return null;
-          }
-        }),
-      );
+      this.buffers = this.tracks.map(() => null);
+      const idx = Math.min(level, this.tracks.length - 1);
+      this.buffers[idx] = await this.loadTrack(ctx, idx);
       if (this.disposed) return;
 
       this.level = level;
       this.current = this.playTrack(level, 1);
       this.started = true;
+
+      this.tracks.forEach((_track, i) => {
+        if (i === idx) return;
+        void this.loadTrack(ctx, i).then((buf) => {
+          if (!this.disposed) this.buffers[i] = buf;
+        });
+      });
     } catch {
       // Audio bloqueado o sin soporte: el juego sigue sin musica
     } finally {
       this.starting = false;
+    }
+  }
+
+  private async loadTrack(ctx: AudioContext, idx: number): Promise<AudioBuffer | null> {
+    try {
+      const res = await fetch(this.tracks[idx]);
+      if (!res.ok) return null;
+      return await ctx.decodeAudioData(await res.arrayBuffer());
+    } catch {
+      return null;
     }
   }
 
