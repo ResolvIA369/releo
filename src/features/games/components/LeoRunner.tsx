@@ -22,7 +22,7 @@ import { sofiaNameWord, sofiaPlayAudio, stopVoice } from "@/shared/services/sofi
 import { domanCanvasText } from "../config/doman-canvas";
 import { buildLanes, rocksForPhase, runnerTuningForPhase, lanesXForCount } from "../config/leo-runner";
 import { rewardForLevel, createWordBag } from "../config/arcade-tuning";
-import { demoChooseWithHesitation, demoJitter } from "../hooks/useDemoAutoplay";
+import { demoHesitateMove, demoJitter } from "../hooks/useDemoAutoplay";
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -747,21 +747,33 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
     ArrowRight: () => moveLane(1),
   });
 
-  // Demo mode: cada tanda, duda entre carriles y mueve a Leo al correcto
-  // mientras los carteles estan lejos (keyed en waveIdx para re-armarse en
-  // cada tanda del flujo continuo, no solo en la primera)
+  // Demo mode: cada tanda, DUDA MOVIENDO A LEO — se desplaza hacia un
+  // carril incorrecto, se frena, y recien ahi corrige hacia el correcto
+  // (QA sep-2026: el resaltado CSS anterior no se notaba en video; el
+  // movimiento si). handleLaneTap ya es exactamente "mover a Leo a este
+  // carril", asi que la "duda" reutiliza la misma accion real dos veces
+  // en vez de simular nada aparte. La resolucion se decide por la
+  // posicion de Leo cuando el cartel LLEGA (no por el toque en si), asi
+  // que corregir a tiempo antes de que el cartel resuelva es lo unico
+  // que importa — Leo nunca "falla" la lectura por dudar.
   useEffect(() => {
     if (!isDemo || gamePhase !== "running" || !targetWord) return;
     const t = setTimeout(() => {
       const targetId = roundRef.current.target?.id;
       if (!targetId) return;
-      const allSigns = Array.from(document.querySelectorAll("[data-word-id]")) as HTMLElement[];
-      const correctEl = allSigns.find((el) => el.dataset.wordId === targetId) ?? null;
-      const wrongEls = allSigns.filter((el) => el.dataset.wordId && el.dataset.wordId !== targetId);
-      demoChooseWithHesitation(correctEl, wrongEls);
+      const targetLane = laneWords.findIndex((w) => w?.id === targetId);
+      if (targetLane === -1) return;
+      const wrongLanes = laneWords
+        .map((_, i) => i)
+        .filter((i) => i !== targetLane && laneWords[i] !== null);
+      demoHesitateMove(
+        wrongLanes.length > 0,
+        () => handleLaneTap(wrongLanes[Math.floor(Math.random() * wrongLanes.length)]),
+        () => handleLaneTap(targetLane),
+      );
     }, demoJitter(1200));
     return () => clearTimeout(t);
-  }, [isDemo, gamePhase, waveIdx, targetWord]);
+  }, [isDemo, gamePhase, waveIdx, targetWord, laneWords, handleLaneTap]);
 
   const handleReplay = useCallback(() => {
     reset();

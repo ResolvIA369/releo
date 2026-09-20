@@ -103,3 +103,32 @@ export function demoChooseSelectorWithHesitation(
     wrongSelectors.map((sel) => document.querySelector(sel) as HTMLElement | null)
   );
 }
+
+/**
+ * Version de demoChooseWithHesitation para juegos con un PERSONAJE que se
+ * desplaza (LeoRunner/LeoVuela/SaltaPalabra) en vez de tocar un boton: el
+ * resaltado CSS de la version de arriba no se nota en video (QA sep-2026,
+ * "hoy se resalta la opcion incorrecta y no se percibe"). Acá, en cambio,
+ * se MUEVE al personaje hacia la opcion incorrecta y recien despues se
+ * corrige hacia la correcta — el movimiento se ve, el resaltado no.
+ *
+ * Mismos tiempos y misma frecuencia de duda (70%) que la version por click,
+ * para no romper el ritmo ya afinado del resto del demo. `moveToWrong` es
+ * responsabilidad de cada juego: tiene que insinuar sin llegar a "tocar" la
+ * opcion incorrecta de verdad (en los juegos de choque fisico, sin entrar
+ * en su zona de atrape) — Leo nunca falla una lectura.
+ */
+export function demoHesitateMove(
+  hasWrongOption: boolean,
+  moveToWrong: () => void,
+  moveToCorrect: () => void,
+): void {
+  if (!hasWrongOption || Math.random() < 0.3) {
+    setTimeout(moveToCorrect, jitter(150));
+    return;
+  }
+  setTimeout(() => {
+    moveToWrong();
+    setTimeout(moveToCorrect, jitter(500));
+  }, jitter(150));
+}

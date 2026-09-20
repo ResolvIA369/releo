@@ -19,6 +19,7 @@ import { FeedbackFlash } from "@/shared/components/FeedbackFlash";
 import { GameCompleteScreen } from "@/shared/components/GameCompleteScreen";
 import { colors, spacing, radii, fontSizes, fonts } from "@/shared/styles/design-tokens";
 import { sofiaNameWord, sofiaPlayAudio, stopVoice } from "@/shared/services/sofiaVoice";
+import { demoHesitateMove, demoJitter } from "../hooks/useDemoAutoplay";
 import { domanCanvasText } from "../config/doman-canvas";
 import { saltaTuningForPhase } from "../config/salta-palabra";
 import { rewardForLevel, createWordBag } from "../config/arcade-tuning";
@@ -548,6 +549,40 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
       if (isDemo) void musicRef.current?.ensureStarted(levelRef.current);
     }
   }, [gamePhase, isDemo]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Demo mode: cada tanda, DUDA MOVIENDO A LEO en horizontal — se
+  // desplaza unos pasos hacia una palabra incorrecta y recien despues
+  // corrige hacia donde esta la palabra objetivo (QA sep-2026: "donde el
+  // atrape es por choque fisico, que el desplazamiento quede lejos de
+  // la decoy: que insinue y vuelva"; y tambien "Leo tiene que moverse" —
+  // hoy se ve casi estatico en video). No hace falta cuidar que el
+  // salto agarre la incorrecta: en este juego el salto SOLO se dispara
+  // por la cercania de la palabra objetivo (ver el bloque de mas abajo
+  // en el ticker) — moverse hacia una decoy no la puede "atrapar", solo
+  // se ve la duda.
+  useEffect(() => {
+    if (!isDemo || gamePhase !== "running" || !targetWord) return;
+    const t = setTimeout(() => {
+      const round = roundRef.current;
+      const targetFw = round.words.find((fw) => fw.word.id === round.target?.id);
+      const decoys = round.words.filter((fw) => fw.word.id !== round.target?.id);
+      const decoy = decoys.length > 0 ? decoys[Math.floor(Math.random() * decoys.length)] : null;
+      const towardDecoy: -1 | 0 | 1 = decoy ? (decoy.box.x > leoXRef.current ? 1 : -1) : 0;
+      const towardTarget: -1 | 0 | 1 = targetFw
+        ? targetFw.box.x > leoXRef.current ? 1 : targetFw.box.x < leoXRef.current ? -1 : 0
+        : 0;
+
+      demoHesitateMove(
+        !!decoy,
+        () => { moveDirRef.current = towardDecoy; },
+        () => {
+          moveDirRef.current = towardTarget;
+          setTimeout(() => { moveDirRef.current = 0; }, demoJitter(320));
+        },
+      );
+    }, demoJitter(900));
+    return () => clearTimeout(t);
+  }, [isDemo, gamePhase, waveIdx, targetWord]);
 
   // Sin energia → fin del juego
   const finishGame = useCallback(() => {

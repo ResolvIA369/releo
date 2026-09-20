@@ -17,6 +17,7 @@ import { GameCompleteScreen } from "@/shared/components/GameCompleteScreen";
 import { colors, spacing, radii, fontSizes, fonts } from "@/shared/styles/design-tokens";
 import { sofiaNameWord, sofiaPlayAudio, stopVoice } from "@/shared/services/sofiaVoice";
 import { recordGameEvent } from "@/shared/services/gameTelemetry";
+import { demoHesitateMove, demoJitter } from "../hooks/useDemoAutoplay";
 import { domanCanvasText } from "../config/doman-canvas";
 import { physicsForPhase, stepFlight, buildCloudRound, tuningForPhase, rewardForLevel } from "../config/leo-vuela";
 import { createWordBag, normalizedCloudPuffWidth } from "../config/arcade-tuning";
@@ -770,6 +771,41 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, worldId, onCom
     setRoundIdx((prev) => prev + 1); // contador de tandas (anima la pill)
     spawnWave();
   }, [spawnWave]);
+
+  // Demo mode: cada tanda, DUDA MOVIENDO A LEO en horizontal — se
+  // desplaza unos pasos hacia una nube incorrecta y recien despues
+  // corrige hacia donde esta la nube objetivo (QA sep-2026: "donde el
+  // atrape es por choque fisico, que el desplazamiento quede lejos de
+  // la decoy: que insinue y vuelva"; y "Leo tiene que moverse"). Solo
+  // se toca el eje X: el eje Y sigue exclusivamente la logica de vuelo
+  // de mas arriba, que ya apunta a la altura de la nube objetivo — como
+  // cada nube de la ronda esta en una banda de altura distinta
+  // (buildCloudRound nunca repite banda dentro de una misma ronda),
+  // acercarse en X a la decoy sin igualar su altura no la puede
+  // "atrapar" (el atrape pide X e Y a la vez).
+  useEffect(() => {
+    if (!isDemo || gamePhase !== "running" || !targetWord) return;
+    const t = setTimeout(() => {
+      const round = roundRef.current;
+      const targetFc = round.clouds.find((fc) => fc.word.id === round.target?.id);
+      const decoys = round.clouds.filter((fc) => fc.word.id !== round.target?.id);
+      const decoy = decoys.length > 0 ? decoys[Math.floor(Math.random() * decoys.length)] : null;
+      const towardDecoy: -1 | 0 | 1 = decoy ? (decoy.box.x > leoXRef.current ? 1 : -1) : 0;
+      const towardTarget: -1 | 0 | 1 = targetFc
+        ? targetFc.box.x > leoXRef.current ? 1 : targetFc.box.x < leoXRef.current ? -1 : 0
+        : 0;
+
+      demoHesitateMove(
+        !!decoy,
+        () => { moveDirRef.current = towardDecoy; },
+        () => {
+          moveDirRef.current = towardTarget;
+          setTimeout(() => { moveDirRef.current = 0; }, demoJitter(320));
+        },
+      );
+    }, demoJitter(900));
+    return () => clearTimeout(t);
+  }, [isDemo, gamePhase, roundIdx, targetWord]);
 
   // Sin energia → fin del juego
   const finishGame = useCallback(() => {
