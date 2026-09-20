@@ -98,6 +98,12 @@ export const CategoryGame: React.FC<GameProps> = ({ words, phase = 1, onComplete
   // alone. Sofia only speaks the word AFTER a correct answer, in
   // handleCategoryTap.
 
+  // B6: en demo/grabacion el toque simulado no cuenta como gesto real
+  // para el browser (ver arcade-music.ts) — arranca directo.
+  useEffect(() => {
+    if (isDemo && gamePhase === "playing") void musicRef.current?.ensureStarted(0);
+  }, [isDemo, gamePhase]);
+
   // Demo: duda entre categorías antes de elegir la correcta.
   useDemoAutoplay(isDemo, gamePhase === "playing" && !feedbackType && !!currentWord, () => {
     const cat = currentWord?.categoryDisplay;

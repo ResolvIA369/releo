@@ -58,6 +58,12 @@ export const WordImageMatch: React.FC<GameProps> = ({ words, phase = 1, onComple
   const finished = currentIndex >= totalWords;
 
 
+  // B6: en demo/grabacion el toque simulado no cuenta como gesto real
+  // para el browser (ver arcade-music.ts) — arranca directo.
+  useEffect(() => {
+    if (isDemo && gamePhase === "playing") music.ensureStarted();
+  }, [isDemo, gamePhase, music.ensureStarted]);
+
   // Demo: lee la palabra (tiempo de lectura + jitter, ver useDemoAutoplay),
   // duda un instante sobre una imagen incorrecta y recién ahí elige la
   // correcta. Nunca clickea una incorrecta de verdad.

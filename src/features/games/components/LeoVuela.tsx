@@ -759,8 +759,11 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, worldId, onCom
       sessionStartRef.current = Date.now();
       recordGameEvent({ type: "game_started", gameId: "leo-vuela", phase, worldId });
       spawnWave();
+      // B6: en demo/grabacion el toque simulado no cuenta como gesto
+      // real para el browser (ver arcade-music.ts) — arranca directo.
+      if (isDemo) void musicRef.current?.ensureStarted(levelRef.current);
     }
-  }, [gamePhase]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [gamePhase, isDemo]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const nextWave = useCallback(() => {
     if (cancelledRef.current) return;

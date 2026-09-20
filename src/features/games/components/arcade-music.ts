@@ -48,13 +48,27 @@ export class ArcadeMusic {
   // posterior lo destrababa antes. Ahora solo el loop del nivel de
   // arranque bloquea el primer sonido; los demas se cargan en segundo
   // plano para cuando `setLevel` los necesite.
+  //
+  // B6 (QA sep-2026, "en modo demo/grabacion sigue sin haber musica"):
+  // `ctx.resume()` sin gesto de verdad (el autoplay de demo dispara
+  // `.click()` desde JS, que el browser NO cuenta como gesto real) se
+  // queda colgado para siempre — nunca resuelve, nunca rechaza. Antes
+  // esto estaba con `await` bloqueando TODO lo de abajo, incluida la
+  // llamada a `recAudio()` en `playTrack` de la que depende el pipeline
+  // de grabacion (arma el audio del video a partir de esos eventos, no
+  // de captura en vivo — ver recorder.ts). Construir el grafo (fetch,
+  // decode, connect, start) no requiere que el contexto este "running":
+  // solo la salida audible real lo requiere. Separar el resume del
+  // resto deja el log de grabacion funcionando SIEMPRE, y el sonido
+  // real se escucha apenas el browser efectivamente destrabe el
+  // contexto (gesto real u otro mecanismo del browser).
   async ensureStarted(level: number): Promise<void> {
     if (this.started || this.starting || this.disposed) return;
     if (typeof window === "undefined" || !("AudioContext" in window)) return;
     this.starting = true;
     try {
       const ctx = new AudioContext();
-      await ctx.resume();
+      void ctx.resume();
       if (this.disposed) {
         ctx.close();
         return;

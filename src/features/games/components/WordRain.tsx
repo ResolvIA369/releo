@@ -174,8 +174,13 @@ export const WordRain: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
   });
 
   useEffect(() => {
-    if (gamePhase === "running" && targetRef.current === null) spawnWave();
-  }, [gamePhase, spawnWave]);
+    if (gamePhase === "running" && targetRef.current === null) {
+      spawnWave();
+      // B6: en demo/grabacion el toque simulado no cuenta como gesto
+      // real para el browser (ver arcade-music.ts) — arranca directo.
+      if (isDemo) void musicRef.current?.ensureStarted(levelRef.current);
+    }
+  }, [gamePhase, spawnWave, isDemo]);
 
   // Clock: solo drena energia + sube nivel (la caida la anima framer)
   useArcadeClock(gamePhase === "running" && !paused, (dt) => {

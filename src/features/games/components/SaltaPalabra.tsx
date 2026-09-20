@@ -543,8 +543,11 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
   useEffect(() => {
     if (gamePhase === "running" && roundRef.current.words.length === 0) {
       spawnWave();
+      // B6: en demo/grabacion el toque simulado no cuenta como gesto
+      // real para el browser (ver arcade-music.ts) — arranca directo.
+      if (isDemo) void musicRef.current?.ensureStarted(levelRef.current);
     }
-  }, [gamePhase]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [gamePhase, isDemo]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Sin energia → fin del juego
   const finishGame = useCallback(() => {

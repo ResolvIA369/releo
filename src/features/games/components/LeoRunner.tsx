@@ -665,8 +665,13 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
   useEffect(() => {
     if (gamePhase === "running" && roundRef.current.signs.length === 0) {
       spawnWave();
+      // B6: en demo/grabacion el juego se toca solo — el toque simulado
+      // via .click() desde JS no cuenta como gesto real para el browser
+      // (ver arcade-music.ts), asi que esperar a ese "primer toque"
+      // nunca destraba nada. En demo arranca directo al empezar.
+      if (isDemo) void musicRef.current?.ensureStarted(levelRef.current);
     }
-  }, [gamePhase]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [gamePhase, isDemo]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Sin energia → fin del juego
   const finishGame = useCallback(() => {

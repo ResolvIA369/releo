@@ -163,8 +163,13 @@ export const BitsReading: React.FC<GameProps> = ({ words, phase = 1, onComplete,
   });
 
   useEffect(() => {
-    if (gamePhase === "running" && targetRef.current === null) spawnWave();
-  }, [gamePhase, spawnWave]);
+    if (gamePhase === "running" && targetRef.current === null) {
+      spawnWave();
+      // B6: en demo/grabacion el toque simulado no cuenta como gesto
+      // real para el browser (ver arcade-music.ts) — arranca directo.
+      if (isDemo) void musicRef.current?.ensureStarted(levelRef.current);
+    }
+  }, [gamePhase, spawnWave, isDemo]);
 
   // Clock: deriva de burbujas + drenaje de energia + nivel
   useArcadeClock(gamePhase === "running" && !paused, (dt) => {

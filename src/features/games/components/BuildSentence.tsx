@@ -196,6 +196,12 @@ export const BuildSentence: React.FC<GameProps> = ({ words, phase = 1, onComplet
     finish().then(() => onComplete?.(state));
   }, [finished, gamePhase]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // B6: en demo/grabacion el toque simulado no cuenta como gesto real
+  // para el browser (ver arcade-music.ts) — arranca directo.
+  useEffect(() => {
+    if (isDemo && gamePhase === "playing") music.ensureStarted();
+  }, [isDemo, gamePhase, music.ensureStarted]);
+
   // Demo: duda entre fichas visibles antes de elegir la que sigue en la frase.
   useDemoAutoplay(isDemo, gamePhase === "playing" && !feedbackType && !isAdvancing, () => {
     if (!currentSentence) return;
