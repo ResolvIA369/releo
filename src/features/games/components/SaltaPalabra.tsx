@@ -39,6 +39,16 @@ const GAME_COLOR = "#38b2ac";
 // hacia las palabras que entran (procesado por scripts/prepare-leo-sprites.py)
 const LEO_SPRITE_URL = "/images/games/leo-salta-sprite.png";
 
+// Animacion de zancada: 2 poses reales de Leo corriendo/saltando (de
+// perfil, mismo angulo y escala que el sprite estatico de arriba —
+// verificado sep-2026 antes de integrar: transparencia real, mismo
+// plano de camara, mismo tamano de cabeza/torso) cruzadas por alpha,
+// mismo tratamiento que leo-vuela-frame-a/b.png (ver LeoVuela.tsx).
+const LEO_FRAME_A_URL = "/images/games/leo-salta-frame-a.png";
+const LEO_FRAME_B_URL = "/images/games/leo-salta-frame-b.png";
+const LEO_RUN_CYCLE_MS = 440;
+const LEO_RUN_CYCLE_FRAMES = (LEO_RUN_CYCLE_MS / 1000) * 60;
+
 // Orden de dibujo explicito (mismo patron ARCADE_Z de arcade-sky.ts,
 // aplicado aca preventivamente — auditoría de grabación sep-2026,
 // docs/RELEO-AUDITORIA-GRABACION.md categoría B3). Ver el mismo
@@ -118,6 +128,7 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
   const leoXRef = useRef(LEO_X);
   const moveDirRef = useRef<-1 | 0 | 1>(0);
   const leoSpriteRef = useRef<Sprite | null>(null);
+  const leoSpriteBRef = useRef<Sprite | null>(null);
   const wordsLayerRef = useRef<Container | null>(null);
   const obstaclesRef = useRef<GroundObstacles | null>(null);
   const invulnUntilRef = useRef(0); // fin de invulnerabilidad (seg de juego)
@@ -232,23 +243,46 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
       app.stage.addChild(obstaclesLayer);
       obstaclesRef.current = new GroundObstacles(PIXI, obstaclesLayer, { W, groundY: GROUND_Y, minGapPx: tuning.minGroundGapPx });
 
-      // Leo — sprite if the texture loads, emoji fallback otherwise
+      // Leo — 2 poses (A/B) cruzadas por alpha; si alguna de las 2 no
+      // carga cae al sprite estatico anterior, y si ese tampoco carga
+      // al emoji de siempre (mismo patron de 3 niveles que LeoVuela.tsx).
       const leo = new PIXI.Container();
       leo.zIndex = SALTA_PALABRA_Z.leo;
       try {
-        const tex = await PIXI.Assets.load(LEO_SPRITE_URL);
+        const [texA, texB] = await Promise.all([
+          PIXI.Assets.load(LEO_FRAME_A_URL),
+          PIXI.Assets.load(LEO_FRAME_B_URL),
+        ]);
         // After appRef is set the cleanup owns destruction — just bail
         if (disposed) return;
-        const sprite = new PIXI.Sprite(tex);
-        sprite.anchor.set(0.5, 1);
-        baseScaleRef.current = 96 / sprite.height;
-        sprite.scale.set(baseScaleRef.current);
-        leo.addChild(sprite);
-        leoSpriteRef.current = sprite;
+        const spriteA = new PIXI.Sprite(texA);
+        const spriteB = new PIXI.Sprite(texB);
+        for (const sprite of [spriteA, spriteB]) {
+          sprite.anchor.set(0.5, 1);
+        }
+        baseScaleRef.current = 96 / spriteA.height;
+        spriteA.scale.set(baseScaleRef.current);
+        spriteB.scale.set(baseScaleRef.current);
+        spriteB.alpha = 0;
+        leo.addChild(spriteA);
+        leo.addChild(spriteB);
+        leoSpriteRef.current = spriteA;
+        leoSpriteBRef.current = spriteB;
       } catch {
-        const fallback = new PIXI.Text({ text: "🦁", style: { fontSize: 64 } });
-        fallback.anchor.set(0.5, 1);
-        leo.addChild(fallback);
+        try {
+          const tex = await PIXI.Assets.load(LEO_SPRITE_URL);
+          if (disposed) return;
+          const sprite = new PIXI.Sprite(tex);
+          sprite.anchor.set(0.5, 1);
+          baseScaleRef.current = 96 / sprite.height;
+          sprite.scale.set(baseScaleRef.current);
+          leo.addChild(sprite);
+          leoSpriteRef.current = sprite;
+        } catch {
+          const fallback = new PIXI.Text({ text: "🦁", style: { fontSize: 64 } });
+          fallback.anchor.set(0.5, 1);
+          leo.addChild(fallback);
+        }
       }
       const shadow = new PIXI.Graphics();
       shadow.ellipse(0, 0, 34, 9).fill({ color: 0x000000, alpha: 0.15 });
@@ -370,6 +404,22 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
             leoSpriteRef.current.scale.set(baseScaleRef.current * sx, baseScaleRef.current * sy);
           }
 
+          // Pose B espeja tint/escala de la pose A frame a frame (mismo
+          // lienzo y anclaje) y solo se distingue por el alpha: cruce
+          // suave A→B→A por coseno, mismo tratamiento que LeoVuela.tsx.
+          // Se congela durante el tropezon (crashT<1) para no competir
+          // con ese flash.
+          if (leoSpriteRef.current && leoSpriteBRef.current) {
+            leoSpriteBRef.current.tint = leoSpriteRef.current.tint;
+            leoSpriteBRef.current.scale.copyFrom(leoSpriteRef.current.scale);
+            if (crashTRef.current >= 1) {
+              const cyclePos = (elapsedRef.current % LEO_RUN_CYCLE_FRAMES) / LEO_RUN_CYCLE_FRAMES;
+              const alphaA = (Math.cos(cyclePos * Math.PI * 2) + 1) / 2;
+              leoSpriteRef.current.alpha = alphaA;
+              leoSpriteBRef.current.alpha = 1 - alphaA;
+            }
+          }
+
           // Near the apex: catch any word overhead (apex measured on the
           // post-anticipation slice of the jump)
           const jt = jumpTRef.current;
@@ -433,6 +483,7 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
         appRef.current = null;
         leoRef.current = null;
         leoSpriteRef.current = null;
+        leoSpriteBRef.current = null;
         wordsLayerRef.current = null;
         obstaclesRef.current = null;
         fadingRef.current = [];
