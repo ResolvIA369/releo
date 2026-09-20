@@ -34,7 +34,15 @@ const TRAIN_BASE = {
   // audibilidad — mismo diagnostico que Leo Vuela. -10dB es el valor
   // ya validado ahi. musicDuckDb sin cambios.
   musicVolumeDb: -10, musicDuckDb: -34,
-  crossSeconds: 10,
+  // 10 -> 13 (sep-2026): la ventana en que un toque cuenta no es todo el
+  // cruce, es solo mientras el vagon esta 100% adentro de la franja
+  // visible (ver bandRef en WordTrain.tsx) — a 10s eso media ~3,6s de 10,
+  // el resto el chico tocaba y no pasaba nada. La ventana es una FRACCION
+  // fija del cruce (depende del ancho del vagon contra el ancho de la
+  // franja, no de crossSeconds), asi que estirar el cruce estira esa
+  // fraccion en segundos reales sin tocar la geometria. Medido: ~4,7s de
+  // 13 en Nivel 1 (antes ~3,6 de 10).
+  crossSeconds: 13,
 };
 
 export const WORD_TRAIN_TUNING: Record<PhaseNumber, WordTrainTuning> = {

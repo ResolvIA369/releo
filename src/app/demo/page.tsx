@@ -32,7 +32,7 @@ import { colors, spacing, fonts, fontSizes, radii, shadows } from "@/shared/styl
 import { staggerContainer, staggerItem, fadeInUp } from "@/shared/styles/animations";
 import { AnimatedButton } from "@/shared/components/AnimatedButton";
 import { buildBlocks, cantidadDeBloques } from "@/features/games/config/blocks";
-import { setDemoSpeedMul } from "@/features/games/hooks/useDemoAutoplay";
+import { setDemoSpeedMul, setDemoHesitationPaceMul } from "@/features/games/hooks/useDemoAutoplay";
 
 const GAME_COMPONENTS: Partial<Record<GameId, FC<GameProps>>> = {
   "word-image-match": WordImageMatch,
@@ -63,6 +63,7 @@ function DemoContent() {
   const gameParam = params.get("game") as GameId | null;
   const phaseParam = params.get("phase");
   const speedParam = params.get("demoSpeed");
+  const hesitatePaceParam = params.get("demoHesitatePace");
 
   // Velocidad de las decisiones del autoplay (lectura, duda, ritmo) — ver
   // useDemoAutoplay.ts. 1 = normal. Se setea antes de que los juegos monten
@@ -70,6 +71,14 @@ function DemoContent() {
   useEffect(() => {
     setDemoSpeedMul(speedParam ? parseFloat(speedParam) : 1);
   }, [speedParam]);
+
+  // Ajuste fino de la duda VISIBLE, ENCIMA de demoSpeed (ver
+  // useDemoAutoplay.ts: el selector de arriba ya la estira 1.5x/2x). Este
+  // es solo para casos puntuales por URL — el selector es el control
+  // único de ritmo del demo. 1 = sin ajuste extra.
+  useEffect(() => {
+    setDemoHesitationPaceMul(hesitatePaceParam ? parseFloat(hesitatePaceParam) : 1);
+  }, [hesitatePaceParam]);
 
   // Flash de Palabras sessions
   const sessions = useMemo(() => {

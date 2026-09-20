@@ -7,15 +7,23 @@ import { AudioWaves } from "@/shared/components/doman-visuals";
 import { fonts, fontSizes, spacing } from "@/shared/styles/design-tokens";
 
 // Overlay de intro de los juegos arcade: muestra a la Seño Sofía en
-// pantalla mientras dice la consigna (como el GameIntro de los juegos
-// de pensar). Se renderiza solo durante la fase "intro"; los juegos
-// Pixi mantienen su canvas montado debajo.
+// pantalla mientras dice la afirmación y, la primera vez, las reglas
+// (como el GameIntro de los juegos de pensar). Se renderiza solo durante
+// la fase "intro"; los juegos Pixi mantienen su canvas montado debajo.
+// Todo el overlay es tocable para saltar (mismo patrón que
+// SofiaAffirmationGate) — un toque corta el audio y arranca el juego.
 interface ArcadeIntroProps {
   color: string;
+  onSkip?: () => void;
 }
 
-export const ArcadeIntro: React.FC<ArcadeIntroProps> = ({ color }) => (
+export const ArcadeIntro: React.FC<ArcadeIntroProps> = ({ color, onSkip }) => (
   <motion.div
+    role={onSkip ? "button" : undefined}
+    tabIndex={onSkip ? 0 : undefined}
+    aria-label={onSkip ? "Saltar" : undefined}
+    onClick={onSkip}
+    onKeyDown={onSkip ? (e) => { if (e.key === "Enter" || e.key === " ") onSkip(); } : undefined}
     initial={{ opacity: 0 }}
     animate={{ opacity: 1 }}
     exit={{ opacity: 0 }}
@@ -32,6 +40,7 @@ export const ArcadeIntro: React.FC<ArcadeIntroProps> = ({ color }) => (
       backgroundColor: "rgba(255,255,255,0.82)",
       backdropFilter: "blur(3px)",
       WebkitBackdropFilter: "blur(3px)",
+      cursor: onSkip ? "pointer" : undefined,
     }}
   >
     <SofiaAvatar size={200} speaking mood="motivating" />
@@ -39,5 +48,10 @@ export const ArcadeIntro: React.FC<ArcadeIntroProps> = ({ color }) => (
     <p style={{ fontSize: fontSizes.lg, fontFamily: fonts.display, color, margin: 0, textAlign: "center" }}>
       🔊 Escuchá a la Seño Sofía...
     </p>
+    {onSkip && (
+      <p style={{ fontSize: fontSizes.sm, fontFamily: fonts.display, color, opacity: 0.6, margin: 0 }}>
+        Tocá para saltar →
+      </p>
+    )}
   </motion.div>
 );

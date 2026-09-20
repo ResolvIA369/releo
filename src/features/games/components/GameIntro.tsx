@@ -6,6 +6,12 @@ import { SofiaAvatar } from "@/shared/components/SofiaAvatar";
 import { sofiaPlayAudio, sofiaNameWord, stopVoice } from "@/shared/services/sofiaVoice";
 import { AudioWaves } from "@/shared/components/doman-visuals";
 import { fonts, fontSizes, spacing, radii, shadows } from "@/shared/styles/design-tokens";
+import {
+  pickPregameAffirmation,
+  hasSeenRules,
+  markRulesSeen,
+} from "@/features/tutor/services/pregameAffirmations";
+import type { GameId } from "../types";
 
 // Map game names to their pre-recorded audio files
 const RULES_AUDIO: Record<string, string> = {
@@ -25,6 +31,7 @@ interface GameIntroProps {
   gameName: string;
   gameIcon: string;
   rulesText: string;
+  gameId: GameId;
   color?: string;
   isDemo?: boolean;
   onReady: () => void;
@@ -33,6 +40,7 @@ interface GameIntroProps {
 export const GameIntro: React.FC<GameIntroProps> = ({
   gameName,
   rulesText,
+  gameId,
   color = "#667eea",
   isDemo = false,
   onReady,
@@ -52,8 +60,7 @@ export const GameIntro: React.FC<GameIntroProps> = ({
   useEffect(() => {
     cancelledRef.current = false;
 
-    async function run() {
-      setIsSpeaking(true);
+    async function playRules() {
       const mp3 = RULES_AUDIO[gameName] ?? null;
       if (mp3) {
         await sofiaPlayAudio(mp3, rulesText, "gentle");
@@ -65,8 +72,26 @@ export const GameIntro: React.FC<GameIntroProps> = ({
           await new Promise((r) => setTimeout(r, 150));
         }
       }
+    }
+
+    async function run() {
+      setIsSpeaking(true);
+
+      // Afirmación primero, siempre. Las reglas solo si nunca se
+      // escucharon en este juego y no estamos en modo demo — en demo
+      // nunca suenan las reglas, solo la afirmación.
+      const { mp3: affMp3, text: affText } = pickPregameAffirmation();
+      await sofiaPlayAudio(affMp3, affText, "encouraging");
+      if (cancelledRef.current) return;
+
+      if (!isDemo && !hasSeenRules(gameId)) {
+        markRulesSeen(gameId);
+        await playRules();
+        if (cancelledRef.current) return;
+      }
+
       setIsSpeaking(false);
-      // In demo mode, auto-start after Sofia finishes the rules
+      // In demo mode, auto-start once Sofia finishes speaking
       if (isDemo && !cancelledRef.current) {
         setTimeout(() => startNow(), 500);
       }
@@ -74,10 +99,10 @@ export const GameIntro: React.FC<GameIntroProps> = ({
 
     run();
 
-    // In demo mode, force-start after 8s even if audio stalls
+    // In demo mode, force-start even if audio stalls
     let safetyTimer: ReturnType<typeof setTimeout> | undefined;
     if (isDemo) {
-      safetyTimer = setTimeout(() => startNow(), 8000);
+      safetyTimer = setTimeout(() => startNow(), 10000);
     }
 
     return () => {
@@ -118,14 +143,14 @@ export const GameIntro: React.FC<GameIntroProps> = ({
       <SofiaAvatar size={200} speaking={isSpeaking} mood="motivating" />
       <AudioWaves active={isSpeaking} color={color} />
 
-      {/* Empezar button — disabled while Sofia is speaking the rules */}
+      {/* Empezar button — sigue tocable mientras Sofía habla: un toque
+          salta la afirmación y/o las reglas y arranca el juego. */}
       <motion.button
         initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: isSpeaking ? 0.4 : 1, y: 0 }}
+        animate={{ opacity: isSpeaking ? 0.6 : 1, y: 0 }}
         transition={{ delay: 0.5 }}
-        whileHover={isSpeaking ? {} : { scale: 1.04 }}
-        whileTap={isSpeaking ? {} : { scale: 0.96 }}
-        disabled={isSpeaking}
+        whileHover={{ scale: 1.04 }}
+        whileTap={{ scale: 0.96 }}
         onClick={() => startNow()}
         style={{
           padding: `${spacing.md}px ${spacing.xl}px`,
@@ -136,12 +161,12 @@ export const GameIntro: React.FC<GameIntroProps> = ({
           fontSize: fontSizes.lg,
           fontWeight: "bold",
           fontFamily: fonts.display,
-          cursor: isSpeaking ? "not-allowed" : "pointer",
+          cursor: "pointer",
           boxShadow: shadows.button,
           minHeight: 56,
         }}
       >
-        {isSpeaking ? "🔊 Escuchá a Sofía..." : "▶ Empezar"}
+        {isSpeaking ? "🔊 Escuchá a Sofía... (tocá para saltar)" : "▶ Empezar"}
       </motion.button>
     </div>
   );

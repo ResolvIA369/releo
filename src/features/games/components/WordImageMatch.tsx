@@ -186,6 +186,7 @@ export const WordImageMatch: React.FC<GameProps> = ({ words, phase = 1, onComple
           gameName="Empareja Palabra-Imagen"
           gameIcon="🖼️"
           rulesText="Voy a mostrarte una palabra. ¡Toca la imagen que le corresponde antes de que se acabe el tiempo!"
+          gameId="word-image-match"
           color={GAME_COLOR}
           isDemo={isDemo} onReady={() => setGamePhase("playing")}
         />

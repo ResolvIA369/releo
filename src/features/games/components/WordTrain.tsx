@@ -8,7 +8,7 @@ import { useGameState } from "../hooks/useGameState";
 import { useArcadeEnergy } from "../hooks/useArcadeEnergy";
 import { useArcadeLevel } from "../hooks/useArcadeLevel";
 import { useArcadeClock } from "../hooks/useArcadeClock";
-import { useSofiaIntro } from "../hooks/useSofiaIntro";
+import { usePreGameIntro } from "../hooks/usePreGameIntro";
 import { GameShell } from "./GameShell";
 import { ArcadeHud } from "./ArcadeHud";
 import { ArcadeIntro } from "./ArcadeIntro";
@@ -58,6 +58,12 @@ export const WordTrain: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
   const [wagons, setWagons] = useState<DomanWord[]>([]);
   const [waveIdx, setWaveIdx] = useState(0);
   const [trainX, setTrainX] = useState(-110);
+  // Que vagones estan AHORA MISMO 100% adentro de la franja (el mismo
+  // criterio que ya usaba handleTap/el auto-toque del demo, ver mas abajo)
+  // — se usa para "encender" el vagon tocable, la señal visual que pide
+  // César (sep-2026: sin esto el chico tocaba 6+ de 10s sin que pasara
+  // nada, sin saber por que).
+  const [tappableIds, setTappableIds] = useState<Set<string>>(() => new Set());
   const [tappedId, setTappedId] = useState<string | null>(null);
   const [feedbackType, setFeedbackType] = useState<"correct" | "wrong" | null>(null);
   const [burstPos, setBurstPos] = useState<{ x: number; y: number } | null>(null);
@@ -130,6 +136,7 @@ export const WordTrain: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
     setBurstPos(null);
     trainXRef.current = -110;
     setTrainX(-110);
+    setTappableIds(new Set());
     resolvedRef.current = false;
     setWaveIdx((w) => w + 1);
     // Sofia nombra en paralelo — el tren ya esta entrando
@@ -156,8 +163,13 @@ export const WordTrain: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
   resolveRef.current = resolveWave;
 
   // ─── Intro de Sofia — solo al arrancar ───────────────────────────
-  useSofiaIntro(gamePhase === "intro", "intro-tren", INTRO_TEXT, () => {
-    if (!cancelledRef.current) setGamePhase("running");
+  const { skip: skipIntro } = usePreGameIntro({
+    active: gamePhase === "intro",
+    gameId: "word-train",
+    isDemo,
+    rulesMp3: "intro-tren",
+    rulesText: INTRO_TEXT,
+    onDone: () => { if (!cancelledRef.current) setGamePhase("running"); },
   });
 
   // Primera tanda al pasar a running
@@ -181,6 +193,30 @@ export const WordTrain: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
     const step = (220 / (tuning.crossSeconds * 60)) * lvl.speedMul * dt;
     trainXRef.current += step;
     setTrainX(trainXRef.current);
+
+    // Que vagones quedan 100% adentro de la franja DESPUES de este paso
+    // (mismo test que handleTap/el auto-toque: rect real del boton contra
+    // rect real de la franja). setState solo si el conjunto cambio — a
+    // 60fps, actualizar en cada frame aunque no cambie nada renderizaria
+    // de mas sin ganar precision (la franja no se mueve tan rapido).
+    const bandEl = bandRef.current;
+    if (bandEl) {
+      const bandRect = bandEl.getBoundingClientRect();
+      const wagonEls = Array.from(bandEl.querySelectorAll("[data-word-id]")) as HTMLElement[];
+      const nowTappable = new Set<string>();
+      for (const el of wagonEls) {
+        const r = el.getBoundingClientRect();
+        if (r.left >= bandRect.left - 0.5 && r.right <= bandRect.right + 0.5) {
+          const id = el.dataset.wordId;
+          if (id) nowTappable.add(id);
+        }
+      }
+      setTappableIds((prev) => {
+        if (prev.size === nowTappable.size && [...prev].every((id) => nowTappable.has(id))) return prev;
+        return nowTappable;
+      });
+    }
+
     if (trainXRef.current >= 110) {
       // El tren se fue sin que toques: intento fallido (escape)
       recordAttempt(false);
@@ -301,12 +337,18 @@ export const WordTrain: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
     const isTapped = tappedId === word.id;
     const isCorrect = isTapped && feedbackType === "correct";
     const isWrong = isTapped && feedbackType === "wrong";
+    // "Encendido" cuando el vagon esta 100% adentro de la franja — la
+    // señal de "ahora si cuenta" que pide César (sep-2026): antes no
+    // habia forma de saber, desde afuera, en que instante un toque iba a
+    // hacer algo.
+    const isTappable = !isTapped && tappableIds.has(word.id);
 
     let bg: string = colors.bg.card;
     let border = "#8d6e63";
     let textColor: string = colors.text.primary;
     if (isCorrect) { bg = "#c6f6d5"; border = colors.success; textColor = colors.success; }
     else if (isWrong) { bg = "#fed7d7"; border = colors.error; textColor = colors.error; }
+    else if (isTappable) { bg = "#fffbe0"; border = "#f6ad37"; textColor = "#8a5a00"; }
 
     return (
       <motion.button
@@ -314,10 +356,12 @@ export const WordTrain: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
         data-word-id={word.id}
         onClick={(e) => handleTap(word, e)}
         whileTap={{ scale: 0.9 }}
+        animate={isTappable ? { scale: [1, 1.05, 1] } : { scale: 1 }}
+        transition={isTappable ? { duration: 0.6, repeat: Infinity, ease: "easeInOut" } : undefined}
         style={{
           width: 96, height: 62, borderRadius: radii.md,
           backgroundColor: bg, border: `3px solid ${border}`,
-          boxShadow: isCorrect ? shadows.glow(colors.success) : shadows.sm,
+          boxShadow: isCorrect ? shadows.glow(colors.success) : isTappable ? shadows.glow("#f6ad37") : shadows.sm,
           display: "flex", alignItems: "center", justifyContent: "center",
           cursor: "pointer", fontSize: fontSizes.md, fontWeight: "bold",
           fontFamily: fonts.display, color: textColor, flexShrink: 0,
@@ -352,7 +396,7 @@ export const WordTrain: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
   return (
     <GameShell title="Tren de Palabras" icon="🚂" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})} contentAlign="top" immersive onPauseChange={setPaused}>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: spacing.md, paddingTop: spacing.xs, width: "100%" }}>
-        {gamePhase === "intro" && <ArcadeIntro color={GAME_COLOR} />}
+        {gamePhase === "intro" && <ArcadeIntro color={GAME_COLOR} onSkip={skipIntro} />}
 
         {/* Escena: mismo patron que WordFishing/WordRain — alto por
             calc(100dvh - 16px), fondo de cielo+pasto llenando la pantalla
@@ -425,7 +469,14 @@ export const WordTrain: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
               ajeno. Con el recorte alineado al mismo ancho de la formula, un
               vagon solo puede aparecer cortado mientras esta fuera del 0%-100%
               (fuera de juego, esperado), nunca en el medio del cruce. */}
-          <div ref={bandRef} style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", width: "min(660px, 92vw)", top: "58%", height: 82, overflow: "hidden" }}>
+          {/* 660/92vw -> 760/95vw (sep-2026): la franja tocable ES esta
+              franja (mismo elemento que recorta visualmente Y decide si
+              un toque cuenta, ver comentario mas abajo) — agrandarla
+              agranda la ventana real de "vagon legible y tocable a la
+              vez", no solo la estetica. En mobile el margen es chico
+              (95vw ya esta cerca del limite fisico de la pantalla), el
+              grueso de la mejora viene de crossSeconds en word-train.ts. */}
+          <div ref={bandRef} style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", width: "min(760px, 95vw)", top: "58%", height: 82, overflow: "hidden" }}>
             <div style={{ position: "absolute", left: 0, right: 0, top: 18, height: 4, backgroundColor: "#8d6e63" }} />
             <div style={{ position: "absolute", left: 0, right: 0, top: 60, height: 4, backgroundColor: "#8d6e63" }} />
             <div style={{ position: "absolute", left: 0, right: 0, top: 14, height: 52, backgroundImage: "repeating-linear-gradient(90deg, #5d4037 0px, #5d4037 4px, transparent 4px, transparent 20px)", opacity: 0.25 }} />

@@ -8,7 +8,7 @@ import { useGameState } from "../hooks/useGameState";
 import { useGameKeys } from "../hooks/useGameKeys";
 import { useArcadeEnergy } from "../hooks/useArcadeEnergy";
 import { useArcadeLevel } from "../hooks/useArcadeLevel";
-import { useSofiaIntro } from "../hooks/useSofiaIntro";
+import { usePreGameIntro } from "../hooks/usePreGameIntro";
 import { useQualityTier } from "../hooks/useQualityTier";
 import { GameShell } from "./GameShell";
 import { useRewards } from "@/shared/components/RewardsLayer";
@@ -750,8 +750,13 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, worldId, onCom
 
   // Intro de Sofia — SOLO al arrancar; la primera tanda recien sale
   // cuando termina. Cero pausas nuevas durante el juego.
-  useSofiaIntro(gamePhase === "intro", "reglas-leo-vuela", INTRO_TEXT, () => {
-    if (!cancelledRef.current) setGamePhase("running");
+  const { skip: skipIntro } = usePreGameIntro({
+    active: gamePhase === "intro",
+    gameId: "leo-vuela",
+    isDemo,
+    rulesMp3: "reglas-leo-vuela",
+    rulesText: INTRO_TEXT,
+    onDone: () => { if (!cancelledRef.current) setGamePhase("running"); },
   });
 
   // First wave once Pixi is up
@@ -1039,7 +1044,7 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, worldId, onCom
             }}
           />
         )}
-        {gamePhase === "intro" && <ArcadeIntro color={GAME_COLOR} />}
+        {gamePhase === "intro" && <ArcadeIntro color={GAME_COLOR} onSkip={skipIntro} />}
 
         {/* Pixi canvas + full-surface flap tap zone. El header de GameShell
             (immersive) y el ArcadeHud (overlay) flotan encima en vez de

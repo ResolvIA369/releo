@@ -278,6 +278,7 @@ export const MemoryCards: React.FC<GameProps> = ({ words, phase = 1, onComplete,
           gameName="Rompecabezas"
           gameIcon="🧩"
           rulesText="¡Arma la palabra! Yo te digo una palabra y tú tocas las sílabas en orden para armarla."
+          gameId="memory-cards"
           color={GAME_COLOR}
           isDemo={isDemo} onReady={() => setGamePhase("announcing")}
         />

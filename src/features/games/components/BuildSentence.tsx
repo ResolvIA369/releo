@@ -303,6 +303,7 @@ export const BuildSentence: React.FC<GameProps> = ({ words, phase = 1, onComplet
           gameName="Construye la Frase"
           gameIcon="🧱"
           rulesText="¡Ordena las palabras para formar la oración!"
+          gameId="phrase-builder"
           color={GAME_COLOR}
           isDemo={isDemo} onReady={() => setGamePhase("playing")}
         />

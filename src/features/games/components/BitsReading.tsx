@@ -8,7 +8,7 @@ import { useGameState } from "../hooks/useGameState";
 import { useArcadeEnergy } from "../hooks/useArcadeEnergy";
 import { useArcadeLevel } from "../hooks/useArcadeLevel";
 import { useArcadeClock } from "../hooks/useArcadeClock";
-import { useSofiaIntro } from "../hooks/useSofiaIntro";
+import { usePreGameIntro } from "../hooks/usePreGameIntro";
 import { GameShell } from "./GameShell";
 import { ArcadeHud } from "./ArcadeHud";
 import { ArcadeIntro } from "./ArcadeIntro";
@@ -158,8 +158,13 @@ export const BitsReading: React.FC<GameProps> = ({ words, phase = 1, onComplete,
   const resolveRef = useRef(resolveWave);
   resolveRef.current = resolveWave;
 
-  useSofiaIntro(gamePhase === "intro", "intro-burbujas", INTRO_TEXT, () => {
-    if (!cancelledRef.current) setGamePhase("running");
+  const { skip: skipIntro } = usePreGameIntro({
+    active: gamePhase === "intro",
+    gameId: "daily-bits",
+    isDemo,
+    rulesMp3: "intro-burbujas",
+    rulesText: INTRO_TEXT,
+    onDone: () => { if (!cancelledRef.current) setGamePhase("running"); },
   });
 
   useEffect(() => {
@@ -284,7 +289,7 @@ export const BitsReading: React.FC<GameProps> = ({ words, phase = 1, onComplete,
   return (
     <GameShell title="Burbujas Magicas" icon="🫧" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})} contentAlign="top" immersive onPauseChange={setPaused}>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: spacing.md, paddingTop: spacing.xs, width: "100%" }}>
-        {gamePhase === "intro" && <ArcadeIntro color={GAME_COLOR} />}
+        {gamePhase === "intro" && <ArcadeIntro color={GAME_COLOR} onSkip={skipIntro} />}
 
         <div style={{
           position: "relative", width: "100%", maxWidth: "96vw", height: "calc(100dvh - 16px)",

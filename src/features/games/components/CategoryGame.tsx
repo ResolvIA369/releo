@@ -180,6 +180,7 @@ export const CategoryGame: React.FC<GameProps> = ({ words, phase = 1, onComplete
           gameName="Categorias"
           gameIcon="🗂️"
           rulesText="¡Pon cada palabra en su categoria! Yo te digo la palabra y tu eliges donde va."
+          gameId="category-sort"
           color={GAME_COLOR}
           isDemo={isDemo} onReady={() => setGamePhase("playing")}
         />

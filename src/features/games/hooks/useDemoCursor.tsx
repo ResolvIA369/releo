@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { demoJitter } from "./useDemoAutoplay";
+import { demoHesitationDwell } from "./useDemoAutoplay";
 
 interface Pos {
   x: number;
@@ -38,6 +38,15 @@ const TRAVEL_MS = 220;
  * palabra seguia cayendo). Por eso durante el tramo de "duda" (no el
  * viaje) se re-lee la posicion en vivo cuadro a cuadro con rAF — el
  * cursor viaja CON la opcion, no a una foto de ella.
+ *
+ * `showIdle(target)` pone el cursor visible en reposo ANTES de decidir
+ * (llamarlo apenas se sabe cual es la palabra objetivo, no cuando arranca
+ * la duda) — sin esto el cursor no existia en pantalla durante la pausa
+ * de lectura, y `hesitateAndClick` lo hacia aparecer YA ENCIMA de la
+ * respuesta correcta: en el 30% de los casos sin detour eso era un
+ * teletransporte de distancia cero seguido de un click instantaneo (QA
+ * sep-2026, visto mirando capturas reales, no midiendo tiempos — los
+ * tiempos ya daban bien, la imagen no).
  */
 export function useDemoCursor(isDemo: boolean) {
   const [pos, setPos] = useState<Pos>({ x: -100, y: -100 });
@@ -98,6 +107,24 @@ export function useDemoCursor(isDemo: boolean) {
     rafRef.current = requestAnimationFrame(step);
   }, [writeXY, stopRaf]);
 
+  // Cursor visible en reposo (p.ej. mientras el chico "lee" la palabra
+  // objetivo, antes de que arranque cualquier duda) — sin esto el cursor
+  // no existia en pantalla hasta el mismo instante en que se resolvia la
+  // eleccion, y en el 30% de los casos sin detour (ver mas abajo)
+  // aparecia YA ENCIMA de la respuesta correcta y la tocaba de inmediato:
+  // se leia como un bot resolviendo, no como un chico pensando (QA
+  // sep-2026, detectado mirando capturas reales, no midiendo tiempos).
+  const showIdle = useCallback((target: HTMLElement | Pos | null | undefined) => {
+    if (!isDemo || !target) return;
+    clearTimers();
+    stopRaf();
+    seqRef.current++;
+    const p = target instanceof HTMLElement ? centerOf(target) : target;
+    curRef.current = p;
+    setPos(p);
+    setVisible(true);
+  }, [isDemo, clearTimers, stopRaf]);
+
   const hesitateAndClick = useCallback((
     correctEl: HTMLElement | null | undefined,
     wrongEls: (HTMLElement | null | undefined)[],
@@ -111,9 +138,10 @@ export function useDemoCursor(isDemo: boolean) {
     const alive = () => seqRef.current === mySeq;
     const candidates = wrongEls.filter((el): el is HTMLElement => !!el && el !== correctEl);
 
-    const start = centerOf(correctEl);
-    curRef.current = start;
-    setPos(start);
+    // El cursor arranca desde donde ya estaba (el reposo de showIdle, o
+    // el default fuera de pantalla si nunca se llamo) — a proposito NO
+    // se lo reubica encima de la correcta antes de decidir: eso es lo
+    // que hacia invisible el camino directo (30% de los casos).
     setVisible(true);
 
     const finish = () => {
@@ -140,7 +168,7 @@ export function useDemoCursor(isDemo: boolean) {
       wrongEl.classList.add("demo-hesitate");
       travelTo(centerOf(wrongEl), TRAVEL_MS, () => {
         if (!alive()) return;
-        followFor(wrongEl, demoJitter(500), () => {
+        followFor(wrongEl, demoHesitationDwell(), () => {
           wrongEl.classList.remove("demo-hesitate");
           if (!alive()) return;
           travelTo(centerOf(correctEl), TRAVEL_MS, finish, mySeq);
@@ -169,5 +197,5 @@ export function useDemoCursor(isDemo: boolean) {
     </div>
   ) : null;
 
-  return { Cursor, hesitateAndClick };
+  return { Cursor, hesitateAndClick, showIdle };
 }

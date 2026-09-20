@@ -1,14 +1,14 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, animate, useMotionValue } from "framer-motion";
 import type { GameProps } from "../types";
 import type { DomanWord } from "@/shared/types/doman";
 import { useGameState } from "../hooks/useGameState";
 import { useArcadeEnergy } from "../hooks/useArcadeEnergy";
 import { useArcadeLevel } from "../hooks/useArcadeLevel";
 import { useArcadeClock } from "../hooks/useArcadeClock";
-import { useSofiaIntro } from "../hooks/useSofiaIntro";
+import { usePreGameIntro } from "../hooks/usePreGameIntro";
 import { GameShell } from "./GameShell";
 import { ArcadeHud } from "./ArcadeHud";
 import { ArcadeIntro } from "./ArcadeIntro";
@@ -23,7 +23,7 @@ import { sofiaNameWord, sofiaPlayAudio, stopVoice } from "@/shared/services/sofi
 import { fitWordFontSize } from "@/shared/utils/fitText";
 import { wordRainTuningForPhase } from "../config/word-rain";
 import { rewardForLevel, createWordBag } from "../config/arcade-tuning";
-import { demoJitter } from "../hooks/useDemoAutoplay";
+import { demoReadingPause, demoDecisionWindowMs, getDemoSpeedMul } from "../hooks/useDemoAutoplay";
 import { useDemoCursor } from "../hooks/useDemoCursor";
 
 function shuffle<T>(arr: T[]): T[] {
@@ -52,6 +52,83 @@ interface Drop {
 
 type Phase = "intro" | "running" | "finished";
 
+// Freeze real de la pausa (QA sep-2026): `animate={paused ? {} : {...}}` en un
+// motion.button NO detiene una caida ya en curso — Framer Motion no vuelve a
+// mirar el target de una animacion de un solo tramo (sin repeat) una vez
+// arrancada, asi que sacarle la clave del objeto `animate` no la cancela
+// (confirmado en vivo: la gota seguia cayendo con el juego "pausado"). La
+// pausa real de Tren de Palabras si funciona porque mueve el tren por estado
+// de React en cada frame, no por una animacion declarativa de Framer Motion.
+// Aca se pasa a `animate()` imperativo (no el prop declarativo del
+// componente): devuelve controles con `.pause()`/`.play()` que son la pausa
+// NATIVA de la Web Animations API — incluyendo el delay inicial de cada
+// gota, que tambien queda congelado (antes ni siquiera eso se pausaba).
+function FallingWord({
+  drop, paused, fallSeconds, areaHeight, leftPct, onLand, onClick,
+}: {
+  drop: Drop; paused: boolean; fallSeconds: number; areaHeight: number;
+  leftPct: number; onLand: () => void;
+  onClick: (e: React.MouseEvent) => void;
+}) {
+  const y = useMotionValue(-80);
+  const opacity = useMotionValue(0);
+  const yControls = useRef<ReturnType<typeof animate> | null>(null);
+  const opacityControls = useRef<ReturnType<typeof animate> | null>(null);
+  const onLandRef = useRef(onLand);
+  onLandRef.current = onLand;
+
+  // Efecto de montaje/desmontaje separado del de pausa a proposito: en dev,
+  // StrictMode monta -> desmonta simulado -> vuelve a montar. Si el stop()
+  // de abajo corriera en el mismo efecto que crea la animacion (guardado
+  // detras de "if (!yControls.current)"), el desmontaje simulado la mataba
+  // con .stop() (that termina la animacion, no se puede reanudar con
+  // .play()) pero el ref seguia apuntando a esos controles muertos — el
+  // remontaje de StrictMode nunca volvia a crearla y la gota quedaba
+  // clavada en el frame inicial. Poniendo a null ambos refs en el cleanup,
+  // un remontaje (real o simulado) siempre crea controles nuevos.
+  useEffect(() => {
+    opacityControls.current = animate(opacity, 1, { duration: 0.5, delay: drop.delay, ease: "easeOut" });
+    yControls.current = animate(y, areaHeight, {
+      duration: fallSeconds, delay: drop.delay, ease: "linear",
+      onComplete: () => onLandRef.current(),
+    });
+    return () => {
+      yControls.current?.stop();
+      opacityControls.current?.stop();
+      yControls.current = null;
+      opacityControls.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- fallSeconds/areaHeight/drop fijos por instancia (key=drop.key remonta el componente si cambian)
+  }, []);
+
+  useEffect(() => {
+    if (!yControls.current) return;
+    if (paused) { yControls.current.pause(); opacityControls.current?.pause(); }
+    else { yControls.current.play(); opacityControls.current?.play(); }
+  }, [paused]);
+
+  return (
+    <motion.button
+      style={{
+        y, opacity,
+        position: "absolute", left: `${leftPct}%`, transform: "translateX(-50%)",
+        padding: `${spacing.md}px ${spacing.lg}px`,
+        backgroundColor: "rgba(255,255,255,0.98)",
+        borderRadius: radii.xl, border: `3px solid ${GAME_COLOR}40`,
+        boxShadow: shadows.md, cursor: "pointer",
+        fontSize: fitWordFontSize(drop.word.text, fontSizes.xl),
+        fontWeight: "bold", fontFamily: fonts.display, color: "#2d3748",
+        whiteSpace: "nowrap", zIndex: 10, minWidth: 80, textAlign: "center",
+        willChange: "transform", backfaceVisibility: "hidden",
+        WebkitFontSmoothing: "antialiased", MozOsxFontSmoothing: "grayscale",
+      }}
+      data-word-id={drop.word.id} onClick={onClick}
+    >
+      {drop.word.text}
+    </motion.button>
+  );
+}
+
 export const WordRain: React.FC<GameProps> = ({ words, phase = 1, onComplete, onBack, isDemo = false }) => {
   const { state, recordAttempt, finish, reset } = useGameState("word-rain", { phase });
   // B4 (QA sep-2026): usePause() leia un Context creado DENTRO de
@@ -60,7 +137,7 @@ export const WordRain: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
   // siempre false. GameShell ahora avisa por callback.
   const [paused, setPaused] = useState(false);
   const { rewardCorrect } = useRewards();
-  const { Cursor, hesitateAndClick } = useDemoCursor(isDemo);
+  const { Cursor, hesitateAndClick, showIdle } = useDemoCursor(isDemo);
 
   const tuning = wordRainTuningForPhase(phase);
 
@@ -143,7 +220,23 @@ export const WordRain: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
     const distractors = shuffle(wordsRef.current.filter((w) => w.id !== t.id)).slice(0, LANES - 1);
     const all = shuffle([t, ...distractors]);
     const lanes = shuffle(Array.from({ length: LANES }, (_, i) => i));
-    setFallSeconds(lvl.fallSeconds);
+    // En demo, la caida tiene que durar al menos lo que puede tardar el
+    // cursor en decidir (lectura + duda), o la palabra se escapa antes de
+    // que el demo llegue a tocarla — QA sep-2026: a "2x" se perdia la
+    // mitad de las rondas. Nunca se ACORTA la caida real, solo se alarga
+    // si hace falta margen (Math.max), y solo en modo demo.
+    //
+    // El PROPIO ritmo visual de la caida tambien tiene que responder al
+    // selector, no solo el piso de seguridad de arriba (QA sep-2026,
+    // segunda vuelta: a 1.5x el margen ya alcanzaba para no perder la
+    // palabra, pero en los niveles faciles fallSeconds*1 no se tocaba —
+    // el video se veia igual de rapido que a 1x, "las palabras pasan un
+    // poco rapido todavia"). getDemoSpeedMul() clampeado a >=1 (nunca
+    // acelera por debajo del ritmo normal, igual criterio que
+    // hesitationMul en useDemoAutoplay.ts).
+    const demoSpeedFactor = isDemo ? Math.max(1, getDemoSpeedMul()) : 1;
+    const minFallSeconds = isDemo ? demoDecisionWindowMs() / 1000 + 0.5 : 0;
+    setFallSeconds(Math.max(lvl.fallSeconds * demoSpeedFactor, minFallSeconds));
     setTarget(t);
     setCaughtId(null);
     setBurstPos(null);
@@ -151,7 +244,7 @@ export const WordRain: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
     setDrops(all.map((w, i) => ({ word: w, lane: lanes[i], delay: i * 0.7, key: keyCounter.current++ })));
     setWaveIdx((w) => w + 1);
     speakDucked(() => sofiaNameWord(t.text));
-  }, [tuning, levelRef, speakDucked]);
+  }, [tuning, levelRef, speakDucked, isDemo]);
 
   const finishGame = useCallback(() => {
     if (cancelledRef.current) return;
@@ -171,8 +264,13 @@ export const WordRain: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
   resolveRef.current = resolveWave;
 
   // Intro de Sofia — solo al arrancar
-  useSofiaIntro(gamePhase === "intro", "intro-lluvia", INTRO_TEXT, () => {
-    if (!cancelledRef.current) setGamePhase("running");
+  const { skip: skipIntro } = usePreGameIntro({
+    active: gamePhase === "intro",
+    gameId: "word-rain",
+    isDemo,
+    rulesMp3: "intro-lluvia",
+    rulesText: INTRO_TEXT,
+    onDone: () => { if (!cancelledRef.current) setGamePhase("running"); },
   });
 
   useEffect(() => {
@@ -241,10 +339,22 @@ export const WordRain: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
 
   // Demo: cada tanda, duda entre las palabras que ya estan cayendo y toca la
   // correcta. El (targetDrop?.delay ?? 0) * 1000 es fisico (cuando aparece
-  // esa gota) y no lleva jitter; el tiempo de lectura despues de eso si.
+  // esa gota) y no lleva jitter; el tiempo de lectura despues de eso si
+  // (demoReadingPause, no demoJitter — QA sep-2026: el jitter generico
+  // podia caer tan bajo que la duda no se llegaba a percibir en video).
   useEffect(() => {
     if (!isDemo || gamePhase !== "running" || !target) return;
     let done = false;
+    // El cursor aparece YA, quieto, apenas se sabe cual es la tanda —
+    // antes vivia invisible hasta el mismo instante de decidir, y en el
+    // 30% de los casos sin detour (ver useDemoCursor) aparecia recien
+    // encima de la correcta: sin este reposo previo no hay nada que
+    // mirar durante la pausa de lectura.
+    const area = areaRef.current;
+    if (area) {
+      const r = area.getBoundingClientRect();
+      showIdle({ x: r.left + r.width / 2, y: r.top + r.height * 0.85 });
+    }
     const targetDrop = drops.find((d) => d.word.id === target.id);
     const t = setTimeout(() => {
       if (done || resolvedRef.current) return;
@@ -253,9 +363,9 @@ export const WordRain: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
       const correctEl = allDrops.find((el) => el.dataset.wordId === target.id) ?? null;
       const wrongEls = allDrops.filter((el) => el.dataset.wordId && el.dataset.wordId !== target.id);
       hesitateAndClick(correctEl, wrongEls);
-    }, (targetDrop?.delay ?? 0) * 1000 + demoJitter(1600));
+    }, (targetDrop?.delay ?? 0) * 1000 + demoReadingPause());
     return () => clearTimeout(t);
-  }, [isDemo, gamePhase, waveIdx, target, drops, hesitateAndClick]);
+  }, [isDemo, gamePhase, waveIdx, target, drops, hesitateAndClick, showIdle]);
 
   const handleReplay = useCallback(() => {
     reset();
@@ -293,7 +403,7 @@ export const WordRain: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
   return (
     <GameShell title="Lluvia de Palabras" icon="🌧️" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})} contentAlign="top" immersive onPauseChange={setPaused}>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: spacing.md, paddingTop: spacing.xs, width: "100%" }}>
-        {gamePhase === "intro" && <ArcadeIntro color={GAME_COLOR} />}
+        {gamePhase === "intro" && <ArcadeIntro color={GAME_COLOR} onSkip={skipIntro} />}
 
         {/* Rain area: la nube cae ocupando el alto disponible (antes h fijo
             min(450px,60vh)) — el area es ahora el elemento dominante, con
@@ -337,28 +447,16 @@ export const WordRain: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
                 if (caughtId === drop.word.id) return null;
 
                 return (
-                  <motion.button
+                  <FallingWord
                     key={drop.key}
-                    initial={{ y: -80, opacity: 0 }}
-                    animate={paused ? {} : { y: areaHeight, opacity: 1 }}
-                    transition={{ duration: fallSeconds, delay: drop.delay, ease: "linear" }}
-                    onAnimationComplete={() => onDropLand(drop.word.id === targetRef.current?.id)}
-                    data-word-id={drop.word.id} onClick={(e) => handleTap(drop, e)}
-                    style={{
-                      position: "absolute", left: `${leftPct}%`, transform: "translateX(-50%)",
-                      padding: `${spacing.md}px ${spacing.lg}px`,
-                      backgroundColor: "rgba(255,255,255,0.98)",
-                      borderRadius: radii.xl, border: `3px solid ${GAME_COLOR}40`,
-                      boxShadow: shadows.md, cursor: "pointer",
-                      fontSize: fitWordFontSize(drop.word.text, fontSizes.xl),
-                      fontWeight: "bold", fontFamily: fonts.display, color: "#2d3748",
-                      whiteSpace: "nowrap", zIndex: 10, minWidth: 80, textAlign: "center",
-                      willChange: "transform", backfaceVisibility: "hidden",
-                      WebkitFontSmoothing: "antialiased", MozOsxFontSmoothing: "grayscale",
-                    }}
-                  >
-                    {drop.word.text}
-                  </motion.button>
+                    drop={drop}
+                    paused={paused}
+                    fallSeconds={fallSeconds}
+                    areaHeight={areaHeight}
+                    leftPct={leftPct}
+                    onLand={() => onDropLand(drop.word.id === targetRef.current?.id)}
+                    onClick={(e) => handleTap(drop, e)}
+                  />
                 );
               })}
             </AnimatePresence>

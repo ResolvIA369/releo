@@ -1,14 +1,14 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, animate, useMotionValue } from "framer-motion";
 import type { GameProps } from "../types";
 import type { DomanWord } from "@/shared/types/doman";
 import { useGameState } from "../hooks/useGameState";
 import { useArcadeEnergy } from "../hooks/useArcadeEnergy";
 import { useArcadeLevel } from "../hooks/useArcadeLevel";
 import { useArcadeClock } from "../hooks/useArcadeClock";
-import { useSofiaIntro } from "../hooks/useSofiaIntro";
+import { usePreGameIntro } from "../hooks/usePreGameIntro";
 import { GameShell } from "./GameShell";
 import { ArcadeHud } from "./ArcadeHud";
 import { ArcadeIntro } from "./ArcadeIntro";
@@ -49,6 +49,49 @@ interface Fish {
 }
 
 type Phase = "intro" | "running" | "finished";
+
+// Freeze real de la pausa (QA sep-2026, ver el mismo mecanismo en
+// WordRain.tsx/FallingWord): `animate={paused ? {} : {...}}` en un
+// motion.button depende de que Framer Motion vuelva a evaluar el target al
+// cerrar cada vuelta del loop (repeat:Infinity) — funcionaba en la practica
+// pero por timing de esa vuelta, no por garantia del mecanismo (a
+// diferencia de la caida de una sola vez de Lluvia, que SI estaba rota
+// confirmado en vivo). Se mueve al mismo patron con `animate()` imperativo
+// + `.pause()/.play()` (pausa nativa de Web Animations API) para no
+// depender de ese accidente de timing.
+function SwimmingFish({
+  fishKey, wordId, xKeyframes, duration, paused, children, onClick, style,
+}: {
+  fishKey: string; wordId: string; xKeyframes: number[]; duration: number; paused: boolean;
+  children: React.ReactNode; onClick: (e: React.MouseEvent) => void;
+  style: React.CSSProperties;
+}) {
+  const x = useMotionValue(xKeyframes[0]);
+  const controls = useRef<ReturnType<typeof animate> | null>(null);
+
+  // Efecto de montaje/desmontaje separado del de pausa — mismo motivo que
+  // FallingWord en WordRain.tsx: el cleanup pone el ref a null para que un
+  // remontaje (incluido el doble-montaje simulado de StrictMode en dev)
+  // siempre cree una animacion nueva en vez de reusar una ya detenida con
+  // .stop() (que a diferencia de .pause() no se puede reanudar).
+  useEffect(() => {
+    controls.current = animate(x, xKeyframes, { repeat: Infinity, duration, ease: "linear" });
+    return () => { controls.current?.stop(); controls.current = null; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- xKeyframes/duration fijos por instancia (key=fishKey remonta el componente si cambian)
+  }, []);
+
+  useEffect(() => {
+    if (!controls.current) return;
+    if (paused) controls.current.pause();
+    else controls.current.play();
+  }, [paused]);
+
+  return (
+    <motion.button key={fishKey} data-word-id={wordId} style={{ ...style, x }} onClick={onClick}>
+      {children}
+    </motion.button>
+  );
+}
 
 export const WordFishing: React.FC<GameProps> = ({ words, phase = 1, onComplete, onBack, isDemo = false }) => {
   const { state, recordAttempt, finish, reset } = useGameState("word-fishing", { phase });
@@ -162,8 +205,13 @@ export const WordFishing: React.FC<GameProps> = ({ words, phase = 1, onComplete,
   const resolveRef = useRef(resolveWave);
   resolveRef.current = resolveWave;
 
-  useSofiaIntro(gamePhase === "intro", "intro-pesca", INTRO_TEXT, () => {
-    if (!cancelledRef.current) setGamePhase("running");
+  const { skip: skipIntro } = usePreGameIntro({
+    active: gamePhase === "intro",
+    gameId: "word-fishing",
+    isDemo,
+    rulesMp3: "intro-pesca",
+    rulesText: INTRO_TEXT,
+    onDone: () => { if (!cancelledRef.current) setGamePhase("running"); },
   });
 
   useEffect(() => {
@@ -270,7 +318,7 @@ export const WordFishing: React.FC<GameProps> = ({ words, phase = 1, onComplete,
   return (
     <GameShell title="Pesca de Palabras" icon="🎣" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})} contentAlign="top" immersive onPauseChange={setPaused}>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: spacing.md, paddingTop: spacing.xs, width: "100%" }}>
-        {gamePhase === "intro" && <ArcadeIntro color={GAME_COLOR} />}
+        {gamePhase === "intro" && <ArcadeIntro color={GAME_COLOR} onSkip={skipIntro} />}
 
         {/* Ocean: mismo patron que Lluvia — alto por calc(100dvh - 16px),
             NO flex:1/height:100% (ver comentario en WordRain.tsx sobre el
@@ -324,11 +372,14 @@ export const WordFishing: React.FC<GameProps> = ({ words, phase = 1, onComplete,
             const referenceDistance = 2 * (REFERENCE_AREA_WIDTH + 300);
             const scaledDuration = (fish.speed / speedMul) * (travelDistance / referenceDistance);
             return (
-              <motion.button
+              <SwimmingFish
                 key={`${fish.word.id}-${waveIdx}`}
-                animate={paused ? {} : { x: goesRight ? [-140, farRight, -140] : [farRight, -140, farRight] }}
-                transition={{ repeat: Infinity, duration: scaledDuration, ease: "linear" }}
-                data-word-id={fish.word.id} onClick={(e) => handleTap(fish, e)}
+                fishKey={`${fish.word.id}-${waveIdx}`}
+                wordId={fish.word.id}
+                xKeyframes={goesRight ? [-140, farRight, -140] : [farRight, -140, farRight]}
+                duration={scaledDuration}
+                paused={paused}
+                onClick={(e) => handleTap(fish, e)}
                 style={{
                   position: "absolute", top: `${yPos}%`, left: 0,
                   padding: `${spacing.sm}px ${spacing.md}px`,
@@ -340,7 +391,7 @@ export const WordFishing: React.FC<GameProps> = ({ words, phase = 1, onComplete,
               >
                 <span style={{ display: "inline-block", transform: goesRight ? "none" : "scaleX(-1)" }}>{fish.emoji}</span>
                 <span>{fish.word.text}</span>
-              </motion.button>
+              </SwimmingFish>
             );
           })}
 

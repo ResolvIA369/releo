@@ -30,6 +30,91 @@ export function demoJitter(ms: number): number {
 const jitter = demoJitter;
 
 /**
+ * Ritmo de la duda VISIBLE (lectura antes de dudar + el tramo de duda en
+ * si). CONECTADO a demoSpeedMul/`?demoSpeed=` — sep-2026: el selector de
+ * /demo dice "1.5x — lento (video)" y "2x — bien lento (video)"; si esos
+ * valores no estiraban la duda, el control decia una cosa y hacia otra.
+ * El selector es el control unico de ritmo del demo; `demoHesitationPaceMul`
+ * (via `?demoHesitatePace=`) queda como ajuste fino ENCIMA del selector,
+ * para casos puntuales por URL.
+ *
+ * El piso (1.5s de duda, ~2s total) es un MINIMO, no se achica nunca: un
+ * demoSpeed < 1 ("0.5x — rapido, probar") no puede volver a esconder la
+ * duda, por eso la parte que viene del selector se clampea a >=1 antes de
+ * multiplicar. >1 (1.5x, 2x) si estira proporcionalmente, como el resto
+ * del autoplay.
+ *
+ * Un jitter simetrico (como demoJitter) no sirve aca porque puede caer
+ * por debajo del piso pedido; estas dos funciones usan piso + variacion
+ * encima, nunca por debajo del piso.
+ */
+let demoHesitationPaceMul = 1;
+export function setDemoHesitationPaceMul(mul: number) {
+  demoHesitationPaceMul = Number.isFinite(mul) && mul > 0 ? mul : 1;
+}
+export function getDemoHesitationPaceMul() {
+  return demoHesitationPaceMul;
+}
+
+function hesitationMul(): number {
+  return Math.max(1, demoSpeedMul) * demoHesitationPaceMul;
+}
+
+// Piso + rango de demoReadingPause/demoHesitationDwell — una sola fuente
+// para el sorteo Y para el peor caso determinista (demoDecisionWindowMs),
+// asi no se desincronizan si algun dia se retocan estos numeros.
+const READING_PAUSE_FLOOR_MS = 1700;
+const READING_PAUSE_RANGE_MS = 600;
+const HESITATION_DWELL_FLOOR_MS = 1500;
+const HESITATION_DWELL_RANGE_MS = 700;
+// 2 viajes (ver TRAVEL_MS en useDemoCursor) + el delay de "toque" antes
+// del click — no escala con el ritmo, es la mecanica del cursor, que no
+// se toca (ver CLAUDE.md de esta sesion).
+const CURSOR_FIXED_OVERHEAD_MS = 2 * 220 + 120;
+
+// Pausa de "lectura" entre que la palabra aparece y arranca la duda.
+// Piso 1700ms: sumado al camino directo del cursor (~340ms de viaje +
+// toque, ver useDemoCursor), el total nunca baja de ~2000ms aunque esa
+// tanda no tenga duda visible.
+export function demoReadingPause(): number {
+  return Math.round((READING_PAUSE_FLOOR_MS + Math.random() * READING_PAUSE_RANGE_MS) * hesitationMul());
+}
+
+// Cuanto se queda el cursor sobre la palabra incorrecta durante la duda.
+// Piso 1500ms — el minimo pedido para que se note en video.
+export function demoHesitationDwell(): number {
+  return Math.round((HESITATION_DWELL_FLOOR_MS + Math.random() * HESITATION_DWELL_RANGE_MS) * hesitationMul());
+}
+
+/**
+ * Peor caso DETERMINISTA (sin aleatoriedad) de cuanto puede tardar una
+ * eleccion completa con el cursor (usePreGameIntro/WordRain y los que se
+ * sumen despues): lectura + duda + los dos viajes + el toque, todos en su
+ * maximo. Sep-2026: a "2x — bien lento (video)" el demo perdia la palabra
+ * en la mitad de las rondas porque la caida no crecia junto con la duda —
+ * la duda se comia la ventana. Los juegos con ventana de tiempo (Lluvia,
+ * Pesca, Burbujas, Tren, Leo Vuela, Salta la Palabra) tienen que estirar
+ * su propia ventana (caida, nado, cuenta regresiva, cruce de carril) EN
+ * MODO DEMO a por lo menos esto — nunca en juego real.
+ */
+export function demoDecisionWindowMs(): number {
+  const mul = hesitationMul();
+  const worstReadingPause = (READING_PAUSE_FLOOR_MS + READING_PAUSE_RANGE_MS) * mul;
+  const worstHesitationDwell = (HESITATION_DWELL_FLOOR_MS + HESITATION_DWELL_RANGE_MS) * mul;
+  return worstReadingPause + worstHesitationDwell + CURSOR_FIXED_OVERHEAD_MS;
+}
+
+/**
+ * Mismo peor caso pero para la duda de PERSONAJE (demoHesitateMove:
+ * LeoRunner/LeoVuela/SaltaPalabra) — jitter(150) + jitter(500) en su
+ * maximo (1.3x), escalado por demoSpeedMul (estos juegos no usan
+ * demoHesitationPaceMul, que es especifico del cursor de WordRain).
+ */
+export function demoMoveDecisionWindowMs(): number {
+  return (150 + 500) * 1.3 * Math.max(1, demoSpeedMul);
+}
+
+/**
  * In demo mode, auto-executes an action after a delay whenever the
  * condition is true. Cleans up on unmount or when condition changes.
  *

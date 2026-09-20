@@ -8,7 +8,7 @@ import { useGameState } from "../hooks/useGameState";
 import { useGameKeys } from "../hooks/useGameKeys";
 import { useArcadeEnergy } from "../hooks/useArcadeEnergy";
 import { useArcadeLevel } from "../hooks/useArcadeLevel";
-import { useSofiaIntro } from "../hooks/useSofiaIntro";
+import { usePreGameIntro } from "../hooks/usePreGameIntro";
 import { GameShell } from "./GameShell";
 import { ArcadeHud, MoveButtons } from "./ArcadeHud";
 import { ArcadeIntro } from "./ArcadeIntro";
@@ -587,8 +587,13 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
 
   // Intro de Sofia — SOLO al arrancar; la primera tanda recien sale
   // cuando termina. Cero pausas nuevas durante el juego.
-  useSofiaIntro(gamePhase === "intro", "reglas-salta-palabra", INTRO_TEXT, () => {
-    if (!cancelledRef.current) setGamePhase("running");
+  const { skip: skipIntro } = usePreGameIntro({
+    active: gamePhase === "intro",
+    gameId: "salta-palabra",
+    isDemo,
+    rulesMp3: "reglas-salta-palabra",
+    rulesText: INTRO_TEXT,
+    onDone: () => { if (!cancelledRef.current) setGamePhase("running"); },
   });
 
   // First wave once Pixi is up
@@ -775,7 +780,7 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
   return (
     <GameShell title="Salta la Palabra" icon="🦘" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})} contentAlign="top" immersive onPauseChange={setPaused}>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: spacing.md, paddingTop: spacing.xs }}>
-        {gamePhase === "intro" && <ArcadeIntro color={GAME_COLOR} />}
+        {gamePhase === "intro" && <ArcadeIntro color={GAME_COLOR} onSkip={skipIntro} />}
 
         {/* Pixi canvas + full-surface jump tap zone. Mismo patron que Leo
             Vuela/Leo Corre: ancho acotado por vw O por dvh*aspect. */}

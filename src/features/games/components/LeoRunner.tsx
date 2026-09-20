@@ -8,7 +8,7 @@ import { useGameState } from "../hooks/useGameState";
 import { useGameKeys } from "../hooks/useGameKeys";
 import { useArcadeEnergy } from "../hooks/useArcadeEnergy";
 import { useArcadeLevel } from "../hooks/useArcadeLevel";
-import { useSofiaIntro } from "../hooks/useSofiaIntro";
+import { usePreGameIntro } from "../hooks/usePreGameIntro";
 import { GameShell, IMMERSIVE_HEADER_H } from "./GameShell";
 import { ArcadeHud } from "./ArcadeHud";
 import { ArcadeIntro } from "./ArcadeIntro";
@@ -710,8 +710,13 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
 
   // Intro de Sofia — SOLO al arrancar; la primera tanda recien sale
   // cuando termina. Cero pausas nuevas durante el juego.
-  useSofiaIntro(gamePhase === "intro", "reglas-leo-corre", INTRO_TEXT, () => {
-    if (!cancelledRef.current) setGamePhase("running");
+  const { skip: skipIntro } = usePreGameIntro({
+    active: gamePhase === "intro",
+    gameId: "leo-runner",
+    isDemo,
+    rulesMp3: "reglas-leo-corre",
+    rulesText: INTRO_TEXT,
+    onDone: () => { if (!cancelledRef.current) setGamePhase("running"); },
   });
 
   // First wave once Pixi is up
@@ -869,7 +874,7 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
         display: "flex", flexDirection: "column", alignItems: "center", gap: spacing.md,
         paddingTop: spacing.xs, height: "100%", minHeight: 0, boxSizing: "border-box",
       }}>
-        {gamePhase === "intro" && <ArcadeIntro color={GAME_COLOR} />}
+        {gamePhase === "intro" && <ArcadeIntro color={GAME_COLOR} onSkip={skipIntro} />}
 
         {/* Pixi canvas + invisible lane tap zones. B3 (QA sep-2026, "el
             canvas no llega hasta abajo"): antes el wrapper forzaba el
