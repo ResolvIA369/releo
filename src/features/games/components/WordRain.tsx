@@ -23,7 +23,8 @@ import { sofiaNameWord, sofiaPlayAudio, stopVoice } from "@/shared/services/sofi
 import { fitWordFontSize } from "@/shared/utils/fitText";
 import { wordRainTuningForPhase } from "../config/word-rain";
 import { rewardForLevel, createWordBag } from "../config/arcade-tuning";
-import { demoChooseWithHesitation, demoJitter } from "../hooks/useDemoAutoplay";
+import { demoJitter } from "../hooks/useDemoAutoplay";
+import { useDemoCursor } from "../hooks/useDemoCursor";
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -59,6 +60,7 @@ export const WordRain: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
   // siempre false. GameShell ahora avisa por callback.
   const [paused, setPaused] = useState(false);
   const { rewardCorrect } = useRewards();
+  const { Cursor, hesitateAndClick } = useDemoCursor(isDemo);
 
   const tuning = wordRainTuningForPhase(phase);
 
@@ -250,10 +252,10 @@ export const WordRain: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
       const allDrops = Array.from(document.querySelectorAll("[data-word-id]")) as HTMLElement[];
       const correctEl = allDrops.find((el) => el.dataset.wordId === target.id) ?? null;
       const wrongEls = allDrops.filter((el) => el.dataset.wordId && el.dataset.wordId !== target.id);
-      demoChooseWithHesitation(correctEl, wrongEls);
+      hesitateAndClick(correctEl, wrongEls);
     }, (targetDrop?.delay ?? 0) * 1000 + demoJitter(1600));
     return () => clearTimeout(t);
-  }, [isDemo, gamePhase, waveIdx, target, drops]);
+  }, [isDemo, gamePhase, waveIdx, target, drops, hesitateAndClick]);
 
   const handleReplay = useCallback(() => {
     reset();
@@ -381,6 +383,7 @@ export const WordRain: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
 
       </div>
       <FeedbackFlash type={feedbackType} />
+      {Cursor}
     </GameShell>
   );
 };
