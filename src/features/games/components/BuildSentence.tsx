@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import type { GameProps } from "../types";
 import type { DomanWord } from "@/shared/types/doman";
@@ -8,7 +8,8 @@ import { useGameState } from "../hooks/useGameState";
 import { sofiaReads, sofiaCelebrates } from "@/shared/services/sofiaVoice";
 import { GameShell } from "./GameShell";
 import { useGameMusic } from "../hooks/useGameMusic";
-import { useDemoAutoplay, demoChooseWithHesitation } from "../hooks/useDemoAutoplay";
+import { useDemoAutoplay, demoDecisionWindowMs } from "../hooks/useDemoAutoplay";
+import { useDemoCursor } from "../hooks/useDemoCursor";
 import { useRewards } from "@/shared/components/RewardsLayer";
 import { GameIntro } from "./GameIntro";
 import { GameCompleteScreen } from "@/shared/components/GameCompleteScreen";
@@ -133,6 +134,8 @@ export const BuildSentence: React.FC<GameProps> = ({ words, phase = 1, onComplet
   const [showCelebration, setShowCelebration] = useState(false);
   const [timerKey, setTimerKey] = useState(0);
   const [isAdvancing, setIsAdvancing] = useState(false);
+  const { Cursor, hesitateAndClick, showIdle } = useDemoCursor(isDemo);
+  const wordsRef = useRef<HTMLDivElement | null>(null);
 
   // Pick sentences: SIEMPRE de la fase actual — una frase de Mundo 4
   // (PHRASE_EXAMPLES, hasta 8 palabras, articulos como contenido) no puede
@@ -188,6 +191,9 @@ export const BuildSentence: React.FC<GameProps> = ({ words, phase = 1, onComplet
     [currentSentence, roundIdx]
   );
   const finished = roundIdx >= sentences.length;
+  const demoSecondsPerPhrase = isDemo
+    ? Math.max(SECONDS_PER_PHRASE, draggableTokenIndices.length * (demoDecisionWindowMs() / 1000 + 0.5))
+    : SECONDS_PER_PHRASE;
 
   // Game end
   useEffect(() => {
@@ -202,6 +208,16 @@ export const BuildSentence: React.FC<GameProps> = ({ words, phase = 1, onComplet
     if (isDemo && gamePhase === "playing") music.ensureStarted();
   }, [isDemo, gamePhase, music.ensureStarted]);
 
+  // Demo: la mano queda a la vista sobre las fichas apenas hay que elegir.
+  useEffect(() => {
+    if (!isDemo || gamePhase !== "playing" || feedbackType || isAdvancing) return;
+    const el = wordsRef.current;
+    if (el) {
+      const r = el.getBoundingClientRect();
+      showIdle({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
+    }
+  }, [isDemo, gamePhase, feedbackType, isAdvancing, showIdle]);
+
   // Demo: duda entre fichas visibles antes de elegir la que sigue en la frase.
   useDemoAutoplay(isDemo, gamePhase === "playing" && !feedbackType && !isAdvancing, () => {
     if (!currentSentence) return;
@@ -213,7 +229,7 @@ export const BuildSentence: React.FC<GameProps> = ({ words, phase = 1, onComplet
     ) as HTMLElement[];
     const correctEl = visibleBtns.find((b) => b.dataset.buildWord === expected) ?? null;
     const wrongEls = visibleBtns.filter((b) => b.dataset.buildWord !== expected);
-    demoChooseWithHesitation(correctEl, wrongEls);
+    hesitateAndClick(correctEl, wrongEls);
   }, 1600);
 
   const advanceRound = useCallback(() => {
@@ -409,6 +425,7 @@ export const BuildSentence: React.FC<GameProps> = ({ words, phase = 1, onComplet
 
         {/* Available words */}
         <motion.div
+          ref={wordsRef}
           variants={staggerContainer}
           initial="initial"
           animate="animate"
@@ -451,10 +468,11 @@ export const BuildSentence: React.FC<GameProps> = ({ words, phase = 1, onComplet
               feedbackType/isAdvancing, asi que el cartel "Pausado" tapaba la
               pantalla pero el reloj seguia corriendo atras y podia perder la
               ronda (handleTimeUp) sin que el chico hubiera tocado nada. */}
-          <TimeBar key={timerKey} seconds={SECONDS_PER_PHRASE} onTimeUp={handleTimeUp} color={GAME_COLOR} paused={paused || !!feedbackType || isAdvancing} resetKey={timerKey} />
+          <TimeBar key={timerKey} seconds={demoSecondsPerPhrase} onTimeUp={handleTimeUp} color={GAME_COLOR} paused={paused || !!feedbackType || isAdvancing} resetKey={timerKey} />
         </div>
       </div>
       <FeedbackFlash type={feedbackType} />
+      {Cursor}
     </GameShell>
   );
 };

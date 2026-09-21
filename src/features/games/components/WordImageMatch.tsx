@@ -5,7 +5,8 @@ import { motion } from "framer-motion";
 import type { GameProps } from "../types";
 import type { DomanWord } from "@/shared/types/doman";
 import { useGameState } from "../hooks/useGameState";
-import { useDemoAutoplay, demoChooseSelectorWithHesitation } from "../hooks/useDemoAutoplay";
+import { useDemoAutoplay, demoDecisionWindowMs } from "../hooks/useDemoAutoplay";
+import { useDemoCursor } from "../hooks/useDemoCursor";
 import { GameShell, IMMERSIVE_HEADER_H } from "./GameShell";
 import { useGameMusic } from "../hooks/useGameMusic";
 import { useRewards } from "@/shared/components/RewardsLayer";
@@ -45,6 +46,8 @@ export const WordImageMatch: React.FC<GameProps> = ({ words, phase = 1, onComple
   // siempre false. GameShell ahora avisa por callback.
   const [paused, setPaused] = useState(false);
   const music = useGameMusic(paused);
+  const { Cursor, hesitateAndClick, showIdle } = useDemoCursor(isDemo);
+  const optionsRef = useRef<HTMLDivElement | null>(null);
 
   const [gamePhase, setGamePhase] = useState<Phase>("intro");
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -52,6 +55,11 @@ export const WordImageMatch: React.FC<GameProps> = ({ words, phase = 1, onComple
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [burstPos, setBurstPos] = useState<{ x: number; y: number } | null>(null);
   const [timerKey, setTimerKey] = useState(0);
+  // Demo: el tiempo del contador se estira para que alcance la duda +
+  // decision del cursor (ver demoDecisionWindowMs) — nunca se ACORTA el
+  // tiempo real, solo se alarga si hace falta margen, y solo en demo
+  // (mismo criterio que crossSeconds en WordTrain/fallSeconds en WordRain).
+  const demoSecondsPerWord = isDemo ? Math.max(SECONDS_PER_WORD, demoDecisionWindowMs() / 1000 + 0.5) : SECONDS_PER_WORD;
 
   const totalWords = Math.min(words.length, 20);
   const currentWord = currentIndex < totalWords ? words[currentIndex] : null;
@@ -64,15 +72,26 @@ export const WordImageMatch: React.FC<GameProps> = ({ words, phase = 1, onComple
     if (isDemo && gamePhase === "playing") music.ensureStarted();
   }, [isDemo, gamePhase, music.ensureStarted]);
 
-  // Demo: lee la palabra (tiempo de lectura + jitter, ver useDemoAutoplay),
-  // duda un instante sobre una imagen incorrecta y recién ahí elige la
-  // correcta. Nunca clickea una incorrecta de verdad.
+  // Demo: mismo cursor de duda que Lluvia/Tren (ver useDemoCursor) — en
+  // reposo sobre las opciones apenas arranca la ronda, lee la palabra
+  // (tiempo de lectura + jitter, ver useDemoAutoplay) y recien ahi duda +
+  // elige. Nunca clickea una incorrecta de verdad.
+  useEffect(() => {
+    if (!isDemo || gamePhase !== "playing" || feedbackType || !currentWord) return;
+    const el = optionsRef.current;
+    if (el) {
+      const r = el.getBoundingClientRect();
+      showIdle({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
+    }
+  }, [isDemo, gamePhase, feedbackType, currentWord, showIdle]);
+
   useDemoAutoplay(isDemo, gamePhase === "playing" && !feedbackType && !!currentWord, () => {
     if (!currentWord) return;
-    demoChooseSelectorWithHesitation(
-      `[data-word-id="${currentWord.id}"]`,
-      options.filter((o) => o.id !== currentWord.id).map((o) => `[data-word-id="${o.id}"]`)
-    );
+    const correctEl = document.querySelector(`[data-word-id="${currentWord.id}"]`) as HTMLElement | null;
+    const wrongEls = options
+      .filter((o) => o.id !== currentWord.id)
+      .map((o) => document.querySelector(`[data-word-id="${o.id}"]`) as HTMLElement | null);
+    hesitateAndClick(correctEl, wrongEls);
   }, 1800);
 
   // Game end
@@ -241,6 +260,7 @@ export const WordImageMatch: React.FC<GameProps> = ({ words, phase = 1, onComple
 
           {/* Emoji options grid */}
           <motion.div
+            ref={optionsRef}
             variants={staggerContainer} initial="initial" animate="animate"
             key={`opts-${currentWord.id}`}
             style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: spacing.md, width: "100%" }}
@@ -296,7 +316,7 @@ export const WordImageMatch: React.FC<GameProps> = ({ words, phase = 1, onComple
         <div style={{ display: "flex", alignItems: "stretch", paddingTop: 40, paddingBottom: 20 }}>
           <TimeBar
             key={timerKey}
-            seconds={SECONDS_PER_WORD}
+            seconds={demoSecondsPerWord}
             onTimeUp={handleTimeUp}
             color={GAME_COLOR}
             paused={paused || gamePhase === "feedback"}
@@ -311,6 +331,7 @@ export const WordImageMatch: React.FC<GameProps> = ({ words, phase = 1, onComple
         </div>
       )}
       <FeedbackFlash type={feedbackType} />
+      {Cursor}
     </GameShell>
   );
 };

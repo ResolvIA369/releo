@@ -5,7 +5,8 @@ import { motion } from "framer-motion";
 import type { GameProps } from "../types";
 import type { DomanWord } from "@/shared/types/doman";
 import { useGameState } from "../hooks/useGameState";
-import { useDemoAutoplay, demoChooseSelectorWithHesitation } from "../hooks/useDemoAutoplay";
+import { useDemoAutoplay } from "../hooks/useDemoAutoplay";
+import { useDemoCursor } from "../hooks/useDemoCursor";
 import { GameShell } from "./GameShell";
 import { useRewards } from "@/shared/components/RewardsLayer";
 import { GameIntro } from "./GameIntro";
@@ -46,6 +47,8 @@ const WORDS_BY_PHASE = [PHASE1_WORDS, PHASE2_WORDS, PHASE3_WORDS, PHASE4_WORDS, 
 export const CategoryGame: React.FC<GameProps> = ({ words, phase = 1, onComplete, onBack, isDemo = false }) => {
   const { state, recordAttempt, finish, reset } = useGameState("category-sort", { phase });
   const { rewardCorrect } = useRewards();
+  const { Cursor, hesitateAndClick, showIdle } = useDemoCursor(isDemo);
+  const optionsRef = useRef<HTMLDivElement | null>(null);
   // B4 (QA sep-2026): usePause() leia un Context creado DENTRO de
   // GameShell, que este componente renderiza como hijo — el Provider
   // quedaba abajo del punto donde se leia el hook, asi que paused era
@@ -104,14 +107,26 @@ export const CategoryGame: React.FC<GameProps> = ({ words, phase = 1, onComplete
     if (isDemo && gamePhase === "playing") void musicRef.current?.ensureStarted(0);
   }, [isDemo, gamePhase]);
 
-  // Demo: duda entre categorías antes de elegir la correcta.
+  // Demo: mismo cursor de duda que Lluvia/Tren (ver useDemoCursor) — en
+  // reposo sobre las opciones apenas arranca la ronda, y recien duda +
+  // decide despues de la pausa de lectura.
+  useEffect(() => {
+    if (!isDemo || gamePhase !== "playing" || feedbackType || !currentWord) return;
+    const el = optionsRef.current;
+    if (el) {
+      const r = el.getBoundingClientRect();
+      showIdle({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
+    }
+  }, [isDemo, gamePhase, feedbackType, currentWord, showIdle]);
+
   useDemoAutoplay(isDemo, gamePhase === "playing" && !feedbackType && !!currentWord, () => {
     const cat = currentWord?.categoryDisplay;
     if (!cat) return;
-    demoChooseSelectorWithHesitation(
-      `[data-category="${cat}"]`,
-      categories.filter((c) => c !== cat).map((c) => `[data-category="${c}"]`)
-    );
+    const correctEl = document.querySelector(`[data-category="${cat}"]`) as HTMLElement | null;
+    const wrongEls = categories
+      .filter((c) => c !== cat)
+      .map((c) => document.querySelector(`[data-category="${c}"]`) as HTMLElement | null);
+    hesitateAndClick(correctEl, wrongEls);
   }, 1300);
 
   // Game end
@@ -228,7 +243,7 @@ export const CategoryGame: React.FC<GameProps> = ({ words, phase = 1, onComplete
         </p>
 
         {/* Category bins with scores */}
-        <div style={{ display: "flex", flexDirection: "column", gap: spacing.md, width: "100%", maxWidth: "min(600px, calc(100vw - 32px))" }}>
+        <div ref={optionsRef} style={{ display: "flex", flexDirection: "column", gap: spacing.md, width: "100%", maxWidth: "min(600px, calc(100vw - 32px))" }}>
           {categories.map((cat) => {
             const catScore = score[cat] ?? 0;
             const isCorrectCat = feedbackType === "correct" && currentWord?.categoryDisplay === cat;
@@ -277,6 +292,7 @@ export const CategoryGame: React.FC<GameProps> = ({ words, phase = 1, onComplete
         )}
       </div>
       <FeedbackFlash type={feedbackType} />
+      {Cursor}
     </GameShell>
   );
 };

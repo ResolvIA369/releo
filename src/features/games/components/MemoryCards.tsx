@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { GameProps } from "../types";
 import type { DomanWord } from "@/shared/types/doman";
 import { useGameState } from "../hooks/useGameState";
-import { useDemoAutoplay, demoChooseSelectorWithHesitation } from "../hooks/useDemoAutoplay";
+import { useDemoAutoplay, demoDecisionWindowMs } from "../hooks/useDemoAutoplay";
+import { useDemoCursor } from "../hooks/useDemoCursor";
 import { GameShell } from "./GameShell";
 import { useGameMusic } from "../hooks/useGameMusic";
 import { useRewards } from "@/shared/components/RewardsLayer";
@@ -116,6 +117,8 @@ export const MemoryCards: React.FC<GameProps> = ({ words, phase = 1, onComplete,
   // siempre false. GameShell ahora avisa por callback.
   const [paused, setPaused] = useState(false);
   const music = useGameMusic(paused);
+  const { Cursor, hesitateAndClick, showIdle } = useDemoCursor(isDemo);
+  const piecesRef = useRef<HTMLDivElement | null>(null);
 
   const [gamePhase, setGamePhase] = useState<Phase>("intro");
   const [roundIdx, setRoundIdx] = useState(0);
@@ -140,6 +143,15 @@ export const MemoryCards: React.FC<GameProps> = ({ words, phase = 1, onComplete,
   const shuffledPieces = useMemo(() => {
     return shuffle(syllables.map((text, index) => ({ text, index })));
   }, [syllables]);
+
+  // Demo: el tiempo del contador se estira para que alcance TODAS las
+  // decisiones de la palabra (una por silaba, cada una con su propia
+  // duda), no solo una — a diferencia de Empareja/Tren (una decision por
+  // cronometro), aca el mismo TimeBar cubre varias. Nunca se ACORTA el
+  // tiempo real, solo se alarga si hace falta margen, y solo en demo.
+  const demoSecondsPerWord = isDemo
+    ? Math.max(SECONDS_PER_WORD, syllables.length * (demoDecisionWindowMs() / 1000 + 0.5))
+    : SECONDS_PER_WORD;
 
   // ─── Announce word ──────────────────────────────────────────
 
@@ -174,13 +186,25 @@ export const MemoryCards: React.FC<GameProps> = ({ words, phase = 1, onComplete,
     if (isDemo && gamePhase === "playing") music.ensureStarted();
   }, [isDemo, gamePhase, music.ensureStarted]);
 
-  // Demo: duda un instante entre sílabas antes de tocar la que sigue en orden.
+  // Demo: mismo cursor de duda que Lluvia/Tren (ver useDemoCursor) — en
+  // reposo sobre las piezas apenas hay algo para elegir, duda un instante
+  // entre sílabas y recien ahi toca la que sigue en orden.
+  useEffect(() => {
+    if (!isDemo || gamePhase !== "playing" || feedbackType || placed.length >= syllables.length) return;
+    const el = piecesRef.current;
+    if (el) {
+      const r = el.getBoundingClientRect();
+      showIdle({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
+    }
+  }, [isDemo, gamePhase, feedbackType, placed.length, syllables.length, showIdle]);
+
   useDemoAutoplay(isDemo, gamePhase === "playing" && !feedbackType && placed.length < syllables.length, () => {
     const nextIdx = placed.length;
-    demoChooseSelectorWithHesitation(
-      `[data-piece-idx="${nextIdx}"]`,
-      remainingPieces.filter((p) => p.index !== nextIdx).map((p) => `[data-piece-idx="${p.index}"]`)
-    );
+    const correctEl = document.querySelector(`[data-piece-idx="${nextIdx}"]`) as HTMLElement | null;
+    const wrongEls = remainingPieces
+      .filter((p) => p.index !== nextIdx)
+      .map((p) => document.querySelector(`[data-piece-idx="${p.index}"]`) as HTMLElement | null);
+    hesitateAndClick(correctEl, wrongEls);
   }, 1200);
 
   // ─── Game end ───────────────────────────────────────────────
@@ -398,7 +422,7 @@ export const MemoryCards: React.FC<GameProps> = ({ words, phase = 1, onComplete,
           </p>
 
           {/* Puzzle pieces — scattered */}
-          <div style={{
+          <div ref={piecesRef} style={{
             display: "flex", flexWrap: "wrap", gap: spacing.md,
             justifyContent: "center", maxWidth: "min(560px, calc(100vw - 32px))",
           }}>
@@ -451,7 +475,7 @@ export const MemoryCards: React.FC<GameProps> = ({ words, phase = 1, onComplete,
         <div style={{ display: "flex", alignItems: "stretch", paddingTop: 40, paddingBottom: 20 }}>
           <TimeBar
             key={timerKey}
-            seconds={SECONDS_PER_WORD}
+            seconds={demoSecondsPerWord}
             onTimeUp={handleTimeUp}
             color={GAME_COLOR}
             paused={paused || gamePhase !== "playing"}
@@ -466,6 +490,7 @@ export const MemoryCards: React.FC<GameProps> = ({ words, phase = 1, onComplete,
         </div>
       )}
       <FeedbackFlash type={feedbackType} />
+      {Cursor}
     </GameShell>
   );
 };
