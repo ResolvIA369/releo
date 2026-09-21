@@ -329,7 +329,6 @@ export function sofiaPlayAudio(mp3Name: string | null, fallbackText: string, emo
 // nuevo.
 const PRAISE_REACTIONS: { id: string; text: string }[] = [
   { id: "reaccion-muy-bien", text: "¡Muy bien!" },
-  { id: "reaccion-bravo", text: "¡Bravo!" },
   { id: "reaccion-correcto", text: "¡Correcto!" },
   { id: "reaccion-excelente", text: "¡Excelente!" },
   { id: "reaccion-genial", text: "¡Genial!" },
