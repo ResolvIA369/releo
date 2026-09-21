@@ -621,7 +621,13 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, worldId, onCom
         }
       });
 
-      setGamePhase(showIntroNarrative ? "story-intro" : "intro");
+      // En demo/grabación se salta la narrativa: no tiene audio capturado por
+      // el pipeline (usa sofiaPlayAudio, no el playMP3 instrumentado) y queda
+      // como un tramo mudo y quieto al principio del video (bug real, visto
+      // en el video de prueba, sep-2026 — "aparece sin sonido y quieta").
+      // El video tiene que arrancar donde Sofía empieza a hablar de verdad:
+      // la fase "intro" (afirmación pregame, sí capturada).
+      setGamePhase(showIntroNarrative && !isDemo ? "story-intro" : "intro");
     })();
 
     return () => {
