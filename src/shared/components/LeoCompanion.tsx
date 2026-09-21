@@ -17,7 +17,7 @@ const LEO_IMAGES: Record<LeoMood, string> = {
 const LEO_MESSAGES: Record<LeoMood, string[]> = {
   idle: [""],
   cheering: ["¡Vamos!", "¡Tu puedes!", "¡Dale!", "¡Eso!"],
-  celebrating: ["¡Siii!", "¡Genial!", "¡Bravo!", "¡Wow!", "¡Excelente!"],
+  celebrating: ["¡Siii!", "¡Genial!", "¡Perfecto!", "¡Wow!", "¡Excelente!"],
   encouraging: ["¡Animo!", "¡Otra vez!", "¡Tu puedes!", "¡Vamos!"],
   clapping: ["👏👏👏", "¡Increible!"],
   thinking: ["Hmm...", "¡Piensa!", "¡Fijate!"],

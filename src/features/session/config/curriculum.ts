@@ -46,7 +46,7 @@ const MIDDLES = [
   "¡Muy bien! Vamos a verlas otra vez",
   "¡Excelente! Ahora las repasamos",
   "¡Lo hiciste genial! Una vez más",
-  "¡Bravo! Vamos a repasarlas",
+  "¡Correcto! Vamos a repasarlas",
   "¡Fantástico! Ahora con más atención",
   "¡Así se hace! Repasemos juntos",
   "¡Increíble! Ahora tú las dices",

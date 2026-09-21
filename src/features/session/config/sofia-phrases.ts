@@ -22,7 +22,7 @@ export const SOFIA_SESSION_PHRASES = {
   betweenRepeat: [
     ["¡Lo estás haciendo increíble, {name}! ¡Tu voz suena muy bien! Vamos otra vez.", "¡Así se hace! Tu voz suena hermosa. ¡Sigamos!"],
     ["¡Casi terminamos, {name}! ¡La última ronda! ¡Tú puedes!", "¡Increíble! Ya casi terminamos. ¡Una más!"],
-    ["¡Lo lograste, {name}! ¡Aprendiste 5 palabras nuevas! ¡Eres un campeón de la lectura!", "¡Bravo! ¡5 palabras nuevas para ti! ¡Eres increíble, {name}!"],
+    ["¡Lo lograste, {name}! ¡Aprendiste 5 palabras nuevas! ¡Eres un campeón de la lectura!", "¡Genial! ¡5 palabras nuevas para ti! ¡Eres increíble, {name}!"],
   ],
 
   storyIntro: "Ahora te voy a contar una historia con las palabras que aprendiste. ¡Escucha bien!",
@@ -67,7 +67,7 @@ export const SOFIA_SESSION_PHRASES = {
   ],
 
   onCorrectWord: [
-    "¡Sí!", "¡Eso!", "¡Bien, {name}!", "¡Bravo!", "¡Genial!",
+    "¡Sí!", "¡Eso!", "¡Bien, {name}!", "¡Excelente!", "¡Genial!",
     "¡Perfecto!", "¡Excelente!", "¡Así es!", "¡Correcto!", "¡Esa es!",
     "¡Muy bien, {name}!", "¡Lo sabías!", "¡Increíble!", "¡Súper, {name}!", "¡Wow!",
   ],

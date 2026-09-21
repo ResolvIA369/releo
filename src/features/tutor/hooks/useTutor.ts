@@ -22,7 +22,7 @@ const GREETINGS = [
 const PRAISES = [
   "¡Increíble! ¡Lo hiciste genial!",
   "¡Eres un genio de las palabras!",
-  "¡Bravo, {name}! ¡Tu esfuerzo es increíble!",
+  "¡Genial, {name}! ¡Tu esfuerzo es increíble!",
   "¡Maravilloso! ¡Aprendes muy rápido!",
   "¡Fantástico! ¡Eso estuvo genial!",
   "¡Wow! ¡Eso estuvo perfecto!",

@@ -19,7 +19,7 @@ export const SOFIA: TutorPersona = {
     "¡Muy bien, {name}! Eres increíble",
     "¡Lo lograste! Sabía que podías",
     "¡Excelente! Cada vez lees mejor",
-    "¡Bravo, {name}! Esa palabra ya es tuya",
+    "¡Correcto, {name}! Esa palabra ya es tuya",
     "¡Fantástico! Cada día leés mejor",
     "¡Genial! Eres un gran lector",
     "¡Así se hace! Cada día aprendes más",

@@ -115,7 +115,6 @@ const PHRASE_TO_MP3: Record<string, string> = {
   "¡Esa no!": "reaccion-esa-no",
   "¡Sí!": "reaccion-si",
   "¡Eso!": "reaccion-eso",
-  "¡Bravo!": "reaccion-bravo",
   "¡Genial!": "reaccion-genial",
   "¡Perfecto!": "reaccion-perfecto",
   "¡Excelente!": "reaccion-excelente",
