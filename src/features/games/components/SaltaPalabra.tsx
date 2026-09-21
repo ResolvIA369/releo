@@ -348,6 +348,16 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
         // Movimiento horizontal (esquive): teclas o botones ◀ ▶
         if (round.active && gamePhaseRef.current === "running" && moveDirRef.current !== 0) {
           leoXRef.current = Math.min(LEO_MAX_X, Math.max(LEO_MIN_X, leoXRef.current + moveDirRef.current * tuningRef.current.horizontalSpeed * dt));
+        } else if (
+          isDemoRef.current && round.active && gamePhaseRef.current === "running" &&
+          Math.abs(leoXRef.current - LEO_X) > 1
+        ) {
+          // Sin una duda explicita en curso, deriva suave de vuelta a la
+          // base — mismo bug y mismo arreglo que en Leo Vuela (medido
+          // sep-2026: sin esto, Leo deriva ronda tras ronda hasta quedar
+          // pegado a un borde y se ve estatico en video).
+          const homeDir = leoXRef.current > LEO_X ? -1 : 1;
+          leoXRef.current = Math.min(LEO_MAX_X, Math.max(LEO_MIN_X, leoXRef.current + homeDir * tuningRef.current.horizontalSpeed * 0.5 * dt));
         }
 
         // Leo: idle bob on the ground, parabola while jumping

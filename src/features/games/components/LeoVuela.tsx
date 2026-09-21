@@ -442,6 +442,21 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, worldId, onCom
             LEO_MIN_X,
             leoXRef.current + moveDirRef.current * tuningRef.current.horizontalSpeed * dt,
           ));
+        } else if (
+          isDemoRef.current && round.active && gamePhaseRef.current === "running" &&
+          Math.abs(leoXRef.current - LEO_BASE_X) > 1
+        ) {
+          // Sin una duda explicita en curso, deriva suave de vuelta a la
+          // base. Las nubes siempre se acercan desde la derecha, asi que
+          // "hacia el objetivo" case casi siempre da +1 — sin este freno
+          // Leo deriva ronda tras ronda hasta quedar pegado a LEO_MAX_X y
+          // se ve estatico (bug real, medido sep-2026: 12 rondas seguidas
+          // sin bajar de 352 = LEO_MAX_X).
+          const homeDir = leoXRef.current > LEO_BASE_X ? -1 : 1;
+          leoXRef.current = Math.min(LEO_MAX_X, Math.max(
+            LEO_MIN_X,
+            leoXRef.current + homeDir * tuningRef.current.horizontalSpeed * 0.5 * dt,
+          ));
         }
 
         // Leo: gravity pulls down, flaps push up (physics via refs)
