@@ -18,7 +18,7 @@ import { useRewards } from "@/shared/components/RewardsLayer";
 import { GameCompleteScreen } from "@/shared/components/GameCompleteScreen";
 import { FeedbackFlash } from "@/shared/components/FeedbackFlash";
 import { colors, spacing, radii, fontSizes, fonts } from "@/shared/styles/design-tokens";
-import { sofiaNameWord, sofiaPlayAudio, stopVoice } from "@/shared/services/sofiaVoice";
+import { sofiaNameWord, sofiaPlayAudio, pickPraiseReaction, stopVoice } from "@/shared/services/sofiaVoice";
 import { bubblesTuningForPhase } from "../config/bubbles";
 import { rewardForLevel, createWordBag } from "../config/arcade-tuning";
 import { demoChooseWithHesitation, demoJitter } from "../hooks/useDemoAutoplay";
@@ -223,14 +223,21 @@ export const BitsReading: React.FC<GameProps> = ({ words, phase = 1, onComplete,
       }
       // La felicitacion suena COMPLETA: la tanda siguiente espera a que
       // termine (en vez de un delay fijo que la cortaba al anunciar la
-      // proxima palabra).
+      // proxima palabra). Ocasional, no en cada acierto (ver
+      // pickPraiseReaction) — si esta vez no toca, la tanda siguiente
+      // arranca directo, sin esperar nada.
       resolvedRef.current = true;
-      stopVoice();
-      musicRef.current?.duck(true);
-      sofiaPlayAudio("reaccion-muy-bien", "¡Muy bien!", "excited").finally(() => {
-        if (!cancelledRef.current) spawnWave();
-        else musicRef.current?.duck(false);
-      });
+      const praise = pickPraiseReaction();
+      if (praise) {
+        stopVoice();
+        musicRef.current?.duck(true);
+        sofiaPlayAudio(praise.id, praise.text, "excited").finally(() => {
+          if (!cancelledRef.current) spawnWave();
+          else musicRef.current?.duck(false);
+        });
+      } else if (!cancelledRef.current) {
+        spawnWave();
+      }
     } else {
       // Error mudo: solo flash + energia abajo; las burbujas siguen
       energy.adjust(-tuning.energyLossWrong);

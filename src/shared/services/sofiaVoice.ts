@@ -317,6 +317,51 @@ export function sofiaPlayAudio(mp3Name: string | null, fallbackText: string, emo
   return track(speak(mp3Name, fallbackText, emotion));
 }
 
+// ─── Refuerzo verbal de acierto (opcional, rotado) ────────────────────
+//
+// Los 7 juegos arcade (WordRain, WordFishing, WordTrain, BitsReading,
+// LeoVuela, LeoRunner, SaltaPalabra) decían "¡Muy bien!" en CADA acierto,
+// siempre la misma frase — se vuelve pesado de escuchar (César, sep-2026).
+// pickPraiseReaction() devuelve null la mayoría de las veces (silencio: el
+// flash visual + el sonido de acierto ya confirman) y, cuando suena, rota
+// entre variantes sin repetir la anterior. Las 11 frases ya tienen MP3
+// pregrabado (ver PHRASE_TO_MP3 arriba) — no hace falta generar audio
+// nuevo.
+const PRAISE_REACTIONS: { id: string; text: string }[] = [
+  { id: "reaccion-muy-bien", text: "¡Muy bien!" },
+  { id: "reaccion-bravo", text: "¡Bravo!" },
+  { id: "reaccion-correcto", text: "¡Correcto!" },
+  { id: "reaccion-excelente", text: "¡Excelente!" },
+  { id: "reaccion-genial", text: "¡Genial!" },
+  { id: "reaccion-increible", text: "¡Increíble!" },
+  { id: "reaccion-lo-sabias", text: "¡Lo sabías!" },
+  { id: "reaccion-perfecto", text: "¡Perfecto!" },
+  { id: "reaccion-si", text: "¡Sí!" },
+  { id: "reaccion-wow", text: "¡Wow!" },
+  { id: "reaccion-asi-es", text: "¡Así es!" },
+];
+
+// ~1 de cada 3-4 aciertos suena algo (pedido de César: "una de cada tres o
+// cuatro"). 0.3 ≈ 1/3.3, adentro de ese rango.
+const PRAISE_PROBABILITY = 0.3;
+
+let lastPraiseId: string | null = null;
+
+/**
+ * Sorteo del refuerzo verbal de un acierto. Devuelve `null` la mayoría de
+ * las veces (no decir nada esta vez); cuando decide reforzar, elige una
+ * frase distinta a la última usada. Cada juego llama esto en su rama de
+ * acierto y sólo reproduce audio (y engancha el spawn de la próxima tanda a
+ * que termine) si el resultado no es null.
+ */
+export function pickPraiseReaction(): { id: string; text: string } | null {
+  if (Math.random() >= PRAISE_PROBABILITY) return null;
+  const candidates = PRAISE_REACTIONS.filter((r) => r.id !== lastPraiseId);
+  const pick = candidates[Math.floor(Math.random() * candidates.length)];
+  lastPraiseId = pick.id;
+  return pick;
+}
+
 // Legacy aliases
 export const speakWord = sofiaNameWord;
 export const speakRules = sofiaTeaches;

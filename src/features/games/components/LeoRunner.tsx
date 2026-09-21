@@ -18,7 +18,7 @@ import { useRewards } from "@/shared/components/RewardsLayer";
 import { FeedbackFlash } from "@/shared/components/FeedbackFlash";
 import { GameCompleteScreen } from "@/shared/components/GameCompleteScreen";
 import { colors, spacing, radii, fontSizes, fonts } from "@/shared/styles/design-tokens";
-import { sofiaNameWord, sofiaPlayAudio, stopVoice } from "@/shared/services/sofiaVoice";
+import { sofiaNameWord, sofiaPlayAudio, pickPraiseReaction, stopVoice } from "@/shared/services/sofiaVoice";
 import { domanCanvasText } from "../config/doman-canvas";
 import { buildLanes, rocksForPhase, runnerTuningForPhase, lanesXForCount } from "../config/leo-runner";
 import { rewardForLevel, createWordBag } from "../config/arcade-tuning";
@@ -764,7 +764,9 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
       energy.adjust(tuningRef.current.energyGainCorrect);
       if (level.registerCorrect()) musicRef.current?.setLevel(levelRef.current);
       flashFeedback("correct");
-      speakDucked(() => sofiaPlayAudio("reaccion-muy-bien", "¡Muy bien!", "excited"));
+      // Ocasional, no en cada acierto (ver pickPraiseReaction).
+      const praise = pickPraiseReaction();
+      if (praise) speakDucked(() => sofiaPlayAudio(praise.id, praise.text, "excited"));
     } else {
       // Error mudo: solo el tropezon visual + energia abajo. El
       // objetivo sigue visible en la pill del HUD.

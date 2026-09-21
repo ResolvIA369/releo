@@ -18,7 +18,7 @@ import { useRewards } from "@/shared/components/RewardsLayer";
 import { FeedbackFlash } from "@/shared/components/FeedbackFlash";
 import { GameCompleteScreen } from "@/shared/components/GameCompleteScreen";
 import { colors, spacing, radii, fontSizes, fonts } from "@/shared/styles/design-tokens";
-import { sofiaNameWord, sofiaPlayAudio, stopVoice } from "@/shared/services/sofiaVoice";
+import { sofiaNameWord, sofiaPlayAudio, pickPraiseReaction, stopVoice } from "@/shared/services/sofiaVoice";
 import { demoHesitateMove, demoJitter } from "../hooks/useDemoAutoplay";
 import { domanCanvasText } from "../config/doman-canvas";
 import { saltaTuningForPhase } from "../config/salta-palabra";
@@ -671,7 +671,9 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
         rewardCorrect(rect.left + leoXRef.current * scale, rect.top + FLY_Y * scale);
       }
       squashTRef.current = 0; // celebration squash-and-stretch
-      speakDucked(() => sofiaPlayAudio("reaccion-muy-bien", "¡Muy bien!", "excited"));
+      // Ocasional, no en cada acierto (ver pickPraiseReaction).
+      const praise = pickPraiseReaction();
+      if (praise) speakDucked(() => sofiaPlayAudio(praise.id, praise.text, "excited"));
       spawnWave();
     } else {
       // Error mudo: solo tint + energia abajo; la ronda sigue si el

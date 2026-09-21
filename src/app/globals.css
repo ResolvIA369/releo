@@ -39,11 +39,23 @@ html, body {
    Se aplica un instante a una opción incorrecta (nunca se la clickea —
    Leo y Sofía no se equivocan leyendo) para que la elección automática
    del modo demo se vea como alguien pensando, no como un script.
-   Ver src/features/games/hooks/useDemoAutoplay.ts */
+   Ver src/features/games/hooks/useDemoAutoplay.ts
+
+   OJO: nunca animar `transform` acá. Varias de las opciones a las que se
+   les aplica esta clase (la palabra cayendo en Lluvia, el pez nadando en
+   Pesca) YA tienen su propio `transform: translateY/translateX(...)`
+   escrito cuadro a cuadro por Framer Motion — una animación CSS nativa
+   que tambien apunte a `transform` en el MISMO elemento le gana esa
+   pelea (el motor de animacion CSS pisa lo que JS escribe en
+   `style.transform` en cada frame), y la opcion queda clavada en su
+   posicion sin transformar en vez de seguir cayendo/nadando (QA sep-2026,
+   visto en vivo: la palabra quedaba frenada arriba, detras del titulo,
+   mientras las demas seguian cayendo normal). filter/box-shadow no
+   chocan con eso. */
 .demo-hesitate {
   animation: demo-hesitate-pulse 0.6s ease-in-out infinite;
 }
 @keyframes demo-hesitate-pulse {
-  0%, 100% { transform: scale(1); filter: brightness(1); }
-  50% { transform: scale(1.06); filter: brightness(1.08); }
+  0%, 100% { filter: brightness(1); box-shadow: 0 0 0 0 rgba(255,214,10,0); }
+  50% { filter: brightness(1.15); box-shadow: 0 0 0 6px rgba(255,214,10,0.45); }
 }

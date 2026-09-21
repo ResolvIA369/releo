@@ -19,10 +19,11 @@ import { FeedbackFlash } from "@/shared/components/FeedbackFlash";
 import { VictoryBurst } from "@/shared/components/VictoryBurst";
 import { GameCompleteScreen } from "@/shared/components/GameCompleteScreen";
 import { colors, spacing, radii, shadows, fontSizes, fonts } from "@/shared/styles/design-tokens";
-import { sofiaNameWord, sofiaPlayAudio, stopVoice } from "@/shared/services/sofiaVoice";
+import { sofiaNameWord, sofiaPlayAudio, pickPraiseReaction, stopVoice } from "@/shared/services/sofiaVoice";
 import { wordTrainTuningForPhase } from "../config/word-train";
 import { rewardForLevel, createWordBag } from "../config/arcade-tuning";
-import { demoJitter } from "../hooks/useDemoAutoplay";
+import { demoDecisionWindowMs, getDemoSpeedMul } from "../hooks/useDemoAutoplay";
+import { useDemoCursor } from "../hooks/useDemoCursor";
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -35,6 +36,15 @@ function shuffle<T>(arr: T[]): T[] {
 
 const GAME_COLOR = "#38a169";
 
+// Fraccion del cruce total que un vagon pasa 100% adentro de la franja
+// tocable (ver el comentario largo de crossSeconds en config/word-train.ts:
+// depende del ancho del vagon contra el ancho de la franja, medido en vivo
+// ~0,33-0,37 en Nivel 1). Se usa un valor conservador a la BAJA (asume
+// menos ventana tocable de la real) para que el estiramiento de demo nunca
+// se quede corto — de sobrar tiempo no pasa nada, de faltar el click cae
+// fuera de la franja y el demo "falla" un vagon en video.
+const TAPPABLE_FRACTION = 0.3;
+
 const INTRO_TEXT =
   "¡Soy la Seño Sofía! Mirá los trenes que pasan. " +
   "Escuchá la palabra, y tocá el vagón donde está escrita antes de que se vaya. " +
@@ -45,6 +55,7 @@ type Phase = "intro" | "running" | "finished";
 export const WordTrain: React.FC<GameProps> = ({ words, phase = 1, onComplete, onBack, isDemo = false }) => {
   const { state, recordAttempt, finish, reset } = useGameState("word-train", { phase });
   const { rewardCorrect } = useRewards();
+  const { Cursor, hesitateAndClick, showIdle } = useDemoCursor(isDemo);
   // B4 (QA sep-2026): usePause() leia un Context creado DENTRO de
   // GameShell, que este componente renderiza como hijo — el Provider
   // quedaba abajo del punto donde se leia el hook, asi que paused era
@@ -84,6 +95,13 @@ export const WordTrain: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
   // que la garantia tiene que ser POR VAGON (su propio rect vs. el de la
   // franja), no "todo el tren adentro al mismo tiempo".
   const bandRef = useRef<HTMLDivElement>(null);
+  // Cuanto tarda el tren en cruzar, en segundos — normalmente tuning.crossSeconds
+  // fijo, pero en demo se estira (ver spawnWave) para que la franja TOCABLE
+  // (una fraccion del cruce, no el cruce entero — ver formula en
+  // word-train.ts) dure al menos demoDecisionWindowMs(): antes el auto-toque
+  // clickeaba apenas el vagon quedaba tocable, sin ninguna pausa de lectura
+  // (QA sep-2026, "la palabra ya esta elegida" apenas asomaba el vagon).
+  const crossSecondsRef = useRef(tuning.crossSeconds);
   const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cancelledRef = useRef(false);
 
@@ -139,9 +157,18 @@ export const WordTrain: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
     setTappableIds(new Set());
     resolvedRef.current = false;
     setWaveIdx((w) => w + 1);
+    // Demo: estirar el cruce para que la ventana tocable (fraccion del
+    // cruce, no el cruce entero) dure al menos lo que puede tardar el
+    // cursor en leer + dudar + decidir — nunca se ACORTA el cruce real,
+    // solo se alarga si hace falta margen (Math.max), y solo en demo.
+    const demoSpeedFactor = isDemo ? Math.max(1, getDemoSpeedMul()) : 1;
+    const minCrossSecondsForDemo = isDemo
+      ? (demoDecisionWindowMs() / 1000 + 0.5) / TAPPABLE_FRACTION
+      : 0;
+    crossSecondsRef.current = Math.max(tuning.crossSeconds * demoSpeedFactor, minCrossSecondsForDemo);
     // Sofia nombra en paralelo — el tren ya esta entrando
     speakDucked(() => sofiaNameWord(target.text));
-  }, [tuning, levelRef, speakDucked]);
+  }, [tuning, levelRef, speakDucked, isDemo]);
 
   // Sin energia → fin del juego
   const finishGame = useCallback(() => {
@@ -190,7 +217,7 @@ export const WordTrain: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
     if (resolvedRef.current) return;
     const lvl = tuning.levels[levelRef.current] ?? tuning.levels[0];
     // 220% de recorrido en crossSeconds (a 60fps), acelerado por nivel
-    const step = (220 / (tuning.crossSeconds * 60)) * lvl.speedMul * dt;
+    const step = (220 / (crossSecondsRef.current * 60)) * lvl.speedMul * dt;
     trainXRef.current += step;
     setTrainX(trainXRef.current);
 
@@ -268,14 +295,21 @@ export const WordTrain: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
       flashFeedback("correct");
       // La felicitacion suena COMPLETA: la tanda siguiente espera a que
       // termine (en vez de un delay fijo que la cortaba al anunciar la
-      // proxima palabra).
+      // proxima palabra). Ocasional, no en cada acierto (ver
+      // pickPraiseReaction) — si esta vez no toca, la tanda siguiente
+      // arranca directo, sin esperar nada.
       resolvedRef.current = true;
-      stopVoice();
-      musicRef.current?.duck(true);
-      sofiaPlayAudio("reaccion-muy-bien", "¡Muy bien!", "excited").finally(() => {
-        if (!cancelledRef.current) spawnWave();
-        else musicRef.current?.duck(false);
-      });
+      const praise = pickPraiseReaction();
+      if (praise) {
+        stopVoice();
+        musicRef.current?.duck(true);
+        sofiaPlayAudio(praise.id, praise.text, "excited").finally(() => {
+          if (!cancelledRef.current) spawnWave();
+          else musicRef.current?.duck(false);
+        });
+      } else if (!cancelledRef.current) {
+        spawnWave();
+      }
     } else {
       // Error mudo: solo el flash visual + energia abajo
       energy.adjust(-tuning.energyLossWrong);
@@ -284,13 +318,23 @@ export const WordTrain: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
     }
   }, [energy, tuning, recordAttempt, rewardCorrect, spawnWave, flashFeedback, levelRef]);
 
-  // Demo: toca el vagon correcto cuando esta 100% adentro de la franja
-  // (polling porque el target se mueve — la precision del click NO lleva
-  // jitter, el tren no espera). Mismo criterio que handleTap: rect real del
-  // boton contra rect real de la franja, no una ventana de trainX% asumida.
+  // Demo: mismo cursor de duda que Lluvia de Palabras (ver useDemoCursor) —
+  // en reposo apenas se conoce la tanda, y recien ataca (duda + click)
+  // cuando el vagon objetivo esta tocable DE VERDAD (100% adentro de la
+  // franja, mismo criterio que handleTap). Antes clickeaba apenas el vagon
+  // quedaba tocable, sin ninguna pausa de lectura (QA sep-2026: "la palabra
+  // ya esta elegida" apenas asomaba el vagon). crossSecondsRef ya viene
+  // estirado (ver spawnWave) para que la ventana tocable dure al menos
+  // demoDecisionWindowMs() desde el instante en que se vuelve tocable, asi
+  // el click de hesitateAndClick siempre cae DENTRO de la ventana.
   useEffect(() => {
     if (!isDemo || gamePhase !== "running" || !targetWord) return;
     let done = false;
+    const band = bandRef.current;
+    if (band) {
+      const r = band.getBoundingClientRect();
+      showIdle({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
+    }
     const iv = setInterval(() => {
       if (done || resolvedRef.current) return;
       const bandEl = bandRef.current;
@@ -299,26 +343,16 @@ export const WordTrain: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
       const bandRect = bandEl.getBoundingClientRect();
       const btnRect = btn.getBoundingClientRect();
       if (btnRect.left >= bandRect.left - 0.5 && btnRect.right <= bandRect.right + 0.5) {
-        done = true; btn.click();
+        done = true;
+        clearInterval(iv);
+        const targetId = targetRef.current?.id;
+        const allCars = Array.from(document.querySelectorAll("[data-word-id]")) as HTMLElement[];
+        const wrongEls = allCars.filter((el) => el.dataset.wordId && el.dataset.wordId !== targetId);
+        hesitateAndClick(btn, wrongEls);
       }
-    }, 250);
+    }, 100);
     return () => clearInterval(iv);
-  }, [isDemo, gamePhase, waveIdx, targetWord]);
-
-  useEffect(() => {
-    if (!isDemo || gamePhase !== "running" || !targetWord) return;
-    const t = setTimeout(() => {
-      if (resolvedRef.current) return;
-      const targetId = targetRef.current?.id;
-      const allCars = Array.from(document.querySelectorAll("[data-word-id]")) as HTMLElement[];
-      const wrongEls = allCars.filter((el) => el.dataset.wordId && el.dataset.wordId !== targetId);
-      if (wrongEls.length === 0) return;
-      const wrongEl = wrongEls[Math.floor(Math.random() * wrongEls.length)];
-      wrongEl.classList.add("demo-hesitate");
-      setTimeout(() => wrongEl.classList.remove("demo-hesitate"), demoJitter(500));
-    }, demoJitter(600));
-    return () => clearTimeout(t);
-  }, [isDemo, gamePhase, waveIdx, targetWord]);
+  }, [isDemo, gamePhase, waveIdx, targetWord, hesitateAndClick, showIdle]);
 
   const handleReplay = useCallback(() => {
     reset();
@@ -504,6 +538,7 @@ export const WordTrain: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
         </div>
       </div>
       <FeedbackFlash type={feedbackType} />
+      {Cursor}
     </GameShell>
   );
 };

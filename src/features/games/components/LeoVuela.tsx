@@ -15,7 +15,7 @@ import { useRewards } from "@/shared/components/RewardsLayer";
 import { FeedbackFlash } from "@/shared/components/FeedbackFlash";
 import { GameCompleteScreen } from "@/shared/components/GameCompleteScreen";
 import { colors, spacing, radii, fontSizes, fonts } from "@/shared/styles/design-tokens";
-import { sofiaNameWord, sofiaPlayAudio, stopVoice } from "@/shared/services/sofiaVoice";
+import { sofiaNameWord, sofiaPlayAudio, pickPraiseReaction, stopVoice } from "@/shared/services/sofiaVoice";
 import { recordGameEvent } from "@/shared/services/gameTelemetry";
 import { demoHesitateMove, demoJitter } from "../hooks/useDemoAutoplay";
 import { domanCanvasText } from "../config/doman-canvas";
@@ -875,7 +875,9 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, worldId, onCom
 
       adjustEnergy(tuningRef.current.energyGainCorrect);
       if (level.registerCorrect()) musicRef.current?.setLevel(levelRef.current);
-      speakDucked(() => sofiaPlayAudio("reaccion-muy-bien", "¡Muy bien!", "excited"));
+      // Ocasional, no en cada acierto (ver pickPraiseReaction).
+      const praise = pickPraiseReaction();
+      if (praise) speakDucked(() => sofiaPlayAudio(praise.id, praise.text, "excited"));
       nextWave();
     } else {
       // Tropezon en silencio: solo el tint visual, sin audio — el
