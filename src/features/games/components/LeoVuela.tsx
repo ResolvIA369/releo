@@ -193,6 +193,12 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, worldId, onCom
   wordsRef.current = words;
   const bagRef = useRef<ReturnType<typeof createWordBag> | null>(null);
   if (!bagRef.current) bagRef.current = createWordBag(words);
+  // Cuenta tandas jugadas en la vuelta actual del mazo. createWordBag ya
+  // garantiza "todas las palabras del bloque una vez antes de repetir
+  // ninguna" — cuando se completan words.length tandas, esa vuelta
+  // terminó: es la meta real del juego (antes solo terminaba si se
+  // quedaba sin energía, y un chico que lee bien nunca llega a eso).
+  const waveCountRef = useRef(0);
 
   const tuning = useMemo(() => tuningForPhase(phase), [phase]);
   const tuningRef = useRef(tuning);
@@ -794,6 +800,15 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, worldId, onCom
 
   const nextWave = useCallback(() => {
     if (cancelledRef.current) return;
+    waveCountRef.current += 1;
+    if (waveCountRef.current >= wordsRef.current.length) {
+      // Vuelta completa al mazo: el chico ya practicó cada palabra del
+      // bloque. Termina el juego acá en vez de rebarajar y seguir sin
+      // fin (mismo cierre que quedarse sin energía: onEnergyOutRef ya
+      // apunta a finishGame, que decide story-outro vs finished).
+      onEnergyOutRef.current();
+      return;
+    }
     setRoundIdx((prev) => prev + 1); // contador de tandas (anima la pill)
     spawnWave();
   }, [spawnWave]);
@@ -989,6 +1004,7 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, worldId, onCom
     birdInvulnUntilRef.current = 0;
     obstaclesRef.current?.reset();
     bagRef.current = createWordBag(words);
+    waveCountRef.current = 0;
     caughtEmojisRef.current = [];
     bookPulseRef.current = 1;
     setRoundIdx(0);
