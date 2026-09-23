@@ -133,6 +133,11 @@ export const WordFishing: React.FC<GameProps> = ({ words, phase = 1, onComplete,
   wordsRef.current = words;
   const bagRef = useRef<ReturnType<typeof createWordBag> | null>(null);
   if (!bagRef.current) bagRef.current = createWordBag(words);
+  // Cuenta tandas de la vuelta actual del mazo — al completar
+  // words.length tandas termina el juego (ver LeoVuela.tsx: antes esto
+  // solo terminaba si se quedaba sin energia, y jugando bien nunca pasa).
+  const waveCountRef = useRef(0);
+  const gameEndRef = useRef<() => void>(() => {});
   const targetRef = useRef<DomanWord | null>(null);
   const resolvedRef = useRef(false);
   const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -197,6 +202,16 @@ export const WordFishing: React.FC<GameProps> = ({ words, phase = 1, onComplete,
   }, [finish, onComplete, state]);
   const finishRef = useRef(finishGame);
   finishRef.current = finishGame;
+  gameEndRef.current = finishGame;
+
+  const nextWave = useCallback(() => {
+    waveCountRef.current += 1;
+    if (waveCountRef.current >= wordsRef.current.length) {
+      gameEndRef.current();
+      return;
+    }
+    spawnWave();
+  }, [spawnWave]);
 
   const resolveWave = useCallback((delayMs: number) => {
     resolvedRef.current = true;
@@ -261,18 +276,18 @@ export const WordFishing: React.FC<GameProps> = ({ words, phase = 1, onComplete,
         stopVoice();
         musicRef.current?.duck(true);
         sofiaPlayAudio(praise.id, praise.text, "excited").finally(() => {
-          if (!cancelledRef.current) spawnWave();
+          if (!cancelledRef.current) nextWave();
           else musicRef.current?.duck(false);
         });
       } else if (!cancelledRef.current) {
-        spawnWave();
+        nextWave();
       }
     } else {
       // Error mudo: solo flash + energia abajo; los peces siguen
       energy.adjust(-tuning.energyLossWrong);
       flashFeedback("wrong");
     }
-  }, [energy, tuning, recordAttempt, rewardCorrect, speakDucked, spawnWave, flashFeedback, levelRef]);
+  }, [energy, tuning, recordAttempt, rewardCorrect, speakDucked, nextWave, flashFeedback, levelRef]);
 
   // Demo: cada tanda, duda entre peces y toca el correcto
   useEffect(() => {
@@ -294,6 +309,7 @@ export const WordFishing: React.FC<GameProps> = ({ words, phase = 1, onComplete,
     energy.reset();
     level.reset();
     bagRef.current = createWordBag(words);
+    waveCountRef.current = 0;
     targetRef.current = null;
     setGamePhase("running");
     musicRef.current?.setLevel(0);

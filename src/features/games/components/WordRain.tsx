@@ -171,6 +171,11 @@ export const WordRain: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
   wordsRef.current = words;
   const bagRef = useRef<ReturnType<typeof createWordBag> | null>(null);
   if (!bagRef.current) bagRef.current = createWordBag(words);
+  // Cuenta tandas de la vuelta actual del mazo — al completar
+  // words.length tandas termina el juego (ver LeoVuela.tsx: antes esto
+  // solo terminaba si se quedaba sin energia, y jugando bien nunca pasa).
+  const waveCountRef = useRef(0);
+  const gameEndRef = useRef<() => void>(() => {});
   const targetRef = useRef<DomanWord | null>(null);
   const resolvedRef = useRef(false);
   const keyCounter = useRef(0);
@@ -255,11 +260,21 @@ export const WordRain: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
   }, [finish, onComplete, state]);
   const finishRef = useRef(finishGame);
   finishRef.current = finishGame;
+  gameEndRef.current = finishGame;
+
+  const nextWave = useCallback(() => {
+    waveCountRef.current += 1;
+    if (waveCountRef.current >= wordsRef.current.length) {
+      gameEndRef.current();
+      return;
+    }
+    spawnWave();
+  }, [spawnWave]);
 
   const resolveWave = useCallback((delayMs: number) => {
     resolvedRef.current = true;
-    setTimeout(() => { if (!cancelledRef.current) spawnWave(); }, delayMs);
-  }, [spawnWave]);
+    setTimeout(() => { if (!cancelledRef.current) nextWave(); }, delayMs);
+  }, [nextWave]);
   const resolveRef = useRef(resolveWave);
   resolveRef.current = resolveWave;
 
@@ -321,18 +336,18 @@ export const WordRain: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
         stopVoice();
         musicRef.current?.duck(true);
         sofiaPlayAudio(praise.id, praise.text, "excited").finally(() => {
-          if (!cancelledRef.current) spawnWave();
+          if (!cancelledRef.current) nextWave();
           else musicRef.current?.duck(false);
         });
       } else if (!cancelledRef.current) {
-        spawnWave();
+        nextWave();
       }
     } else {
       // Error mudo: solo flash + energia abajo; el target sigue cayendo
       energy.adjust(-tuning.energyLossWrong);
       flashFeedback("wrong");
     }
-  }, [energy, tuning, recordAttempt, rewardCorrect, speakDucked, spawnWave, flashFeedback, levelRef]);
+  }, [energy, tuning, recordAttempt, rewardCorrect, speakDucked, nextWave, flashFeedback, levelRef]);
 
   // Una palabra termino de caer
   const onDropLand = useCallback((isTarget: boolean) => {
@@ -379,6 +394,7 @@ export const WordRain: React.FC<GameProps> = ({ words, phase = 1, onComplete, on
     energy.reset();
     level.reset();
     bagRef.current = createWordBag(words);
+    waveCountRef.current = 0;
     targetRef.current = null;
     setGamePhase("running");
     musicRef.current?.setLevel(0);

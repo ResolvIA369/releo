@@ -78,6 +78,11 @@ export const BitsReading: React.FC<GameProps> = ({ words, phase = 1, onComplete,
   wordsRef.current = words;
   const bagRef = useRef<ReturnType<typeof createWordBag> | null>(null);
   if (!bagRef.current) bagRef.current = createWordBag(words);
+  // Cuenta tandas de la vuelta actual del mazo — al completar
+  // words.length tandas termina el juego (ver LeoVuela.tsx: antes esto
+  // solo terminaba si se quedaba sin energia, y jugando bien nunca pasa).
+  const waveCountRef = useRef(0);
+  const gameEndRef = useRef<() => void>(() => {});
   const targetRef = useRef<DomanWord | null>(null);
   const resolvedRef = useRef(false);
   const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -119,6 +124,11 @@ export const BitsReading: React.FC<GameProps> = ({ words, phase = 1, onComplete,
   // ─── Wave: nuevas burbujas ──────────────────────────────────────
   const spawnWave = useCallback(() => {
     if (cancelledRef.current) return;
+    waveCountRef.current += 1;
+    if (waveCountRef.current > wordsRef.current.length) {
+      gameEndRef.current();
+      return;
+    }
     const lvl = tuning.levels[levelRef.current] ?? tuning.levels[0];
     const t = bagRef.current!.next();
     targetRef.current = t;
@@ -150,6 +160,7 @@ export const BitsReading: React.FC<GameProps> = ({ words, phase = 1, onComplete,
   }, [finish, onComplete, state]);
   const finishRef = useRef(finishGame);
   finishRef.current = finishGame;
+  gameEndRef.current = finishGame;
 
   const resolveWave = useCallback((delayMs: number) => {
     resolvedRef.current = true;
@@ -265,6 +276,7 @@ export const BitsReading: React.FC<GameProps> = ({ words, phase = 1, onComplete,
     energy.reset();
     level.reset();
     bagRef.current = createWordBag(words);
+    waveCountRef.current = 0;
     targetRef.current = null;
     setGamePhase("running");
     musicRef.current?.setLevel(0);

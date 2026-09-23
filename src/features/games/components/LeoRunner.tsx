@@ -210,6 +210,10 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
   wordsRef.current = words;
   const bagRef = useRef<ReturnType<typeof createWordBag> | null>(null);
   if (!bagRef.current) bagRef.current = createWordBag(words);
+  // Cuenta tandas de la vuelta actual del mazo — al completar
+  // words.length tandas termina el juego (ver LeoVuela.tsx: antes esto
+  // solo terminaba si se quedaba sin energia, y jugando bien nunca pasa).
+  const waveCountRef = useRef(0);
 
   const tuning = useMemo(() => runnerTuningForPhase(phase), [phase]);
   const tuningRef = useRef(tuning);
@@ -775,7 +779,13 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
       flashFeedback("wrong");
     }
 
-    // Siguiente tanda al toque — flujo continuo
+    // Siguiente tanda al toque — flujo continuo, salvo que ya se haya
+    // completado una vuelta entera al mazo (ver waveCountRef arriba)
+    waveCountRef.current += 1;
+    if (waveCountRef.current >= wordsRef.current.length) {
+      onEnergyOutRef.current();
+      return;
+    }
     spawnWave();
   }, [recordAttempt, rewardCorrect, energy, flashFeedback, spawnWave]);
 
@@ -841,6 +851,7 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
     level.reset();
     leoLaneRef.current = 1;
     bagRef.current = createWordBag(words);
+    waveCountRef.current = 0;
     invulnUntilRef.current = 0;
     obstaclesRef.current?.reset();
     setGamePhase("running");

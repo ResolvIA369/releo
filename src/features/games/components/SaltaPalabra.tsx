@@ -154,6 +154,10 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
   wordsRef.current = words;
   const bagRef = useRef<ReturnType<typeof createWordBag> | null>(null);
   if (!bagRef.current) bagRef.current = createWordBag(words);
+  // Cuenta tandas de la vuelta actual del mazo — al completar
+  // words.length tandas termina el juego (ver LeoVuela.tsx: antes esto
+  // solo terminaba si se quedaba sin energia, y jugando bien nunca pasa).
+  const waveCountRef = useRef(0);
 
   const tuning = useMemo(() => saltaTuningForPhase(phase), [phase]);
   const tuningRef = useRef(tuning);
@@ -595,6 +599,17 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
     speakDucked(() => sofiaNameWord(target.text));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const nextWave = useCallback(() => {
+    if (cancelledRef.current) return;
+    waveCountRef.current += 1;
+    if (waveCountRef.current >= wordsRef.current.length) {
+      // Vuelta completa al mazo: mismo cierre que quedarse sin energia.
+      onEnergyOutRef.current();
+      return;
+    }
+    spawnWave();
+  }, [spawnWave]);
+
   // Intro de Sofia — SOLO al arrancar; la primera tanda recien sale
   // cuando termina. Cero pausas nuevas durante el juego.
   const { skip: skipIntro } = usePreGameIntro({
@@ -684,7 +699,7 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
       // Ocasional, no en cada acierto (ver pickPraiseReaction).
       const praise = pickPraiseReaction();
       if (praise) speakDucked(() => sofiaPlayAudio(praise.id, praise.text, "excited"));
-      spawnWave();
+      nextWave();
     } else {
       // Error mudo: solo tint + energia abajo; la ronda sigue si el
       // objetivo todavia esta en pantalla
@@ -695,10 +710,10 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
       const targetFw = round.words.find((f) => f.word.id === target.id);
       if (!targetFw || targetFw.caught || targetFw.box.x <= -100) {
         round.resolved = true;
-        spawnWave();
+        nextWave();
       }
     }
-  }, [recordAttempt, rewardCorrect, energy, flashFeedback, spawnWave]);
+  }, [recordAttempt, rewardCorrect, energy, flashFeedback, nextWave]);
 
   const handleEscape = useCallback(() => {
     const round = roundRef.current;
@@ -707,8 +722,8 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
     energy.adjust(-tuningRef.current.energyLossEscape);
     flashFeedback("wrong");
     speakDucked(() => sofiaPlayAudio("reaccion-se-escapo", "¡Se escapó!", "gentle"));
-    spawnWave();
-  }, [recordAttempt, energy, flashFeedback, spawnWave]);
+    nextWave();
+  }, [recordAttempt, energy, flashFeedback, nextWave]);
 
   onCatchRef.current = handleCatch;
   onEscapeRef.current = handleEscape;
@@ -760,6 +775,7 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
     energy.reset();
     level.reset();
     bagRef.current = createWordBag(words);
+    waveCountRef.current = 0;
     invulnUntilRef.current = 0;
     obstaclesRef.current?.reset();
     setGamePhase("running");

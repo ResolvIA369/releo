@@ -123,7 +123,12 @@ function DemoContent() {
           phase={(phaseIdx + 1) as 1 | 2 | 3 | 4 | 5}
           worldId={worldId}
           isDemo
-          onComplete={() => router.push("/demo")}
+          // GameCompleteScreen tiene un video de festejo de 8s (Leo/Sofía,
+          // con sonido) + animación de monedas — en /play nadie navega
+          // hasta que el chico toca un botón, pero acá onComplete disparaba
+          // router.push casi al instante de entrar a "finished" y lo
+          // desmontaba a mitad del video (bug real, visto grabando).
+          onComplete={() => setTimeout(() => router.push("/demo"), 9000)}
           onBack={() => router.push("/demo")}
         />
       </RewardsProvider>
