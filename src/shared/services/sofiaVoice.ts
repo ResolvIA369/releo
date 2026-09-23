@@ -360,6 +360,38 @@ export function pickPraiseReaction(): { id: string; text: string } | null {
   return pick;
 }
 
+// ─── Despedida al terminar un juego ───────────────────────────────────
+//
+// Estas 10 frases (Jessica, [warmly]) ya existían generadas por
+// regenerate-all-elevenlabs.py desde el 22-ago-2026 pero no las llamaba
+// nadie en el código — ningún juego terminaba nunca (ver LeoVuela.tsx y
+// los otros 6 arcade: solo cerraban si la energía llegaba a 0, cosa que
+// jugando bien casi no pasa). Ahora que los juegos sí terminan solos,
+// GameCompleteScreen las usa para que la Seño Sofía felicite y se
+// despida de verdad, no solo en silencio con el video de festejo.
+const DESPEDIDA_PHRASES: { id: string; text: string }[] = [
+  { id: "despedida-01", text: "¡Fue una gran clase! Nos vemos mañana" },
+  { id: "despedida-02", text: "¡Aprendiste mucho hoy! La Seño Sofía está orgullosa de vos" },
+  { id: "despedida-03", text: "¡Hasta la próxima! Recordá: sos un gran lector" },
+  { id: "despedida-04", text: "¡Qué clase tan linda! Descansá y mañana seguimos" },
+  { id: "despedida-05", text: "¡Adiós! Hoy brillaste mucho" },
+  { id: "despedida-06", text: "¡Nos vemos pronto! Hoy fue un gran día de lectura" },
+  { id: "despedida-07", text: "¡Hasta mañana! Recordá que la Seño Sofía siempre cree en vos" },
+  { id: "despedida-08", text: "¡Chau! Hoy aprendimos palabras hermosas juntos" },
+  { id: "despedida-09", text: "¡Nos vemos en la próxima clase!" },
+  { id: "despedida-10", text: "¡Fue un placer aprender con vos hoy!" },
+];
+
+let lastDespedidaId: string | null = null;
+
+/** Elige una despedida al azar, nunca la misma que la última vez. */
+export function pickDespedida(): { id: string; text: string } {
+  const candidates = DESPEDIDA_PHRASES.filter((d) => d.id !== lastDespedidaId);
+  const pick = candidates[Math.floor(Math.random() * candidates.length)];
+  lastDespedidaId = pick.id;
+  return pick;
+}
+
 // Legacy aliases
 export const speakWord = sofiaNameWord;
 export const speakRules = sofiaTeaches;

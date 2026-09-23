@@ -7,6 +7,7 @@ import { CelebrationGif } from "./CelebrationGif";
 import { colors, spacing, fonts, fontSizes } from "@/shared/styles/design-tokens";
 import { fadeInUp, starPop } from "@/shared/styles/animations";
 import { pickEndVideo } from "@/shared/utils/videoPool";
+import { pickDespedida, sofiaPlayAudio } from "@/shared/services/sofiaVoice";
 import { useRewards } from "./RewardsLayer";
 import { useAppStore } from "@/shared/store/useAppStore";
 
@@ -54,10 +55,31 @@ export const GameCompleteScreen: React.FC<GameCompleteScreenProps> = ({
   const [coins, setCoins] = useState<ChestCoin[]>([]);
   const [storedCount, setStoredCount] = useState(0);
   const firedRef = useRef(false);
+  const despedidaFiredRef = useRef(false);
+  // pickEndVideo(stars) NO puede llamarse inline en el JSX: este
+  // componente se re-renderiza varias veces mientras arma el festejo
+  // (bigBurst, chestOpen, cada moneda que cae vía storedCount) y cada
+  // llamada elige un video AL AZAR distinto — el <video src> cambiaba de
+  // golpe a mitad de reproducción, reiniciándose una y otra vez, y por eso
+  // el onEnded (que dispara la despedida) casi nunca llegaba a disparar.
+  // Se elige una sola vez por montaje y se reusa.
+  const endVideoSrcRef = useRef<string | null>(null);
+  if (!endVideoSrcRef.current) endVideoSrcRef.current = pickEndVideo(stars);
 
   // Only award coins if the player got at least 1 correct.
   // 0/5 = no reward (no coins, no chest, no confetti).
   const totalCoins = correct > 0 ? correct + 5 + bonusCoins : 0;
+
+  // Despedida hablada de Sofía DESPUES de que termina (o falla) el video
+  // de festejo, nunca al mismo tiempo — dos voces encima es un bug ya
+  // conocido en esta app (ver sofiaVoice.ts). Sin premio no hay despedida,
+  // mismo criterio que las monedas.
+  const handleCelebrationVideoDone = () => {
+    if (despedidaFiredRef.current || totalCoins === 0) return;
+    despedidaFiredRef.current = true;
+    const d = pickDespedida();
+    void sofiaPlayAudio(d.id, d.text, "gentle");
+  };
 
   useEffect(() => {
     if (firedRef.current) return;
@@ -110,12 +132,13 @@ export const GameCompleteScreen: React.FC<GameCompleteScreenProps> = ({
         style={{ borderRadius: 16, overflow: "hidden", maxWidth: "min(360px, 90vw)" }}
       >
         <video
-          src={pickEndVideo(stars)}
+          src={endVideoSrcRef.current}
           autoPlay
           playsInline
           muted={false}
           controls={false}
-          onError={(e) => { (e.target as HTMLVideoElement).style.display = "none"; }}
+          onError={(e) => { (e.target as HTMLVideoElement).style.display = "none"; handleCelebrationVideoDone(); }}
+          onEnded={handleCelebrationVideoDone}
           style={{ width: "100%", borderRadius: 16, display: "block" }}
         />
       </motion.div>

@@ -124,11 +124,12 @@ function DemoContent() {
           worldId={worldId}
           isDemo
           // GameCompleteScreen tiene un video de festejo de 8s (Leo/Sofía,
-          // con sonido) + animación de monedas — en /play nadie navega
-          // hasta que el chico toca un botón, pero acá onComplete disparaba
-          // router.push casi al instante de entrar a "finished" y lo
-          // desmontaba a mitad del video (bug real, visto grabando).
-          onComplete={() => setTimeout(() => router.push("/demo"), 9000)}
+          // con sonido) + la despedida hablada de Sofía DESPUES de ese
+          // video (unos 3-4s más) + animación de monedas — en /play nadie
+          // navega hasta que el chico toca un botón, pero acá onComplete
+          // disparaba router.push casi al instante de entrar a "finished"
+          // y lo desmontaba a mitad de todo eso (bug real, visto grabando).
+          onComplete={() => setTimeout(() => router.push("/demo"), 13000)}
           onBack={() => router.push("/demo")}
         />
       </RewardsProvider>

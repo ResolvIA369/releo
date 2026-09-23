@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { useMemo, useState, useCallback, Suspense } from "react";
+import { useMemo, useState, useCallback, useRef, Suspense } from "react";
 import { motion } from "framer-motion";
 import type { DomanWord, PhaseNumber } from "@/shared/types/doman";
 import { GAME_REGISTRY } from "@/features/games/config/game-registry";
@@ -27,6 +27,7 @@ import { CelebrationGif } from "@/shared/components/CelebrationGif";
 import { AnimatedButton } from "@/shared/components/AnimatedButton";
 import { RewardsProvider } from "@/shared/components/RewardsLayer";
 import { pickEndVideo } from '@/shared/utils/videoPool';
+import { pickDespedida, sofiaPlayAudio } from "@/shared/services/sofiaVoice";
 import { ErrorBoundary } from "@/shared/components/ErrorBoundary";
 import type { GameId, GameProps, GameSessionState } from "@/features/games/types";
 import type { FC } from "react";
@@ -72,6 +73,16 @@ function GamePageInner() {
   const [postGame, setPostGame] = useState<GameSessionState | null>(null);
   const [gameKey, setGameKey] = useState(0);
   const [forceBlockSelection, setForceBlockSelection] = useState(false);
+  const despedidaFiredRef = useRef(false);
+  // pickEndVideo(stars) NO puede llamarse inline en el JSX (ver
+  // GameCompleteScreen.tsx): esta pantalla se re-renderiza varias veces
+  // mientras postGame está activo (stars/pct no cambian, pero React igual
+  // re-ejecuta el componente) y cada llamada elige un video AL AZAR
+  // distinto — el <video src> cambiaba de golpe a mitad de reproducción,
+  // reiniciándose una y otra vez y por eso el onEnded (que dispara la
+  // despedida) casi nunca llegaba a disparar. Se elige una sola vez por
+  // sesión de postGame y se reusa.
+  const endVideoSrcRef = useRef<string | null>(null);
 
   // If word-flash comes with ?session=, load those words directly
   const preloadedSession = useMemo(() => {
@@ -157,6 +168,8 @@ function GamePageInner() {
     if (sessionId > 0) {
       await completeSession(sessionId);
     }
+    despedidaFiredRef.current = false;
+    endVideoSrcRef.current = null;
     // Coins are now awarded by GameCompleteScreen as part of the
     // chest animation (1 per correct + 5 bonus).
     setPostGame(result ?? {
@@ -198,11 +211,22 @@ function GamePageInner() {
 
   // ─── Post-game results ──────────────────────────────────────
 
+  // Despedida hablada de Sofía DESPUES de que termina (o falla) el
+  // video de festejo, nunca al mismo tiempo — dos voces encima es un
+  // bug ya conocido en esta app (ver sofiaVoice.ts).
+  const handleCelebrationVideoDone = () => {
+    if (despedidaFiredRef.current) return;
+    despedidaFiredRef.current = true;
+    const d = pickDespedida();
+    void sofiaPlayAudio(d.id, d.text, "gentle");
+  };
+
   if (postGame) {
     const pct = postGame.totalAttempts > 0
       ? Math.round((postGame.correctAttempts / postGame.totalAttempts) * 100)
       : 0;
     const stars = pct >= 90 ? 3 : pct >= 60 ? 2 : 1;
+    if (!endVideoSrcRef.current) endVideoSrcRef.current = pickEndVideo(stars);
 
     return (
       <div style={{
@@ -221,10 +245,11 @@ function GamePageInner() {
           {/* Celebration / motivation video */}
           <div style={{ borderRadius: 16, overflow: "hidden", maxWidth: "min(320px, 85vw)" }}>
             <video
-              src={pickEndVideo(stars)}
+              src={endVideoSrcRef.current}
               autoPlay playsInline
               onCanPlay={(e) => { (e.target as HTMLVideoElement).style.opacity = "1"; }}
-              onError={(e) => { (e.target as HTMLVideoElement).style.display = "none"; }}
+              onError={(e) => { (e.target as HTMLVideoElement).style.display = "none"; handleCelebrationVideoDone(); }}
+              onEnded={handleCelebrationVideoDone}
               style={{ width: "100%", borderRadius: 16, display: "block", opacity: 0, transition: "opacity 0.15s" }}
             />
           </div>
