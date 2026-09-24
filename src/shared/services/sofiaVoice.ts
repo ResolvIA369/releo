@@ -57,10 +57,18 @@ function playMP3(filename: string): Promise<boolean> {
 
   return new Promise((resolve) => {
     let settled = false;
+    // NO se gatea por token: una vez que stopAll() de una sesión más nueva
+    // pone en null audio.onended/onerror, el handler de ESTA sesión ya
+    // quedó desenganchado del elemento compartido — no puede volver a
+    // dispararse por las buenas. El único disparo posible después de eso
+    // es este mismo timeout de seguridad, y tiene que poder resolver
+    // igual: si no, un caller que hace `await` (como speak(), de la que
+    // depende toda la cadena festejo→afirmación→despedida) se queda
+    // colgado para siempre en vez de recibir `false` a los 120s (bug
+    // real, encontrado 24-sep-2026 diagnosticando por qué el cierre de
+    // los juegos a veces nunca llegaba a la despedida).
     const finish = (ok: boolean) => {
       if (settled) return;
-      // Stale callback (a newer playback session is now active)
-      if (myToken !== _currentToken) return;
       settled = true;
       resolve(ok);
     };

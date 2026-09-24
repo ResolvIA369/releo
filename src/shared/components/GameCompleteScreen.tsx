@@ -66,6 +66,15 @@ export const GameCompleteScreen: React.FC<GameCompleteScreenProps> = ({
   // Se elige una sola vez por montaje y se reusa.
   const endVideoSrcRef = useRef<string | null>(null);
   if (!endVideoSrcRef.current) endVideoSrcRef.current = pickEndVideo(stars);
+  // A diferencia del audio (sofiaVoice.playMP3 tiene un timeout de
+  // seguridad de 120s), este <video> no tenía NINGÚN respaldo si el
+  // navegador nunca dispara "ended" — y eso pasa de verdad: bajo carga
+  // (grabación con Playwright + una sesión larga encima) el festejo
+  // puede quedar colgado para siempre, sin afirmación ni despedida
+  // (diagnosticado 23/24-sep-2026 grabando Leo Vuela). Con la duración
+  // real del clip + margen alcanza para no depender de que el evento
+  // llegue.
+  const videoFallbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Only award coins if the player got at least 1 correct.
   // 0/5 = no reward (no coins, no chest, no confetti).
@@ -77,6 +86,10 @@ export const GameCompleteScreen: React.FC<GameCompleteScreenProps> = ({
   // (rotando, una de 8), 2) despedida. Sin premio no hay cierre, mismo
   // criterio que las monedas.
   const handleCelebrationVideoDone = () => {
+    if (videoFallbackTimerRef.current) {
+      clearTimeout(videoFallbackTimerRef.current);
+      videoFallbackTimerRef.current = null;
+    }
     if (despedidaFiredRef.current || totalCoins === 0) return;
     despedidaFiredRef.current = true;
     const a = pickAfirmacionCierre();
@@ -85,6 +98,12 @@ export const GameCompleteScreen: React.FC<GameCompleteScreenProps> = ({
       void sofiaPlayAudio(d.id, d.text, "gentle");
     });
   };
+
+  useEffect(() => {
+    return () => {
+      if (videoFallbackTimerRef.current) clearTimeout(videoFallbackTimerRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (firedRef.current) return;
@@ -148,6 +167,12 @@ export const GameCompleteScreen: React.FC<GameCompleteScreenProps> = ({
           // este <video> nunca avisaba que tenía su propio audio (bug real,
           // sep-2026 — "Leo festeja en la app, en el video no se escucha").
           onPlay={() => endVideoSrcRef.current && recAudio(endVideoSrcRef.current, "voz")}
+          onLoadedMetadata={(e) => {
+            const dur = (e.target as HTMLVideoElement).duration;
+            if (!dur || !isFinite(dur)) return;
+            if (videoFallbackTimerRef.current) clearTimeout(videoFallbackTimerRef.current);
+            videoFallbackTimerRef.current = setTimeout(handleCelebrationVideoDone, dur * 1000 + 1500);
+          }}
           onError={(e) => { (e.target as HTMLVideoElement).style.display = "none"; handleCelebrationVideoDone(); }}
           onEnded={handleCelebrationVideoDone}
           style={{ width: "100%", borderRadius: 16, display: "block" }}
