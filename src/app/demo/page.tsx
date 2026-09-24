@@ -123,13 +123,24 @@ function DemoContent() {
           phase={(phaseIdx + 1) as 1 | 2 | 3 | 4 | 5}
           worldId={worldId}
           isDemo
-          // GameCompleteScreen tiene un video de festejo de 8s (Leo/Sofía,
-          // con sonido) + la despedida hablada de Sofía DESPUES de ese
-          // video (unos 3-4s más) + animación de monedas — en /play nadie
+          // GameCompleteScreen tiene un video de festejo de ~8s (Leo/Sofía,
+          // con sonido) + afirmación de Sofía (~8s, rotando 1 de 8) +
+          // despedida hablada (~8s) + animación de monedas — en /play nadie
           // navega hasta que el chico toca un botón, pero acá onComplete
           // disparaba router.push casi al instante de entrar a "finished"
           // y lo desmontaba a mitad de todo eso (bug real, visto grabando).
-          onComplete={() => setTimeout(() => router.push("/demo"), 13000)}
+          // 13000ms alcanzaba para festejo+despedida; al agregar la
+          // afirmación de cierre (23-sep-2026) el camino feliz pasó a ~24s
+          // y este número quedó corto — mismo síntoma, se ve grabando: la
+          // pantalla ya se fue a /demo pero la afirmación/despedida siguen
+          // sonando de fondo, huérfanas.
+          // Nota: esto NO cubre el caso raro en que el navegador nunca
+          // dispara "ended" (ver el timeout de seguridad de 120s en
+          // sofiaVoice.ts) — ahí igual se corta. Ese caso es de entorno
+          // (visto grabando bajo carga), no algo que un delay fijo pueda
+          // resolver sin que GameCompleteScreen avise cuándo termina de
+          // verdad; queda para si se vuelve a ver.
+          onComplete={() => setTimeout(() => router.push("/demo"), 27000)}
           onBack={() => router.push("/demo")}
         />
       </RewardsProvider>
