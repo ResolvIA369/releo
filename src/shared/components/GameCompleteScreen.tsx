@@ -7,7 +7,8 @@ import { CelebrationGif } from "./CelebrationGif";
 import { colors, spacing, fonts, fontSizes } from "@/shared/styles/design-tokens";
 import { fadeInUp, starPop } from "@/shared/styles/animations";
 import { pickEndVideo } from "@/shared/utils/videoPool";
-import { pickDespedida, sofiaPlayAudio } from "@/shared/services/sofiaVoice";
+import { pickAfirmacionCierre, pickDespedida, sofiaPlayAudio } from "@/shared/services/sofiaVoice";
+import { recAudio } from "@/shared/utils/recorder";
 import { useRewards } from "./RewardsLayer";
 import { useAppStore } from "@/shared/store/useAppStore";
 
@@ -70,15 +71,19 @@ export const GameCompleteScreen: React.FC<GameCompleteScreenProps> = ({
   // 0/5 = no reward (no coins, no chest, no confetti).
   const totalCoins = correct > 0 ? correct + 5 + bonusCoins : 0;
 
-  // Despedida hablada de Sofía DESPUES de que termina (o falla) el video
-  // de festejo, nunca al mismo tiempo — dos voces encima es un bug ya
-  // conocido en esta app (ver sofiaVoice.ts). Sin premio no hay despedida,
-  // mismo criterio que las monedas.
+  // Secuencia de cierre DESPUES de que termina (o falla) el video de
+  // festejo, nunca al mismo tiempo — dos voces encima es un bug ya
+  // conocido en esta app (ver sofiaVoice.ts): 1) afirmación positiva
+  // (rotando, una de 8), 2) despedida. Sin premio no hay cierre, mismo
+  // criterio que las monedas.
   const handleCelebrationVideoDone = () => {
     if (despedidaFiredRef.current || totalCoins === 0) return;
     despedidaFiredRef.current = true;
-    const d = pickDespedida();
-    void sofiaPlayAudio(d.id, d.text, "gentle");
+    const a = pickAfirmacionCierre();
+    void sofiaPlayAudio(a.id, a.text, "encouraging").then(() => {
+      const d = pickDespedida();
+      void sofiaPlayAudio(d.id, d.text, "gentle");
+    });
   };
 
   useEffect(() => {
@@ -137,6 +142,12 @@ export const GameCompleteScreen: React.FC<GameCompleteScreenProps> = ({
           playsInline
           muted={false}
           controls={false}
+          // Sin esto el video de festejo suena en la app pero sale mudo en
+          // las grabaciones: el pipeline no captura audio del sistema, arma
+          // la pista entera a partir de estos eventos (ver recorder.ts), y
+          // este <video> nunca avisaba que tenía su propio audio (bug real,
+          // sep-2026 — "Leo festeja en la app, en el video no se escucha").
+          onPlay={() => endVideoSrcRef.current && recAudio(endVideoSrcRef.current, "voz")}
           onError={(e) => { (e.target as HTMLVideoElement).style.display = "none"; handleCelebrationVideoDone(); }}
           onEnded={handleCelebrationVideoDone}
           style={{ width: "100%", borderRadius: 16, display: "block" }}

@@ -360,6 +360,34 @@ export function pickPraiseReaction(): { id: string; text: string } | null {
   return pick;
 }
 
+// ─── Afirmación de cierre al terminar un juego ────────────────────────
+//
+// Orden pedido por César (23-sep-2026): 1) video de festejo con SU audio,
+// 2) esta afirmación, 3) despedida (DESPEDIDA_PHRASES, abajo). Mismas 8
+// frases núcleo que afirmacion-inicio/pregame, envueltas para el cierre —
+// felicita por terminar, no repite el saludo de despedida (eso ya lo dice
+// la despedida después, no hace falta decirlo dos veces).
+const AFIRMACION_CIERRE: { id: string; text: string }[] = [
+  { id: "afirmacion-cierre-01", text: "¡Qué bien jugaste! Repetí conmigo: yo puedo, yo creo en mí, yo soy inteligente." },
+  { id: "afirmacion-cierre-02", text: "¡Qué bien jugaste! Repetí conmigo: me esfuerzo, lo intento, y lo consigo." },
+  { id: "afirmacion-cierre-03", text: "¡Qué bien jugaste! Repetí conmigo: me quiero tal como soy." },
+  { id: "afirmacion-cierre-04", text: "¡Qué bien jugaste! Repetí conmigo: vine al mundo a hacer cosas hermosas." },
+  { id: "afirmacion-cierre-05", text: "¡Qué bien jugaste! Repetí conmigo: si me equivoco, lo intento de nuevo." },
+  { id: "afirmacion-cierre-06", text: "¡Qué bien jugaste! Repetí conmigo: cada día aprendo algo nuevo." },
+  { id: "afirmacion-cierre-07", text: "¡Qué bien jugaste! Repetí conmigo: soy valiente y no me rindo." },
+  { id: "afirmacion-cierre-08", text: "¡Qué bien jugaste! Repetí conmigo: leer me hace grande." },
+];
+
+let lastAfirmacionCierreId: string | null = null;
+
+/** Elige una afirmación de cierre al azar, nunca la misma que la última vez. */
+export function pickAfirmacionCierre(): { id: string; text: string } {
+  const candidates = AFIRMACION_CIERRE.filter((a) => a.id !== lastAfirmacionCierreId);
+  const pick = candidates[Math.floor(Math.random() * candidates.length)];
+  lastAfirmacionCierreId = pick.id;
+  return pick;
+}
+
 // ─── Despedida al terminar un juego ───────────────────────────────────
 //
 // Estas 10 frases (Jessica, [warmly]) ya existían generadas por
