@@ -85,20 +85,41 @@ function playMP3(filename: string): Promise<PlayResult> {
       resolve(ok ? "ok" : myToken === _currentToken ? "failed" : "superseded");
     };
 
-    // Safety timeout — only fires if the audio truly hangs (e.g.
-    // network stall). Set to 120s so long audios like the intro
-    // (30s) and stories (15-30s) are never cut short.
-    const timer = setTimeout(() => finish(false), 120000);
+    // Safety timeout — red de última instancia si el audio de verdad se
+    // cuelga. Antes era un número fijo de 120s pensado para que los audios
+    // largos (intro ~30s, cuentos 15-30s) nunca se cortaran — pero eso
+    // mismo dejaba a un chico hasta 2 minutos esperando frente a una
+    // pantalla congelada cuando el audio corto del CIERRE (afirmación,
+    // despedida, ~3-8s) era el que se colgaba. Diagnosticado 25-sep-2026
+    // con carga de CPU artificial: no es un audio "colgado" de verdad
+    // (readyState 4, networkState idle, sin error) — es reproducción en
+    // cámara lenta porque la máquina no tiene ciclos para decodificar en
+    // tiempo real. No hay forma de "arreglar" eso desde acá: si el CPU no
+    // alcanza, no alcanza. Lo que sí se puede hacer es que el margen de
+    // espera sea proporcional a la duración REAL del clip en vez de un
+    // número fijo — así un despedida de 3s no cuelga la pantalla 120s,
+    // pero un cuento de 30s sigue teniendo margen de sobra incluso bajo
+    // carga (6x su duración, con piso de 8s y techo de 60s).
+    let timer = setTimeout(() => finish(false), 15000); // esperando metadata
     const wrap = (ok: boolean) => { clearTimeout(timer); finish(ok); };
 
     const url = `/audio/sofia/${filename}.mp3`;
     const audio = getSharedAudio();
     if (!audio) { wrap(false); return; }
 
+    const armTimeoutFromDuration = () => {
+      const dur = audio.duration;
+      if (!dur || !isFinite(dur)) return;
+      clearTimeout(timer);
+      const ms = Math.max(8000, Math.min(60000, dur * 1000 * 6));
+      timer = setTimeout(() => finish(false), ms);
+    };
+
     recAudio(url, "voz");
 
     audio.volume = 1;
     audio.src = url;
+    audio.onloadedmetadata = armTimeoutFromDuration;
     audio.onended = () => {
       if (myToken !== _currentToken) return;
       // Wait 300ms after the browser reports "ended" so the audio
