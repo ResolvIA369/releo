@@ -555,7 +555,7 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
         }
 
         // Resolver cuando los carteles llegan a Leo
-        if (round.active && !round.resolved && round.signs.length > 0) {
+        if (round.active && !round.resolved && gamePhaseRef.current === "running" && round.signs.length > 0) {
           const firstY = round.signs[0].box.y;
           if (firstY >= dynLeoY - SIGN_RESOLVE_OFFSET) {
             round.resolved = true;
@@ -738,6 +738,11 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
   // Sin energia → fin del juego
   const finishGame = useCallback(() => {
     if (cancelledRef.current) return;
+    // Mismo bug que LeoVuela (ver su finishGame): el camino de "vuelta
+    // completa" nunca apagaba round.active, así que el ticker seguía
+    // jugando solo después de terminado y pickPraiseReaction() cortaba
+    // por la fuerza la despedida en curso.
+    roundRef.current.active = false;
     stopVoice();
     musicRef.current?.pause();
     setGamePhase("finished");

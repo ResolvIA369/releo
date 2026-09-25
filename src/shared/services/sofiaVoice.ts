@@ -48,8 +48,18 @@ function stopAll() {
   }
 }
 
-function playMP3(filename: string): Promise<boolean> {
-  if (typeof window === "undefined") return Promise.resolve(false);
+// "ok" = terminó de sonar. "failed" = falló de verdad (red, archivo raro):
+// vale la pena que speak() reintente con el auto-match de texto. "superseded"
+// = una sesión más nueva ya tomó el elemento compartido: NO hay que
+// reintentar, porque el reintento llamaría a stopAll() de nuevo y le
+// cortaría el audio a esa sesión más nueva — exactamente el bug real de
+// 24-sep-2026 (ver más abajo) que hacía que una reacción de acierto vieja,
+// atrapada en el timeout de seguridad, interrumpiera la afirmación/
+// despedida del cierre minutos después de terminado el juego.
+type PlayResult = "ok" | "failed" | "superseded";
+
+function playMP3(filename: string): Promise<PlayResult> {
+  if (typeof window === "undefined") return Promise.resolve("failed");
 
   // New session — invalidate older callbacks and stop any playback
   stopAll();
@@ -57,20 +67,22 @@ function playMP3(filename: string): Promise<boolean> {
 
   return new Promise((resolve) => {
     let settled = false;
-    // NO se gatea por token: una vez que stopAll() de una sesión más nueva
-    // pone en null audio.onended/onerror, el handler de ESTA sesión ya
-    // quedó desenganchado del elemento compartido — no puede volver a
-    // dispararse por las buenas. El único disparo posible después de eso
-    // es este mismo timeout de seguridad, y tiene que poder resolver
+    // NO se gatea por token para DEJAR DE resolver: una vez que stopAll() de
+    // una sesión más nueva pone en null audio.onended/onerror, el handler de
+    // ESTA sesión ya quedó desenganchado del elemento compartido — no puede
+    // volver a dispararse por las buenas. El único disparo posible después
+    // de eso es este mismo timeout de seguridad, y tiene que poder resolver
     // igual: si no, un caller que hace `await` (como speak(), de la que
     // depende toda la cadena festejo→afirmación→despedida) se queda
-    // colgado para siempre en vez de recibir `false` a los 120s (bug
-    // real, encontrado 24-sep-2026 diagnosticando por qué el cierre de
-    // los juegos a veces nunca llegaba a la despedida).
+    // colgado para siempre en vez de recibir esto a los 120s (bug real,
+    // encontrado 24-sep-2026 diagnosticando por qué el cierre de los juegos
+    // a veces nunca llegaba a la despedida). SÍ se usa el token para decidir
+    // QUÉ resultado dar: si cuando esto se dispara ya hay una sesión más
+    // nueva corriendo, el resultado es "superseded", no "failed".
     const finish = (ok: boolean) => {
       if (settled) return;
       settled = true;
-      resolve(ok);
+      resolve(ok ? "ok" : myToken === _currentToken ? "failed" : "superseded");
     };
 
     // Safety timeout — only fires if the audio truly hangs (e.g.
@@ -257,14 +269,24 @@ export type SpeechEmotion = "normal" | "excited" | "gentle" | "encouraging";
 async function speak(mp3Name: string | null, text: string, _emotion: SpeechEmotion): Promise<void> {
   // Try explicit MP3 name first
   if (mp3Name && mp3Name.length > 0) {
-    const played = await playMP3(mp3Name);
-    if (played) return;
+    const result = await playMP3(mp3Name);
+    if (result === "ok") return;
+    // "superseded": una llamada más nueva ya tomó el elemento de audio —
+    // reintentar acá llamaría a stopAll() y le cortaría el sonido a ESA
+    // llamada más nueva. Bug real (24-sep-2026): una reacción de acierto
+    // vieja, atrapada horas... perdón, minutos en el timeout de 120s,
+    // reintentaba con el auto-match de texto (que da el mismo audio) y
+    // volvía a interrumpir lo que sonara en ese momento — típicamente la
+    // afirmación/despedida del cierre del juego, mucho después de
+    // terminada la partida. Sólo "failed" (error real de red/archivo)
+    // amerita el reintento de abajo.
+    if (result === "superseded") return;
   }
   // Try auto-matching text to MP3
   const autoMp3 = findMP3ForText(text);
   if (autoMp3) {
-    const played = await playMP3(autoMp3);
-    if (played) return;
+    const result = await playMP3(autoMp3);
+    if (result === "ok") return;
   }
   // No MP3 available — stay silent (intentionally no TTS fallback)
 }

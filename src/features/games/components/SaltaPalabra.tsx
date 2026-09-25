@@ -439,7 +439,7 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
           const jt = jumpTRef.current;
           const p = jt < 1 && jt >= ANTICIPATION ? (jt - ANTICIPATION) / (1 - ANTICIPATION) : 0;
           const nearApex = jt < 1 && Math.sin(p * Math.PI) > 0.6;
-          if (nearApex && round.active && !round.resolved) {
+          if (nearApex && round.active && !round.resolved && gamePhaseRef.current === "running") {
             for (const fw of round.words) {
               if (!fw.caught && Math.abs(fw.box.x - leoXRef.current) < CATCH_X) {
                 fw.caught = true;
@@ -452,7 +452,7 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
         }
 
         // Target escaped off the left edge → miss
-        if (round.active && !round.resolved) {
+        if (round.active && !round.resolved && gamePhaseRef.current === "running") {
           const targetFw = round.words.find((fw) => fw.word.id === round.target?.id);
           if (targetFw && !targetFw.caught && targetFw.box.x < -100) {
             round.resolved = true;
@@ -471,7 +471,7 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
         // explícitamente. El "no instantáneo" de este juego ya lo da el
         // recorrido completo de la palabra en pantalla antes de llegar
         // al rango de salto — no hace falta agregar más acá.
-        if (isDemoRef.current && round.active && !round.resolved && jumpTRef.current >= 1) {
+        if (isDemoRef.current && round.active && !round.resolved && gamePhaseRef.current === "running" && jumpTRef.current >= 1) {
           const targetFw = round.words.find((fw) => fw.word.id === round.target?.id && !fw.caught);
           if (targetFw) {
             const lead = effSpeed * APEX_FRAMES; // px traveled until apex
@@ -668,6 +668,11 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
   // Sin energia → fin del juego
   const finishGame = useCallback(() => {
     if (cancelledRef.current) return;
+    // Mismo bug que LeoVuela (ver su finishGame): el camino de "vuelta
+    // completa" nunca apagaba round.active, así que el ticker seguía
+    // jugando solo después de terminado y pickPraiseReaction() cortaba
+    // por la fuerza la despedida en curso.
+    roundRef.current.active = false;
     stopVoice();
     musicRef.current?.pause();
     setGamePhase("finished");

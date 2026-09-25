@@ -568,7 +568,7 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, worldId, onCom
           }
 
           // Flying through a cloud catches it (both axes, vs Leo's center)
-          if (round.active && !round.resolved) {
+          if (round.active && !round.resolved && gamePhaseRef.current === "running") {
             const leoCenterY = leoYRef.current - LEO_CENTER_OFFSET;
             for (const fc of round.clouds) {
               if (!fc.caught && Math.abs(fc.box.x - leoXRef.current) < CATCH_X && Math.abs(fc.box.y - leoCenterY) < CATCH_Y) {
@@ -582,7 +582,7 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, worldId, onCom
         }
 
         // Target escaped off the left edge → miss
-        if (round.active && !round.resolved) {
+        if (round.active && !round.resolved && gamePhaseRef.current === "running") {
           const targetFc = round.clouds.find((fc) => fc.word.id === round.target?.id);
           if (targetFc && !targetFc.caught && targetFc.box.x < -100) {
             round.resolved = true;
@@ -596,7 +596,7 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, worldId, onCom
         // en rango (dist < 280) bastante antes de que haga falta actuar —
         // ese margen es lo que se usa como "tiempo de lectura": recien
         // se empieza a subir despues de demoReactionMsRef, no apenas entra.
-        if (isDemoRef.current && round.active && !round.resolved) {
+        if (isDemoRef.current && round.active && !round.resolved && gamePhaseRef.current === "running") {
           const targetFc = round.clouds.find((fc) => fc.word.id === round.target?.id && !fc.caught);
           if (targetFc) {
             if (demoTargetIdRef.current !== targetFc.word.id) {
@@ -851,6 +851,18 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, worldId, onCom
   // Sin energia → fin del juego
   const finishGame = useCallback(() => {
     if (cancelledRef.current) return;
+    // Bug real (sep-2026): el camino de "vuelta completa" (nextWave al
+    // llegar al final del mazo) nunca apagaba round.active como sí hacen
+    // el de sin-energía y el de escape. El ticker de Pixi sigue vivo
+    // aunque este componente ya no renderice su JSX (GameCompleteScreen
+    // reemplaza todo en el return, no desmonta LeoVuela), así que sin
+    // esto el juego seguía jugando solo — atrapando nubes señuelo,
+    // completando rondas nuevas — y pickPraiseReaction() cortaba por la
+    // fuerza (stopVoice) la afirmación/despedida en curso, minutos
+    // después de terminado. round.active es lo único que gatea captura,
+    // escape y el apuntado de la demo en el ticker: apagarlo acá lo para
+    // todo de una vez, sin importar por qué puerta se llegó a terminar.
+    roundRef.current.active = false;
     stopVoice();
     musicRef.current?.pause();
     recordGameEvent({
