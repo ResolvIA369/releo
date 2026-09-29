@@ -811,7 +811,7 @@ export const SaltaPalabra: React.FC<GameProps> = ({ words, phase = 1, onComplete
   }
 
   return (
-    <GameShell title="Salta la Palabra" icon="🦘" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})} contentAlign="top" immersive onPauseChange={setPaused}>
+    <GameShell title="Salta la Palabra" icon="🦘" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})} contentAlign="top" immersive landscapeOnly onPauseChange={setPaused}>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: spacing.md, paddingTop: spacing.xs }}>
         {gamePhase === "intro" && <ArcadeIntro color={GAME_COLOR} onSkip={skipIntro} />}
 

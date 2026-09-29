@@ -1068,7 +1068,7 @@ export const LeoVuela: React.FC<GameProps> = ({ words, phase = 1, worldId, onCom
   }
 
   return (
-    <GameShell title="Leo Vuela" icon="🪁" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})} contentAlign="top" immersive onPauseChange={setPaused}>
+    <GameShell title="Leo Vuela" icon="🪁" color={GAME_COLOR} session={state} onBack={onBack ?? (() => {})} contentAlign="top" immersive landscapeOnly onPauseChange={setPaused}>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: spacing.md, paddingTop: spacing.xs }}>
         {gamePhase === "story-intro" && (
           <MissionNarrative

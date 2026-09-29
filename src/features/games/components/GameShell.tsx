@@ -7,6 +7,7 @@ import { colors, spacing, fonts, fontSizes, radii, shadows } from "@/shared/styl
 import { fadeInUp } from "@/shared/styles/animations";
 import { SofiaAvatar } from "@/shared/components/SofiaAvatar";
 import { LeoCompanion, useLeo } from "@/shared/components/LeoCompanion";
+import { RotateGate, useNeedsRotate } from "./RotateGate";
 
 // Leo context so games can trigger Leo's reactions
 type LeoActions = ReturnType<typeof useLeo>;
@@ -48,6 +49,10 @@ interface GameShellProps {
   // controlado: el juego guarda su propio estado local y lo actualiza
   // aca — sin Context, sin la trampa de nesting invertido.
   onPauseChange?: (paused: boolean) => void;
+  // Juegos de escena horizontal (Leo Vuela, Salta la Palabra): en un
+  // celular en vertical se tapa el juego con el pedido de girar el
+  // telefono y la partida queda en pausa hasta que lo acuesten.
+  landscapeOnly?: boolean;
 }
 
 // Alto real (px) de la barra flotante en modo immersive: boton 44px +
@@ -59,9 +64,25 @@ interface GameShellProps {
 // abajo (QA mobile 390x844/360x740, sep-2026).
 export const IMMERSIVE_HEADER_H = 44 + spacing.sm * 2;
 
-export const GameShell: React.FC<GameShellProps> = ({ title, icon, color, session, onBack, children, contentAlign = "center", immersive = false, onPauseChange }) => {
+export const GameShell: React.FC<GameShellProps> = ({ title, icon, color, session, onBack, children, contentAlign = "center", immersive = false, onPauseChange, landscapeOnly = false }) => {
   const [showMenu, setShowMenu] = useState(false);
   const leo = useLeo();
+  const needsRotate = useNeedsRotate(landscapeOnly);
+
+  // Mientras se pide girar el telefono el juego no corre; al acostarlo
+  // retoma solo, salvo que el menu de pausa este abierto.
+  useEffect(() => {
+    if (!landscapeOnly) return;
+    onPauseChange?.(needsRotate || showMenu);
+  }, [needsRotate]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Si el boton "Girar la pantalla" puso pantalla completa, se sale al
+  // dejar el juego.
+  useEffect(() => () => {
+    if (landscapeOnly && typeof document !== "undefined" && document.fullscreenElement) {
+      document.exitFullscreen?.().catch(() => {});
+    }
+  }, [landscapeOnly]);
 
   const handlePause = useCallback(() => {
     setShowMenu(true);
@@ -229,6 +250,8 @@ export const GameShell: React.FC<GameShellProps> = ({ title, icon, color, sessio
             </motion.div>
           )}
         </AnimatePresence>
+
+        {needsRotate && <RotateGate color={color} />}
 
         {/* Leo the Lion companion — oculto en modo immersive: con el canvas
             ocupando casi toda la pantalla no queda margen donde flotar sin

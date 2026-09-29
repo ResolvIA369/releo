@@ -80,6 +80,13 @@ export const LEO_RUNNER_Z = {
 // dimsRef, para que quede accesible fuera del effect de init (spawnWave,
 // handleResolve).
 const W = 820;
+// Ancho logico en pantallas angostas (celular en vertical). Con 820 fijo,
+// un telefono de 390px mostraba todo a escala 0.46: carteles de ~12px y un
+// Leo diminuto (QA sep-2026, "en el celular quedo ultrapequeno"). Con 520
+// la escala sube a ~0.73. Las palabras largas con 4 carriles no quedan mas
+// chicas que antes: se ajustan al cartel igual que con 820.
+const W_NARROW = 520;
+const NARROW_BREAKPOINT = 640; // px CSS reales del contenedor
 const H_DEFAULT = 420;
 const DEFAULT_LANES_X = lanesXForCount(3, W);
 const SIGN_H = 56;
@@ -174,7 +181,7 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
   // B3: alto logico real (medido del contenedor, ya no fijo en 420) +
   // valores derivados, compartidos con spawnWave/handleResolve que viven
   // fuera del effect de init de Pixi.
-  const dimsRef = useRef({ H: H_DEFAULT, leoY: H_DEFAULT - 72, baseSpeed: BASE_SPEED });
+  const dimsRef = useRef({ W, H: H_DEFAULT, leoY: H_DEFAULT - 72, baseSpeed: BASE_SPEED });
   // Banda logica (0..H) donde un cartel todavia no es seguro mostrar: el
   // cartel de objetivo (ArcadeHud overlay) flota ENCIMA del canvas con un
   // top fijo en px reales (IMMERSIVE_HEADER_H + spacing.sm, para despejar
@@ -268,8 +275,11 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
       // carteles, obstaculos) sigue trabajando en unidades logicas que
       // representan honestamente el alto real de cada viewport.
       const rect = hostRef.current.getBoundingClientRect();
-      const measuredAspect = rect.width > 0 && rect.height > 0 ? rect.height / rect.width : H_DEFAULT / W;
-      const dynH = Math.round(Math.min(2200, Math.max(320, W * measuredAspect)));
+      const dynW = rect.width > 0 && rect.width < NARROW_BREAKPOINT ? W_NARROW : W;
+      const measuredAspect = rect.width > 0 && rect.height > 0 ? rect.height / rect.width : H_DEFAULT / dynW;
+      const dynH = Math.round(Math.min(2200, Math.max(320, dynW * measuredAspect)));
+      const dynLanesX = lanesXForCount(3, dynW);
+      lanesXRef.current = dynLanesX;
       const dynLeoY = dynH - 72;
       // La distancia de spawn a resolucion (~H menos las bandas fijas de
       // arriba/abajo) crece con H — sin escalar la velocidad, un canvas
@@ -278,7 +288,7 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
       // proporcional a H/H_DEFAULT para que el tiempo real de cruce (en
       // segundos) se mantenga aproximadamente igual en los tres viewports.
       const dynBaseSpeed = BASE_SPEED * (dynH / H_DEFAULT);
-      dimsRef.current = { H: dynH, leoY: dynLeoY, baseSpeed: dynBaseSpeed };
+      dimsRef.current = { W: dynW, H: dynH, leoY: dynLeoY, baseSpeed: dynBaseSpeed };
 
       // El canvas se muestra bastante mas grande que su resolucion logica
       // (820x420) — sin resolution > 1 en pantallas de alta densidad, Pixi
@@ -290,7 +300,7 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
       // patron que ya tiene LeoVuela.tsx (tope en 2 por costo de GPU).
       // QA sep-2026 (reporte: linea vertical negra en el canvas).
       const dpr = typeof window !== "undefined" ? Math.min(window.devicePixelRatio || 1, 2) : 1;
-      await app.init({ width: W, height: dynH, background: "#dcefe2", antialias: true, resolution: dpr });
+      await app.init({ width: dynW, height: dynH, background: "#dcefe2", antialias: true, resolution: dpr });
       if (disposed || !hostRef.current) {
         app.destroy(true, { children: true });
         return;
@@ -360,9 +370,9 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
 
       // Road background: 3 lanes separated by scrolling dashed lines
       const road = new PIXI.Graphics();
-      road.rect(0, 0, W, dynH).fill("#dcefe2");
+      road.rect(0, 0, dynW, dynH).fill("#dcefe2");
       road.rect(0, 0, 14, dynH).fill("#a8d5b0");
-      road.rect(W - 14, 0, 14, dynH).fill("#a8d5b0");
+      road.rect(dynW - 14, 0, 14, dynH).fill("#a8d5b0");
       road.zIndex = LEO_RUNNER_Z.road;
       app.stage.addChild(road);
 
@@ -370,7 +380,7 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
       // Nivel 3 agrega un cuarto carril
       const dashLayer = new PIXI.Container();
       dashLayer.zIndex = LEO_RUNNER_Z.dashes;
-      rebuildDashes(PIXI, dashLayer, separatorXs(DEFAULT_LANES_X), dynH);
+      rebuildDashes(PIXI, dashLayer, separatorXs(dynLanesX), dynH);
       app.stage.addChild(dashLayer);
       dashLayerRef.current = dashLayer;
 
@@ -384,7 +394,7 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
       const obstaclesLayer = new PIXI.Container();
       obstaclesLayer.zIndex = LEO_RUNNER_Z.obstacles;
       app.stage.addChild(obstaclesLayer);
-      obstaclesRef.current = new LaneObstacles(PIXI, obstaclesLayer, { lanesX: DEFAULT_LANES_X, H: dynH, leoY: dynLeoY });
+      obstaclesRef.current = new LaneObstacles(PIXI, obstaclesLayer, { lanesX: dynLanesX, H: dynH, leoY: dynLeoY });
 
       // Leo — 2 poses (A/B) cruzadas por alpha; si alguna de las 2 no
       // carga cae al sprite estatico anterior, y si ese tampoco carga
@@ -430,7 +440,7 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
       const shadow = new PIXI.Graphics();
       shadow.ellipse(0, 0, 34, 9).fill({ color: 0x000000, alpha: 0.15 });
       leo.addChildAt(shadow, 0);
-      leo.x = DEFAULT_LANES_X[1];
+      leo.x = dynLanesX[1];
       leo.y = dynLeoY;
       app.stage.addChild(leo);
       leoRef.current = leo;
@@ -632,7 +642,7 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
     const target = bagRef.current!.next();
     // Piedras por mundo: Mundo 1 deja 1 piedra (2 carteles), 2+ sin piedras
     const laneCount = tuningRef.current.lanesByLevel[levelRef.current] ?? 3;
-    lanesXRef.current = lanesXForCount(laneCount, W);
+    lanesXRef.current = lanesXForCount(laneCount, dimsRef.current.W);
     if (leoLaneRef.current > laneCount - 1) leoLaneRef.current = laneCount - 1;
     // Redibujar los separadores punteados si cambio la cantidad de carriles
     if (laneCount !== dashLaneCountRef.current && dashLayerRef.current) {
@@ -645,7 +655,7 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
     // El cartel se dimensiona al carril: ancho = separacion entre
     // carriles menos un gap, asi DOS carteles vecinos nunca se
     // superponen (garantia geometrica, sirve para 3 y 4 carriles).
-    const laneSpacing = (W * ROAD_FRAC) / lanes.length;
+    const laneSpacing = (dimsRef.current.W * ROAD_FRAC) / lanes.length;
     const plateW = laneSpacing - LANE_GAP;
     const maxTextW = plateW - SIGN_PAD * 2;
 
@@ -765,7 +775,7 @@ export const LeoRunner: React.FC<GameProps> = ({ words, phase = 1, onComplete, o
       const canvas = appRef.current?.canvas;
       if (canvas) {
         const rect = canvas.getBoundingClientRect();
-        const scale = rect.width / W;
+        const scale = rect.width / dimsRef.current.W;
         rewardCorrect(rect.left + lanesXRef.current[round.targetLane] * scale, rect.top + dimsRef.current.leoY * scale);
       }
       jumpTRef.current = 0; // victory hop
