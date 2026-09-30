@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AnimatedButton } from "./AnimatedButton";
 import { CelebrationGif } from "./CelebrationGif";
+import { SofiaAvatar } from "./SofiaAvatar";
 import { colors, spacing, fonts, fontSizes } from "@/shared/styles/design-tokens";
 import { fadeInUp, starPop } from "@/shared/styles/animations";
 import { pickEndVideo } from "@/shared/utils/videoPool";
@@ -75,6 +76,11 @@ export const GameCompleteScreen: React.FC<GameCompleteScreenProps> = ({
   // real del clip + margen alcanza para no depender de que el evento
   // llegue.
   const videoFallbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Cuando termina el festejo, el <video> queda congelado en su último
+  // cuadro (Leo en pose) mientras Sofía dice la afirmación y la despedida:
+  // no se veía quién hablaba. Pedido de César (30-sep-2026): en ese tramo
+  // aparece la Seño Sofía. "habla" = está sonando su voz.
+  const [sofiaCierre, setSofiaCierre] = useState<"no" | "habla" | "callada">("no");
 
   // Only award coins if the player got at least 1 correct.
   // 0/5 = no reward (no coins, no chest, no confetti).
@@ -92,11 +98,12 @@ export const GameCompleteScreen: React.FC<GameCompleteScreenProps> = ({
     }
     if (despedidaFiredRef.current || totalCoins === 0) return;
     despedidaFiredRef.current = true;
+    setSofiaCierre("habla");
     const a = pickAfirmacionCierre();
     void sofiaPlayAudio(a.id, a.text, "encouraging").then(() => {
       const d = pickDespedida();
-      void sofiaPlayAudio(d.id, d.text, "gentle");
-    });
+      return sofiaPlayAudio(d.id, d.text, "gentle");
+    }).finally(() => setSofiaCierre("callada"));
   };
 
   useEffect(() => {
@@ -149,8 +156,22 @@ export const GameCompleteScreen: React.FC<GameCompleteScreenProps> = ({
     <motion.div variants={fadeInUp} initial="initial" animate="animate"
       style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: spacing.md, position: "relative", paddingBottom: 180 }}
     >
-      {/* Celebration / motivation video */}
+      {/* Celebration / motivation video → Sofía cuando ella habla */}
+      <AnimatePresence mode="wait" initial={false}>
+      {sofiaCierre !== "no" ? (
+        <motion.div
+          key="sofia-cierre"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.35 }}
+          style={{ display: "flex", justifyContent: "center" }}
+        >
+          <SofiaAvatar size={220} speaking={sofiaCierre === "habla"} mood="clapping" />
+        </motion.div>
+      ) : (
       <motion.div
+        key="festejo"
+        exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.25 } }}
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         style={{ borderRadius: 16, overflow: "hidden", maxWidth: "min(360px, 90vw)" }}
@@ -178,6 +199,8 @@ export const GameCompleteScreen: React.FC<GameCompleteScreenProps> = ({
           style={{ width: "100%", borderRadius: 16, display: "block" }}
         />
       </motion.div>
+      )}
+      </AnimatePresence>
 
       {/* Stars — 0 stars shows a motivational emoji instead */}
       <div style={{ display: "flex", gap: spacing.md }}>
