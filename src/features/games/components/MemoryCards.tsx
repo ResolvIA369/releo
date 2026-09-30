@@ -205,7 +205,7 @@ export const MemoryCards: React.FC<GameProps> = ({ words, phase = 1, onComplete,
       .filter((p) => p.index !== nextIdx)
       .map((p) => document.querySelector(`[data-piece-idx="${p.index}"]`) as HTMLElement | null);
     hesitateAndClick(correctEl, wrongEls);
-  }, 1200);
+  }, 1200, placed.length);
 
   // ─── Game end ───────────────────────────────────────────────
 

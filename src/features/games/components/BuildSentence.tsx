@@ -230,7 +230,7 @@ export const BuildSentence: React.FC<GameProps> = ({ words, phase = 1, onComplet
     const correctEl = visibleBtns.find((b) => b.dataset.buildWord === expected) ?? null;
     const wrongEls = visibleBtns.filter((b) => b.dataset.buildWord !== expected);
     hesitateAndClick(correctEl, wrongEls);
-  }, 1600);
+  }, 1600, placed.length);
 
   const advanceRound = useCallback(() => {
     setShowCelebration(false);

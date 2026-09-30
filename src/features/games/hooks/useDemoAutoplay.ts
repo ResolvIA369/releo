@@ -127,6 +127,15 @@ export function useDemoAutoplay(
   condition: boolean,
   action: () => void,
   baseDelayMs = 1500,
+  /**
+   * Juegos donde se colocan VARIAS piezas por ronda (sílabas en
+   * Rompecabezas, palabras en Construye la Frase): `condition` sigue en
+   * true entre una pieza y la siguiente, así que el efecto no se volvía a
+   * disparar y la demo se quedaba quieta después de la primera (bug real,
+   * grabación del 30-sep-2026: Rompecabezas 0 correctas, sin cierre).
+   * Pasar acá la cantidad colocada hace que actúe de nuevo en cada paso.
+   */
+  step?: number,
 ) {
   const actionRef = useRef(action);
   actionRef.current = action;
@@ -136,7 +145,7 @@ export function useDemoAutoplay(
     const t = setTimeout(() => actionRef.current(), jitter(baseDelayMs));
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isDemo, condition, baseDelayMs]);
+  }, [isDemo, condition, baseDelayMs, step]);
 }
 
 /**
