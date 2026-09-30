@@ -14,6 +14,7 @@
 // previously fire in parallel.
 
 import { recAudio } from "@/shared/utils/recorder";
+import { ORACIONES_AUDIO } from "@/shared/constants/oraciones-audio";
 
 let _currentToken = 0;
 // Single shared audio element. Reusing one element (instead of
@@ -249,6 +250,11 @@ const PHRASE_TO_MP3: Record<string, string> = {
 
   // Multiplayer rules
   "Sofia dice una palabra y muestra 4 emojis. El jugador que toque el emoji correcto gana un punto.": "reglas-multijugador",
+
+  // Las 70 frases de Construye la Frase (sofiaReads). Sin esto quedaban
+  // mudas: acá no hay TTS de respaldo. Generadas por
+  // scripts/regenerate-oraciones.py desde words.ts.
+  ...ORACIONES_AUDIO,
 };
 
 /** Find a matching MP3 for a text. Strips {name} placeholders before matching. */
