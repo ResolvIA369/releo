@@ -318,7 +318,10 @@ export const GameCompleteScreen: React.FC<GameCompleteScreenProps> = ({
         </motion.div>
       </div>
 
-      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 2.5 }}
+      {/* data-chrome: en la app se ven; en las grabaciones de video el
+          grabador los oculta (releo-record.mjs), igual que los controles
+          de Flash de Palabras. */}
+      <motion.div data-chrome initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 2.5 }}
         style={{ display: "flex", gap: spacing.md, marginTop: spacing.sm }}
       >
         <AnimatedButton color={color} onClick={onReplay}>Jugar de nuevo</AnimatedButton>
