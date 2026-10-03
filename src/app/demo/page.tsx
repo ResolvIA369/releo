@@ -4,6 +4,7 @@ import React, { useEffect, useState, useMemo, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { DomanDemoPlayer } from "@/features/session/components/DomanDemoPlayer";
+import { isStandaloneDisplay } from "@/shared/utils/pwa";
 import {
   CURRICULUM,
   getSession,
@@ -152,7 +153,6 @@ function DemoContent() {
       <DomanDemoPlayer
         sessions={sessions}
         onComplete={() => router.push("/demo")}
-        autoFullscreen
       />
     );
   }
@@ -176,15 +176,26 @@ function DemoSelector() {
   const [rangeTo, setRangeTo] = useState(5);
   const [demoSpeed, setDemoSpeed] = useState(1);
 
+  // El reproductor de sesiones se graba en pantalla completa. Se pide aca,
+  // en el toque del boton, y no al montar el reproductor: pantalla completa
+  // solo ante un toque explicito, y nunca si ya corre instalada (PWA).
+  const pantallaCompleta = () => {
+    if (isStandaloneDisplay() || document.fullscreenElement) return;
+    document.documentElement.requestFullscreen?.().catch(() => {});
+  };
+
   const startSession = (session: number) => {
+    pantallaCompleta();
     router.push(`/demo?session=${session}&demoSpeed=${demoSpeed}`);
   };
 
   const startRange = () => {
+    pantallaCompleta();
     router.push(`/demo?from=${rangeFrom}&to=${rangeTo}&demoSpeed=${demoSpeed}`);
   };
 
   const startWorld = (worldNum: number) => {
+    pantallaCompleta();
     router.push(`/demo?world=${worldNum}&demoSpeed=${demoSpeed}`);
   };
 
@@ -193,6 +204,7 @@ function DemoSelector() {
   };
 
   const startAll = () => {
+    pantallaCompleta();
     router.push(`/demo?all=true&demoSpeed=${demoSpeed}`);
   };
 

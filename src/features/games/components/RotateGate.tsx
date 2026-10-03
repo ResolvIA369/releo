@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import { colors, fonts, fontSizes, spacing, radii } from "@/shared/styles/design-tokens";
+import { canLockOrientation, isStandaloneDisplay, lockLandscape } from "@/shared/utils/pwa";
 
 // Leo Vuela y Salta la Palabra tienen escena horizontal (640x420). En un
 // celular en vertical el lienzo se ajusta al ancho y queda en ~370x243:
@@ -25,28 +26,25 @@ export function useNeedsRotate(enabled: boolean): boolean {
   return enabled && needs;
 }
 
-type LockableOrientation = ScreenOrientation & { lock?: (o: string) => Promise<void> };
-
-// Android Chrome permite acostar la pantalla solo si antes entra en
-// pantalla completa. iOS no tiene ninguna de las dos cosas para una pagina:
-// ahi el boton no se muestra y queda el pedido de girar a mano.
-function canForceLandscape(): boolean {
-  if (typeof document === "undefined") return false;
-  const o = (typeof screen !== "undefined" ? screen.orientation : undefined) as LockableOrientation | undefined;
-  return !!document.fullscreenEnabled && typeof o?.lock === "function";
-}
-
+// Android Chrome en una pestaña comun permite acostar la pantalla solo si
+// antes entra en pantalla completa, y cada vez que entra muestra el aviso
+// "Para salir de la pantalla completa, arrastra desde arriba". Por eso:
+// - instalada (PWA): el lock va directo, sin pantalla completa ni aviso;
+// - navegador: el boton dice que va a pantalla completa y solo la pide al
+//   tocarlo. Nunca se pide sola al girar.
+// iOS no tiene lock para una pagina: ahi el boton no se muestra y queda el
+// pedido de girar a mano.
 export const RotateGate: React.FC<{ color: string }> = ({ color }) => {
   const [canForce, setCanForce] = useState(false);
-  useEffect(() => setCanForce(canForceLandscape()), []);
+  const [installed, setInstalled] = useState(false);
+  useEffect(() => {
+    const inApp = isStandaloneDisplay();
+    setInstalled(inApp);
+    setCanForce(canLockOrientation() && (inApp || !!document.fullscreenEnabled));
+  }, []);
 
-  const forceLandscape = useCallback(async () => {
-    try {
-      if (!document.fullscreenElement) await document.documentElement.requestFullscreen();
-      await (screen.orientation as LockableOrientation).lock?.("landscape");
-    } catch {
-      // Sin permiso o sin soporte: queda el pedido de girar a mano.
-    }
+  const forceLandscape = useCallback(() => {
+    void lockLandscape({ userGesture: true });
   }, []);
 
   return (
@@ -101,7 +99,7 @@ export const RotateGate: React.FC<{ color: string }> = ({ color }) => {
             cursor: "pointer",
           }}
         >
-          Girar la pantalla
+          {installed ? "Girar la pantalla" : "Jugar en pantalla completa"}
         </button>
       )}
 

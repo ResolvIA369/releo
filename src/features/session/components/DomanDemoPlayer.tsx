@@ -22,13 +22,11 @@ import { RewardsProvider } from "@/shared/components/RewardsLayer";
 interface DomanDemoPlayerProps {
   sessions: DomanSession[];
   onComplete?: () => void;
-  autoFullscreen?: boolean;
 }
 
 export const DomanDemoPlayer: React.FC<DomanDemoPlayerProps> = ({
   sessions,
   onComplete,
-  autoFullscreen = true,
 }) => {
   const [sessionIdx, setSessionIdx] = useState(0);
   const [showTransition, setShowTransition] = useState(false);
@@ -38,14 +36,11 @@ export const DomanDemoPlayer: React.FC<DomanDemoPlayerProps> = ({
   const session = sessions[sessionIdx];
   const totalSessions = sessions.length;
 
-  // Fullscreen on mount
-  useEffect(() => {
-    if (!autoFullscreen) return;
-    document.documentElement.requestFullscreen?.().catch(() => {});
-    return () => {
-      document.exitFullscreen?.().catch(() => {});
-    };
-  }, [autoFullscreen]);
+  // La pantalla completa la pide quien abre el reproductor, en el toque del
+  // boton (ver DemoSelector en app/demo). Aca solo se sale al desmontar.
+  useEffect(() => () => {
+    if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
+  }, []);
 
   const handleSessionComplete = useCallback(() => {
     // Small fade-to-black between sessions

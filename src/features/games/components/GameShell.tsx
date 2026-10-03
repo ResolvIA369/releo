@@ -8,6 +8,7 @@ import { fadeInUp } from "@/shared/styles/animations";
 import { SofiaAvatar } from "@/shared/components/SofiaAvatar";
 import { LeoCompanion, useLeo } from "@/shared/components/LeoCompanion";
 import { RotateGate, useNeedsRotate } from "./RotateGate";
+import { lockLandscape, unlockOrientation } from "@/shared/utils/pwa";
 
 // Leo context so games can trigger Leo's reactions
 type LeoActions = ReturnType<typeof useLeo>;
@@ -76,12 +77,20 @@ export const GameShell: React.FC<GameShellProps> = ({ title, icon, color, sessio
     onPauseChange?.(needsRotate || showMenu);
   }, [needsRotate]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Si el boton "Girar la pantalla" puso pantalla completa, se sale al
-  // dejar el juego.
-  useEffect(() => () => {
-    if (landscapeOnly && typeof document !== "undefined" && document.fullscreenElement) {
-      document.exitFullscreen?.().catch(() => {});
-    }
+  // Instalada (PWA), el juego horizontal acuesta la pantalla solo: ahi el
+  // lock no necesita pantalla completa, asi que no aparece el aviso de
+  // Chrome. En el navegador no se hace nada automatico (ver RotateGate).
+  // Al dejar el juego se libera la orientacion y, si el boton puso
+  // pantalla completa, se sale.
+  useEffect(() => {
+    if (!landscapeOnly) return;
+    void lockLandscape({ userGesture: false });
+    return () => {
+      unlockOrientation();
+      if (typeof document !== "undefined" && document.fullscreenElement) {
+        document.exitFullscreen?.().catch(() => {});
+      }
+    };
   }, [landscapeOnly]);
 
   const handlePause = useCallback(() => {
