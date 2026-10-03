@@ -2,7 +2,7 @@
   "name": "REleo — Lee y Diviértete",
   "short_name": "REleo",
   "description": "Aprende a leer jugando con Leo el leon y la Seño Sofia. Metodo Doman.",
-  "id": "./",
+  "id": "./dashboard",
   "start_url": "./dashboard",
   "scope": "./",
   "display": "fullscreen",
