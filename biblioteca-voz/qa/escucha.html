@@ -1,0 +1,718 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Escucha QA Sofía</title>
+<style>
+:root { --bg:#fbfaf7; --fg:#1d1d1b; --mut:#6b6a66; --line:#e3e0d8; --ok:#1f7a3d; --mal:#b3261e; --hd:#f0ede5; --acc:#8a4b00; --okbg:#e7f3ea; --malbg:#fbe9e7; }
+@media (prefers-color-scheme: dark) { :root { --bg:#161614; --fg:#ecebe6; --mut:#a3a19a; --line:#34332f; --ok:#5fc27e; --mal:#f2867c; --hd:#22211e; --acc:#f0b464; --okbg:#1c2b20; --malbg:#33201e; } }
+body { margin:0; padding:16px; background:var(--bg); color:var(--fg); font:15px/1.4 system-ui, sans-serif; }
+header { position:sticky; top:0; background:var(--bg); padding:8px 0 12px; border-bottom:1px solid var(--line); display:flex; gap:16px; align-items:center; flex-wrap:wrap; z-index:2; }
+h1 { font-size:18px; margin:0; }
+#cuenta { color:var(--mut); }
+#siguiente { margin-left:auto; padding:8px 14px; } #exportar { padding:8px 14px; font-weight:700; }
+table { border-collapse:collapse; width:100%; }
+td, th { border-bottom:1px solid var(--line); padding:8px 6px; text-align:left; vertical-align:middle; }
+tr.grupo th { background:var(--hd); font-size:14px; } tr.grupo span { color:var(--mut); font-weight:400; }
+.texto { font-size:18px; font-weight:650; } .resp { font-size:14px; color:var(--acc); font-weight:600; margin-top:2px; } .meta { color:var(--mut); font-size:12px; margin-top:4px; }
+td.reproductor { width:260px; } audio { width:250px; min-width:250px; }
+button { font:inherit; border:1px solid var(--line); background:transparent; color:var(--fg); border-radius:6px; padding:4px 10px; cursor:pointer; }
+.eval { white-space:nowrap; width:1%; } .eval button { min-width:72px; min-height:44px; font-weight:700; } .eval .ok { color:var(--ok); border-color:var(--ok); margin-right:12px; } .eval .mal { color:var(--mal); border-color:var(--mal); margin-right:12px; } .nota { font:inherit; width:220px; min-height:40px; padding:4px; background:transparent; color:var(--fg); border:1px solid var(--line); border-radius:6px; }
+tr.v-ok { background:var(--okbg); } tr.v-mal { background:var(--malbg); }
+tr.v-ok .ok { background:var(--ok); color:var(--bg); }
+tr.v-mal .mal { background:var(--mal); color:var(--bg); }
+tr.actual { outline:3px solid var(--acc); outline-offset:-3px; }
+@media (max-width:700px) { table, tbody, tr, td { display:block; } tr.grupo th { display:block; } td { border:0; padding:4px 8px; } tr { border-bottom:1px solid var(--line); padding:8px 0; } audio { width:100%; } .eval { width:auto; display:flex; flex-wrap:wrap; gap:8px; } .eval button { flex:1; margin:0 !important; min-height:52px; } .nota { width:100%; } td.reproductor { width:auto; } audio { min-width:0; } header { gap:6px 10px; } #siguiente { margin-left:0; } #siguiente, #exportar { padding:6px 10px; font-size:14px; } h1 { font-size:15px; width:100%; } #cuenta { width:100%; font-size:13px; } }
+</style></head>
+<body>
+<header><h1>Escucha QA: biblioteca de voz de Sofía</h1><span id="cuenta"></span><button type="button" id="siguiente">Próximo pendiente ↓</button><button type="button" id="exportar">Exportar resultados</button></header>
+<p style="color:var(--mut);margin:10px 0">Escuchá y marcá OK o MAL. En grande, lo que ve el chico; en naranja, lo que se le mandó al TTS si era distinto.</p>
+<table><tbody>
+<tr class="grupo"><th colspan="3">Palabras con grafía alterada <span>(27)</span></th></tr>
+<tr data-i="0">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/animales/animal.mp3"></audio></td>
+  <td><div class="texto">animal</div><div class="resp">al TTS se le mandó «animál»</div><div class="meta">candB (palabra suelta) · palabras / animales · palabra-lib-animal</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="1">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/colores/beige.mp3"></audio></td>
+  <td><div class="texto">beige</div><div class="resp">al TTS se le mandó «béis»</div><div class="meta">candB (palabra suelta) · palabras / colores · palabra-lib-beige</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="2">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/naturaleza/cactus.mp3"></audio></td>
+  <td><div class="texto">cactus</div><div class="resp">al TTS se le mandó «cáctus»</div><div class="meta">candB (palabra suelta) · palabras / naturaleza · palabra-lib-cactus</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="3">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/cuerpo/cola.mp3"></audio></td>
+  <td><div class="texto">cola</div><div class="resp">al TTS se le mandó «cóla»</div><div class="meta">candB (palabra suelta) · palabras / cuerpo · palabra-lib-cola</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="4">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/colores/color.mp3"></audio></td>
+  <td><div class="texto">color</div><div class="resp">al TTS se le mandó «colór»</div><div class="meta">candB (palabra suelta) · palabras / colores · palabra-lib-color</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="5">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/juguetes/dado.mp3"></audio></td>
+  <td><div class="texto">dado</div><div class="resp">al TTS se le mandó «dádo»</div><div class="meta">candB (palabra suelta) · palabras / juguetes · palabra-lib-dado</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="6">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/personas/doctora.mp3"></audio></td>
+  <td><div class="texto">doctora</div><div class="resp">al TTS se le mandó «doctóra»</div><div class="meta">candB (palabra suelta) · palabras / personas · palabra-lib-doctora</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="7">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/pares/foto.mp3"></audio></td>
+  <td><div class="texto">foto</div><div class="resp">al TTS se le mandó «fóto»</div><div class="meta">candB (palabra suelta) · palabras / pares · palabra-lib-foto</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="8">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/lugares/hotel.mp3"></audio></td>
+  <td><div class="texto">hotel</div><div class="resp">al TTS se le mandó «otél»</div><div class="meta">candB (palabra suelta) · palabras / lugares · palabra-lib-hotel</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="9">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/animales/hamster.mp3"></audio></td>
+  <td><div class="texto">hámster</div><div class="resp">al TTS se le mandó «jámster»</div><div class="meta">candB (palabra suelta) · palabras / animales · palabra-lib-hamster</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="10">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/comida/kiwi.mp3"></audio></td>
+  <td><div class="texto">kiwi</div><div class="resp">al TTS se le mandó «kíwi»</div><div class="meta">candB (palabra suelta) · palabras / comida · palabra-lib-kiwi</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="11">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/animales/koala.mp3"></audio></td>
+  <td><div class="texto">koala</div><div class="resp">al TTS se le mandó «koála»</div><div class="meta">candB (palabra suelta) · palabras / animales · palabra-lib-koala</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="12">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/transporte/moto.mp3"></audio></td>
+  <td><div class="texto">moto</div><div class="resp">al TTS se le mandó «móto»</div><div class="meta">candB (palabra suelta) · palabras / transporte · palabra-lib-moto</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="13">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/transporte/motor.mp3"></audio></td>
+  <td><div class="texto">motor</div><div class="resp">al TTS se le mandó «motór»</div><div class="meta">candB (palabra suelta) · palabras / transporte · palabra-lib-motor</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="14">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/numeros/once.mp3"></audio></td>
+  <td><div class="texto">once</div><div class="resp">al TTS se le mandó «ónce»</div><div class="meta">candB (palabra suelta) · palabras / numeros · palabra-lib-once</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="15">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/animales/panda.mp3"></audio></td>
+  <td><div class="texto">panda</div><div class="resp">al TTS se le mandó «pánda»</div><div class="meta">candB (palabra suelta) · palabras / animales · palabra-lib-panda</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="16">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/numeros/par.mp3"></audio></td>
+  <td><div class="texto">par</div><div class="resp">al TTS se le mandó «pár»</div><div class="meta">candB (palabra suelta) · palabras / numeros · palabra-lib-par</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="17">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/comida/pasta.mp3"></audio></td>
+  <td><div class="texto">pasta</div><div class="resp">al TTS se le mandó «pásta»</div><div class="meta">candB (palabra suelta) · palabras / comida · palabra-lib-pasta</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="18">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/juguetes/piano.mp3"></audio></td>
+  <td><div class="texto">piano</div><div class="resp">al TTS se le mandó «piáno»</div><div class="meta">candB (palabra suelta) · palabras / juguetes · palabra-lib-piano</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="19">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/comida/pizza.mp3"></audio></td>
+  <td><div class="texto">pizza</div><div class="resp">al TTS se le mandó «pítsa»</div><div class="meta">candB (palabra suelta) · palabras / comida · palabra-lib-pizza</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="20">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/animales/pony.mp3"></audio></td>
+  <td><div class="texto">pony</div><div class="resp">al TTS se le mandó «póni»</div><div class="meta">candB (palabra suelta) · palabras / animales · palabra-lib-pony</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="21">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/juguetes/robot.mp3"></audio></td>
+  <td><div class="texto">robot</div><div class="resp">al TTS se le mandó «robót»</div><div class="meta">candB (palabra suelta) · palabras / juguetes · palabra-lib-robot</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="22">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/emociones/sed.mp3"></audio></td>
+  <td><div class="texto">sed</div><div class="resp">al TTS se le mandó «séd»</div><div class="meta">candB (palabra suelta) · palabras / emociones · palabra-lib-sed</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="23">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/personas/senor.mp3"></audio></td>
+  <td><div class="texto">señor</div><div class="resp">al TTS se le mandó «señór»</div><div class="meta">candB (palabra suelta) · palabras / personas · palabra-lib-senor</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="24">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/transporte/taxi.mp3"></audio></td>
+  <td><div class="texto">taxi</div><div class="resp">al TTS se le mandó «táxi»</div><div class="meta">candB (palabra suelta) · palabras / transporte · palabra-lib-taxi</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="25">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/pares/tuba.mp3"></audio></td>
+  <td><div class="texto">tuba</div><div class="resp">al TTS se le mandó «túba»</div><div class="meta">candB (palabra suelta) · palabras / pares · palabra-lib-tuba</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="26">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/comida/yogur.mp3"></audio></td>
+  <td><div class="texto">yogur</div><div class="resp">al TTS se le mandó «yogúr»</div><div class="meta">candB (palabra suelta) · palabras / comida · palabra-lib-yogur</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr class="grupo"><th colspan="3">Palabras: 3 por tema <span>(57)</span></th></tr>
+<tr data-i="27">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/acciones/aplaude.mp3"></audio></td>
+  <td><div class="texto">aplaude</div><div class="meta">candB (palabra suelta) · palabras / acciones · palabra-lib-aplaude</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="28">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/acciones/abrazar.mp3"></audio></td>
+  <td><div class="texto">abrazar</div><div class="meta">candB (palabra suelta) · palabras / acciones · palabra-lib-abrazar</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="29">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/acciones/pagar.mp3"></audio></td>
+  <td><div class="texto">pagar</div><div class="meta">candB (palabra suelta) · palabras / acciones · palabra-lib-pagar</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="30">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/animales/conejito.mp3"></audio></td>
+  <td><div class="texto">conejito</div><div class="meta">candB (palabra suelta) · palabras / animales · palabra-lib-conejito</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="31">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/animales/venado.mp3"></audio></td>
+  <td><div class="texto">venado</div><div class="meta">candB (palabra suelta) · palabras / animales · palabra-lib-venado</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="32">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/animales/leon.mp3"></audio></td>
+  <td><div class="texto">león</div><div class="meta">candB (palabra suelta) · palabras / animales · palabra-lib-leon</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="33">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/casa/mantel.mp3"></audio></td>
+  <td><div class="texto">mantel</div><div class="meta">candB (palabra suelta) · palabras / casa · palabra-lib-mantel</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="34">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/casa/botella.mp3"></audio></td>
+  <td><div class="texto">botella</div><div class="meta">candB (palabra suelta) · palabras / casa · palabra-lib-botella</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="35">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/casa/plato.mp3"></audio></td>
+  <td><div class="texto">plato</div><div class="meta">candB (palabra suelta) · palabras / casa · palabra-lib-plato</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="36">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/clima/nublado.mp3"></audio></td>
+  <td><div class="texto">nublado</div><div class="meta">candB (palabra suelta) · palabras / clima · palabra-lib-nublado</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="37">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/clima/soleado.mp3"></audio></td>
+  <td><div class="texto">soleado</div><div class="meta">candB (palabra suelta) · palabras / clima · palabra-lib-soleado</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="38">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/clima/nevada.mp3"></audio></td>
+  <td><div class="texto">nevada</div><div class="meta">candB (palabra suelta) · palabras / clima · palabra-lib-nevada</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="39">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/colores/anaranjado.mp3"></audio></td>
+  <td><div class="texto">anaranjado</div><div class="meta">candB (palabra suelta) · palabras / colores · palabra-lib-anaranjado</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="40">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/colores/turquesa.mp3"></audio></td>
+  <td><div class="texto">turquesa</div><div class="meta">candB (palabra suelta) · palabras / colores · palabra-lib-turquesa</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="41">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/colores/dorado.mp3"></audio></td>
+  <td><div class="texto">dorado</div><div class="meta">candB (palabra suelta) · palabras / colores · palabra-lib-dorado</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="42">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/comida/frutilla.mp3"></audio></td>
+  <td><div class="texto">frutilla</div><div class="meta">candB (palabra suelta) · palabras / comida · palabra-lib-frutilla</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="43">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/comida/tomate.mp3"></audio></td>
+  <td><div class="texto">tomate</div><div class="meta">candB (palabra suelta) · palabras / comida · palabra-lib-tomate</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="44">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/comida/budin.mp3"></audio></td>
+  <td><div class="texto">budín</div><div class="meta">candB (palabra suelta) · palabras / comida · palabra-lib-budin</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="45">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/cuerpo/muela.mp3"></audio></td>
+  <td><div class="texto">muela</div><div class="meta">candB (palabra suelta) · palabras / cuerpo · palabra-lib-muela</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="46">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/cuerpo/sangre.mp3"></audio></td>
+  <td><div class="texto">sangre</div><div class="meta">candB (palabra suelta) · palabras / cuerpo · palabra-lib-sangre</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="47">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/cuerpo/pecho.mp3"></audio></td>
+  <td><div class="texto">pecho</div><div class="meta">candB (palabra suelta) · palabras / cuerpo · palabra-lib-pecho</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="48">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/emociones/asustada.mp3"></audio></td>
+  <td><div class="texto">asustada</div><div class="meta">candB (palabra suelta) · palabras / emociones · palabra-lib-asustada</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="49">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/emociones/verguenza.mp3"></audio></td>
+  <td><div class="texto">vergüenza</div><div class="meta">candB (palabra suelta) · palabras / emociones · palabra-lib-verguenza</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="50">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/emociones/orgulloso.mp3"></audio></td>
+  <td><div class="texto">orgulloso</div><div class="meta">candB (palabra suelta) · palabras / emociones · palabra-lib-orgulloso</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="51">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/escuela/tarea.mp3"></audio></td>
+  <td><div class="texto">tarea</div><div class="meta">candB (palabra suelta) · palabras / escuela · palabra-lib-tarea</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="52">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/escuela/aula.mp3"></audio></td>
+  <td><div class="texto">aula</div><div class="meta">candB (palabra suelta) · palabras / escuela · palabra-lib-aula</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="53">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/escuela/hoja.mp3"></audio></td>
+  <td><div class="texto">hoja</div><div class="meta">candB (palabra suelta) · palabras / escuela · palabra-lib-hoja</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="54">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/familia/prima.mp3"></audio></td>
+  <td><div class="texto">prima</div><div class="meta">candB (palabra suelta) · palabras / familia · palabra-lib-prima</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="55">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/familia/padre.mp3"></audio></td>
+  <td><div class="texto">padre</div><div class="meta">candB (palabra suelta) · palabras / familia · palabra-lib-padre</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="56">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/familia/familiar.mp3"></audio></td>
+  <td><div class="texto">familiar</div><div class="meta">candB (palabra suelta) · palabras / familia · palabra-lib-familiar</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="57">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/juguetes/cuna.mp3"></audio></td>
+  <td><div class="texto">cuna</div><div class="meta">candB (palabra suelta) · palabras / juguetes · palabra-lib-cuna</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="58">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/juguetes/hamaca.mp3"></audio></td>
+  <td><div class="texto">hamaca</div><div class="meta">candB (palabra suelta) · palabras / juguetes · palabra-lib-hamaca</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="59">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/juguetes/muneco.mp3"></audio></td>
+  <td><div class="texto">muñeco</div><div class="meta">candB (palabra suelta) · palabras / juguetes · palabra-lib-muneco</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="60">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/lugares/municipio.mp3"></audio></td>
+  <td><div class="texto">municipio</div><div class="meta">candB (palabra suelta) · palabras / lugares · palabra-lib-municipio</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="61">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/lugares/camping.mp3"></audio></td>
+  <td><div class="texto">camping</div><div class="meta">candB (palabra suelta) · palabras / lugares · palabra-lib-camping</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="62">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/lugares/granja.mp3"></audio></td>
+  <td><div class="texto">granja</div><div class="meta">candB (palabra suelta) · palabras / lugares · palabra-lib-granja</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="63">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/naturaleza/hielo.mp3"></audio></td>
+  <td><div class="texto">hielo</div><div class="meta">candB (palabra suelta) · palabras / naturaleza · palabra-lib-hielo</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="64">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/naturaleza/trueno.mp3"></audio></td>
+  <td><div class="texto">trueno</div><div class="meta">candB (palabra suelta) · palabras / naturaleza · palabra-lib-trueno</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="65">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/naturaleza/barro.mp3"></audio></td>
+  <td><div class="texto">barro</div><div class="meta">candB (palabra suelta) · palabras / naturaleza · palabra-lib-barro</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="66">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/numeros/diecisiete.mp3"></audio></td>
+  <td><div class="texto">diecisiete</div><div class="meta">candB (palabra suelta) · palabras / numeros · palabra-lib-diecisiete</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="67">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/numeros/doce.mp3"></audio></td>
+  <td><div class="texto">doce</div><div class="meta">candB (palabra suelta) · palabras / numeros · palabra-lib-doce</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="68">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/numeros/veinte.mp3"></audio></td>
+  <td><div class="texto">veinte</div><div class="meta">candB (palabra suelta) · palabras / numeros · palabra-lib-veinte</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="69">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/objetos/billete.mp3"></audio></td>
+  <td><div class="texto">billete</div><div class="meta">candB (palabra suelta) · palabras / objetos · palabra-lib-billete</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="70">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/objetos/candado.mp3"></audio></td>
+  <td><div class="texto">candado</div><div class="meta">candB (palabra suelta) · palabras / objetos · palabra-lib-candado</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="71">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/objetos/bomba.mp3"></audio></td>
+  <td><div class="texto">bomba</div><div class="meta">candB (palabra suelta) · palabras / objetos · palabra-lib-bomba</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="72">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/pares/paso.mp3"></audio></td>
+  <td><div class="texto">paso</div><div class="meta">candB (palabra suelta) · palabras / pares · palabra-lib-paso</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="73">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/pares/oro.mp3"></audio></td>
+  <td><div class="texto">oro</div><div class="meta">candB (palabra suelta) · palabras / pares · palabra-lib-oro</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="74">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/pares/coche.mp3"></audio></td>
+  <td><div class="texto">coche</div><div class="meta">candB (palabra suelta) · palabras / pares · palabra-lib-coche</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="75">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/personas/princesa.mp3"></audio></td>
+  <td><div class="texto">princesa</div><div class="meta">candB (palabra suelta) · palabras / personas · palabra-lib-princesa</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="76">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/personas/gigante.mp3"></audio></td>
+  <td><div class="texto">gigante</div><div class="meta">candB (palabra suelta) · palabras / personas · palabra-lib-gigante</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="77">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/personas/chofer.mp3"></audio></td>
+  <td><div class="texto">chofer</div><div class="meta">candB (palabra suelta) · palabras / personas · palabra-lib-chofer</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="78">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/ropa/panal.mp3"></audio></td>
+  <td><div class="texto">pañal</div><div class="meta">candB (palabra suelta) · palabras / ropa · palabra-lib-panal</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="79">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/ropa/pulsera.mp3"></audio></td>
+  <td><div class="texto">pulsera</div><div class="meta">candB (palabra suelta) · palabras / ropa · palabra-lib-pulsera</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="80">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/ropa/capucha.mp3"></audio></td>
+  <td><div class="texto">capucha</div><div class="meta">candB (palabra suelta) · palabras / ropa · palabra-lib-capucha</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="81">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/transporte/camion.mp3"></audio></td>
+  <td><div class="texto">camión</div><div class="meta">candB (palabra suelta) · palabras / transporte · palabra-lib-camion</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="82">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/transporte/lancha.mp3"></audio></td>
+  <td><div class="texto">lancha</div><div class="meta">candB (palabra suelta) · palabras / transporte · palabra-lib-lancha</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="83">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/palabras/transporte/bondi.mp3"></audio></td>
+  <td><div class="texto">bondi</div><div class="meta">candB (palabra suelta) · palabras / transporte · palabra-lib-bondi</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr class="grupo"><th colspan="3">Sílabas (experimentales) <span>(10)</span></th></tr>
+<tr data-i="84">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/silabas-directas/lle.mp3"></audio></td>
+  <td><div class="texto">lle</div><div class="resp">al TTS se le mandó «llé»</div><div class="meta">candB (palabra suelta) · silabas-directas · silaba-lle</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="85">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/silabas-directas/je.mp3"></audio></td>
+  <td><div class="texto">je</div><div class="resp">al TTS se le mandó «jé»</div><div class="meta">candB (palabra suelta) · silabas-directas · silaba-je</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="86">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/silabas-directas/fo.mp3"></audio></td>
+  <td><div class="texto">fo</div><div class="resp">al TTS se le mandó «fó»</div><div class="meta">candB (palabra suelta) · silabas-directas · silaba-fo</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="87">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/silabas-directas/da.mp3"></audio></td>
+  <td><div class="texto">da</div><div class="resp">al TTS se le mandó «dá»</div><div class="meta">candB (palabra suelta) · silabas-directas · silaba-da</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="88">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/silabas-directas/qui.mp3"></audio></td>
+  <td><div class="texto">qui</div><div class="resp">al TTS se le mandó «quí»</div><div class="meta">candB (palabra suelta) · silabas-directas · silaba-qui</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="89">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/silabas-directas/ri.mp3"></audio></td>
+  <td><div class="texto">ri</div><div class="resp">al TTS se le mandó «rí»</div><div class="meta">candB (palabra suelta) · silabas-directas · silaba-ri</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="90">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/silabas-directas/bu.mp3"></audio></td>
+  <td><div class="texto">bu</div><div class="resp">al TTS se le mandó «bú»</div><div class="meta">candB (palabra suelta) · silabas-directas · silaba-bu</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="91">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/silabas-directas/ro.mp3"></audio></td>
+  <td><div class="texto">ro</div><div class="resp">al TTS se le mandó «ró»</div><div class="meta">candB (palabra suelta) · silabas-directas · silaba-ro</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="92">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/silabas-directas/cho.mp3"></audio></td>
+  <td><div class="texto">cho</div><div class="resp">al TTS se le mandó «chó»</div><div class="meta">candB (palabra suelta) · silabas-directas · silaba-cho</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="93">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/silabas-directas/que.mp3"></audio></td>
+  <td><div class="texto">que</div><div class="resp">al TTS se le mandó «qué»</div><div class="meta">candB (palabra suelta) · silabas-directas · silaba-que</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr class="grupo"><th colspan="3">Intervenciones de Sofía <span>(10)</span></th></tr>
+<tr data-i="94">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/errores/sofia-errores-032.mp3"></audio></td>
+  <td><div class="texto">Esa se parece, pero no es.</div><div class="meta">Jessica (Sofía) · errores · sofia-errores-032</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="95">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/rutina/sofia-rutina-002.mp3"></audio></td>
+  <td><div class="texto">Hoy vamos a leer diez palabras.</div><div class="meta">Jessica (Sofía) · rutina · sofia-rutina-002</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="96">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/afecto/sofia-afecto-012.mp3"></audio></td>
+  <td><div class="texto">Lo importante es intentarlo.</div><div class="meta">Jessica (Sofía) · afecto · sofia-afecto-012</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="97">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/emociones_sofia/sofia-emociones_sofia-007.mp3"></audio></td>
+  <td><div class="texto">¡Qué lindo dibujo!</div><div class="meta">Jessica (Sofía) · emociones_sofia · sofia-emociones_sofia-007</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="98">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/refuerzo/sofia-refuerzo-064.mp3"></audio></td>
+  <td><div class="texto">¡Qué bien que te salió!</div><div class="meta">Jessica (Sofía) · refuerzo · sofia-refuerzo-064</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="99">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/saludos/sofia-saludos-017.mp3"></audio></td>
+  <td><div class="texto">¡Hola! ¿Me ayudás a leer hoy?</div><div class="meta">Jessica (Sofía) · saludos · sofia-saludos-017</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="100">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/cuento_formulas/sofia-cuento_formulas-017.mp3"></audio></td>
+  <td><div class="texto">Ahora leé vos el cuento conmigo.</div><div class="meta">Jessica (Sofía) · cuento_formulas · sofia-cuento_formulas-017</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="101">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/pistas/sofia-pistas-024.mp3"></audio></td>
+  <td><div class="texto">Mirá qué largas son las palabras.</div><div class="meta">Jessica (Sofía) · pistas · sofia-pistas-024</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="102">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/inicio/sofia-inicio-008.mp3"></audio></td>
+  <td><div class="texto">Después lo hacés vos.</div><div class="meta">Jessica (Sofía) · inicio · sofia-inicio-008</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="103">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/autonomia/sofia-autonomia-009.mp3"></audio></td>
+  <td><div class="texto">Leé todas antes de elegir.</div><div class="meta">Jessica (Sofía) · autonomia · sofia-autonomia-009</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr class="grupo"><th colspan="3">Narraciones completas de cuento <span>(2)</span></th></tr>
+<tr data-i="104">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/cuentos/cuento-11-la-abuela-que-tejia-nubes/completo.mp3"></audio></td>
+  <td><div class="texto">La abuela que tejía nubes</div><div class="meta">Jessica (Sofía) · cuentos / completo · cuento-11-completo</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+<tr data-i="105">
+  <td class="reproductor"><audio controls preload="none" src="../sofia/cuentos/cuento-19-el-pulpo-que-se-enojaba/completo.mp3"></audio></td>
+  <td><div class="texto">El pulpo que se enojaba</div><div class="meta">Jessica (Sofía) · cuentos / completo · cuento-19-completo</div></td>
+  <td class="eval"><button type="button" class="ok">OK</button><button type="button" class="mal">MAL</button>
+      <input type="text" class="nota" placeholder="nota" aria-label="nota"></td>
+</tr>
+</tbody></table>
+<script>
+const MUESTRA = [{"id": "palabra-lib-animal", "grupo": "Palabras con grafía alterada", "texto": "animal", "respelling": "animál", "voz": "candB (palabra suelta)", "categoria": "palabras / animales", "archivo": "../sofia/palabras/animales/animal.mp3"}, {"id": "palabra-lib-beige", "grupo": "Palabras con grafía alterada", "texto": "beige", "respelling": "béis", "voz": "candB (palabra suelta)", "categoria": "palabras / colores", "archivo": "../sofia/palabras/colores/beige.mp3"}, {"id": "palabra-lib-cactus", "grupo": "Palabras con grafía alterada", "texto": "cactus", "respelling": "cáctus", "voz": "candB (palabra suelta)", "categoria": "palabras / naturaleza", "archivo": "../sofia/palabras/naturaleza/cactus.mp3"}, {"id": "palabra-lib-cola", "grupo": "Palabras con grafía alterada", "texto": "cola", "respelling": "cóla", "voz": "candB (palabra suelta)", "categoria": "palabras / cuerpo", "archivo": "../sofia/palabras/cuerpo/cola.mp3"}, {"id": "palabra-lib-color", "grupo": "Palabras con grafía alterada", "texto": "color", "respelling": "colór", "voz": "candB (palabra suelta)", "categoria": "palabras / colores", "archivo": "../sofia/palabras/colores/color.mp3"}, {"id": "palabra-lib-dado", "grupo": "Palabras con grafía alterada", "texto": "dado", "respelling": "dádo", "voz": "candB (palabra suelta)", "categoria": "palabras / juguetes", "archivo": "../sofia/palabras/juguetes/dado.mp3"}, {"id": "palabra-lib-doctora", "grupo": "Palabras con grafía alterada", "texto": "doctora", "respelling": "doctóra", "voz": "candB (palabra suelta)", "categoria": "palabras / personas", "archivo": "../sofia/palabras/personas/doctora.mp3"}, {"id": "palabra-lib-foto", "grupo": "Palabras con grafía alterada", "texto": "foto", "respelling": "fóto", "voz": "candB (palabra suelta)", "categoria": "palabras / pares", "archivo": "../sofia/palabras/pares/foto.mp3"}, {"id": "palabra-lib-hotel", "grupo": "Palabras con grafía alterada", "texto": "hotel", "respelling": "otél", "voz": "candB (palabra suelta)", "categoria": "palabras / lugares", "archivo": "../sofia/palabras/lugares/hotel.mp3"}, {"id": "palabra-lib-hamster", "grupo": "Palabras con grafía alterada", "texto": "hámster", "respelling": "jámster", "voz": "candB (palabra suelta)", "categoria": "palabras / animales", "archivo": "../sofia/palabras/animales/hamster.mp3"}, {"id": "palabra-lib-kiwi", "grupo": "Palabras con grafía alterada", "texto": "kiwi", "respelling": "kíwi", "voz": "candB (palabra suelta)", "categoria": "palabras / comida", "archivo": "../sofia/palabras/comida/kiwi.mp3"}, {"id": "palabra-lib-koala", "grupo": "Palabras con grafía alterada", "texto": "koala", "respelling": "koála", "voz": "candB (palabra suelta)", "categoria": "palabras / animales", "archivo": "../sofia/palabras/animales/koala.mp3"}, {"id": "palabra-lib-moto", "grupo": "Palabras con grafía alterada", "texto": "moto", "respelling": "móto", "voz": "candB (palabra suelta)", "categoria": "palabras / transporte", "archivo": "../sofia/palabras/transporte/moto.mp3"}, {"id": "palabra-lib-motor", "grupo": "Palabras con grafía alterada", "texto": "motor", "respelling": "motór", "voz": "candB (palabra suelta)", "categoria": "palabras / transporte", "archivo": "../sofia/palabras/transporte/motor.mp3"}, {"id": "palabra-lib-once", "grupo": "Palabras con grafía alterada", "texto": "once", "respelling": "ónce", "voz": "candB (palabra suelta)", "categoria": "palabras / numeros", "archivo": "../sofia/palabras/numeros/once.mp3"}, {"id": "palabra-lib-panda", "grupo": "Palabras con grafía alterada", "texto": "panda", "respelling": "pánda", "voz": "candB (palabra suelta)", "categoria": "palabras / animales", "archivo": "../sofia/palabras/animales/panda.mp3"}, {"id": "palabra-lib-par", "grupo": "Palabras con grafía alterada", "texto": "par", "respelling": "pár", "voz": "candB (palabra suelta)", "categoria": "palabras / numeros", "archivo": "../sofia/palabras/numeros/par.mp3"}, {"id": "palabra-lib-pasta", "grupo": "Palabras con grafía alterada", "texto": "pasta", "respelling": "pásta", "voz": "candB (palabra suelta)", "categoria": "palabras / comida", "archivo": "../sofia/palabras/comida/pasta.mp3"}, {"id": "palabra-lib-piano", "grupo": "Palabras con grafía alterada", "texto": "piano", "respelling": "piáno", "voz": "candB (palabra suelta)", "categoria": "palabras / juguetes", "archivo": "../sofia/palabras/juguetes/piano.mp3"}, {"id": "palabra-lib-pizza", "grupo": "Palabras con grafía alterada", "texto": "pizza", "respelling": "pítsa", "voz": "candB (palabra suelta)", "categoria": "palabras / comida", "archivo": "../sofia/palabras/comida/pizza.mp3"}, {"id": "palabra-lib-pony", "grupo": "Palabras con grafía alterada", "texto": "pony", "respelling": "póni", "voz": "candB (palabra suelta)", "categoria": "palabras / animales", "archivo": "../sofia/palabras/animales/pony.mp3"}, {"id": "palabra-lib-robot", "grupo": "Palabras con grafía alterada", "texto": "robot", "respelling": "robót", "voz": "candB (palabra suelta)", "categoria": "palabras / juguetes", "archivo": "../sofia/palabras/juguetes/robot.mp3"}, {"id": "palabra-lib-sed", "grupo": "Palabras con grafía alterada", "texto": "sed", "respelling": "séd", "voz": "candB (palabra suelta)", "categoria": "palabras / emociones", "archivo": "../sofia/palabras/emociones/sed.mp3"}, {"id": "palabra-lib-senor", "grupo": "Palabras con grafía alterada", "texto": "señor", "respelling": "señór", "voz": "candB (palabra suelta)", "categoria": "palabras / personas", "archivo": "../sofia/palabras/personas/senor.mp3"}, {"id": "palabra-lib-taxi", "grupo": "Palabras con grafía alterada", "texto": "taxi", "respelling": "táxi", "voz": "candB (palabra suelta)", "categoria": "palabras / transporte", "archivo": "../sofia/palabras/transporte/taxi.mp3"}, {"id": "palabra-lib-tuba", "grupo": "Palabras con grafía alterada", "texto": "tuba", "respelling": "túba", "voz": "candB (palabra suelta)", "categoria": "palabras / pares", "archivo": "../sofia/palabras/pares/tuba.mp3"}, {"id": "palabra-lib-yogur", "grupo": "Palabras con grafía alterada", "texto": "yogur", "respelling": "yogúr", "voz": "candB (palabra suelta)", "categoria": "palabras / comida", "archivo": "../sofia/palabras/comida/yogur.mp3"}, {"id": "palabra-lib-aplaude", "grupo": "Palabras: 3 por tema", "texto": "aplaude", "respelling": null, "voz": "candB (palabra suelta)", "categoria": "palabras / acciones", "archivo": "../sofia/palabras/acciones/aplaude.mp3"}, {"id": "palabra-lib-abrazar", "grupo": "Palabras: 3 por tema", "texto": "abrazar", "respelling": null, "voz": "candB (palabra suelta)", "categoria": "palabras / acciones", "archivo": "../sofia/palabras/acciones/abrazar.mp3"}, {"id": "palabra-lib-pagar", "grupo": "Palabras: 3 por tema", "texto": "pagar", "respelling": null, "voz": "candB (palabra suelta)", "categoria": "palabras / acciones", "archivo": "../sofia/palabras/acciones/pagar.mp3"}, {"id": "palabra-lib-conejito", "grupo": "Palabras: 3 por tema", "texto": "conejito", "respelling": null, "voz": "candB (palabra suelta)", "categoria": "palabras / animales", "archivo": "../sofia/palabras/animales/conejito.mp3"}, {"id": "palabra-lib-venado", "grupo": "Palabras: 3 por tema", "texto": "venado", "respelling": null, "voz": "candB (palabra suelta)", "categoria": "palabras / animales", "archivo": "../sofia/palabras/animales/venado.mp3"}, {"id": "palabra-lib-leon", "grupo": "Palabras: 3 por tema", "texto": "león", "respelling": null, "voz": "candB (palabra suelta)", "categoria": "palabras / animales", "archivo": "../sofia/palabras/animales/leon.mp3"}, {"id": "palabra-lib-mantel", "grupo": "Palabras: 3 por tema", "texto": "mantel", "respelling": null, "voz": "candB (palabra suelta)", "categoria": "palabras / casa", "archivo": "../sofia/palabras/casa/mantel.mp3"}, {"id": "palabra-lib-botella", "grupo": "Palabras: 3 por tema", "texto": "botella", "respelling": null, "voz": "candB (palabra suelta)", "categoria": "palabras / casa", "archivo": "../sofia/palabras/casa/botella.mp3"}, {"id": "palabra-lib-plato", "grupo": "Palabras: 3 por tema", "texto": "plato", "respelling": null, "voz": "candB (palabra suelta)", "categoria": "palabras / casa", "archivo": "../sofia/palabras/casa/plato.mp3"}, {"id": "palabra-lib-nublado", "grupo": "Palabras: 3 por tema", "texto": "nublado", "respelling": null, "voz": "candB (palabra suelta)", "categoria": "palabras / clima", "archivo": "../sofia/palabras/clima/nublado.mp3"}, {"id": "palabra-lib-soleado", "grupo": "Palabras: 3 por tema", "texto": "soleado", "respelling": null, "voz": "candB (palabra suelta)", "categoria": "palabras / clima", "archivo": "../sofia/palabras/clima/soleado.mp3"}, {"id": "palabra-lib-nevada", "grupo": "Palabras: 3 por tema", "texto": "nevada", "respelling": null, "voz": "candB (palabra suelta)", "categoria": "palabras / clima", "archivo": "../sofia/palabras/clima/nevada.mp3"}, {"id": "palabra-lib-anaranjado", "grupo": "Palabras: 3 por tema", "texto": "anaranjado", "respelling": null, "voz": "candB (palabra suelta)", "categoria": "palabras / colores", "archivo": "../sofia/palabras/colores/anaranjado.mp3"}, {"id": "palabra-lib-turquesa", "grupo": "Palabras: 3 por tema", "texto": "turquesa", "respelling": null, "voz": "candB (palabra suelta)", "categoria": "palabras / colores", "archivo": "../sofia/palabras/colores/turquesa.mp3"}, {"id": "palabra-lib-dorado", "grupo": "Palabras: 3 por tema", "texto": "dorado", "respelling": null, "voz": "candB (palabra suelta)", "categoria": "palabras / colores", "archivo": "../sofia/palabras/colores/dorado.mp3"}, {"id": "palabra-lib-frutilla", "grupo": "Palabras: 3 por tema", "texto": "frutilla", "respelling": null, "voz": "candB (palabra suelta)", "categoria": "palabras / comida", "archivo": "../sofia/palabras/comida/frutilla.mp3"}, {"id": "palabra-lib-tomate", "grupo": "Palabras: 3 por tema", "texto": "tomate", "respelling": null, "voz": "candB (palabra suelta)", "categoria": "palabras / comida", "archivo": "../sofia/palabras/comida/tomate.mp3"}, {"id": "palabra-lib-budin", "grupo": "Palabras: 3 por tema", "texto": "budín", "respelling": null, "voz": "candB (palabra suelta)", "categoria": "palabras / comida", "archivo": "../sofia/palabras/comida/budin.mp3"}, {"id": "palabra-lib-muela", "grupo": "Palabras: 3 por tema", "texto": "muela", "respelling": null, "voz": "candB (palabra suelta)", "categoria": "palabras / cuerpo", "archivo": "../sofia/palabras/cuerpo/muela.mp3"}, {"id": "palabra-lib-sangre", "grupo": "Palabras: 3 por tema", "texto": "sangre", "respelling": null, "voz": "candB (palabra suelta)", "categoria": "palabras / cuerpo", "archivo": "../sofia/palabras/cuerpo/sangre.mp3"}, {"id": "palabra-lib-pecho", "grupo": "Palabras: 3 por tema", "texto": "pecho", "respelling": null, "voz": "candB (palabra suelta)", "categoria": "palabras / cuerpo", "archivo": "../sofia/palabras/cuerpo/pecho.mp3"}, {"id": "palabra-lib-asustada", "grupo": "Palabras: 3 por tema", "texto": "asustada", "respelling": null, "voz": "candB (palabra suelta)", "categoria": "palabras / emociones", "archivo": "../sofia/palabras/emociones/asustada.mp3"}, {"id": "palabra-lib-verguenza", "grupo": "Palabras: 3 por tema", "texto": "vergüenza", "respelling": null, "voz": "candB (palabra suelta)", "categoria": "palabras / emociones", "archivo": "../sofia/palabras/emociones/verguenza.mp3"}, {"id": "palabra-lib-orgulloso", "grupo": "Palabras: 3 por tema", "texto": "orgulloso", "respelling": null, "voz": "candB (palabra suelta)", "categoria": "palabras / emociones", "archivo": "../sofia/palabras/emociones/orgulloso.mp3"}, {"id": "palabra-lib-tarea", "grupo": "Palabras: 3 por tema", "texto": "tarea", "respelling": null, "voz": "candB (palabra suelta)", "categoria": "palabras / escuela", "archivo": "../sofia/palabras/escuela/tarea.mp3"}, {"id": "palabra-lib-aula", "grupo": "Palabras: 3 por tema", "texto": "aula", "respelling": null, "voz": "candB (palabra suelta)", "categoria": "palabras / escuela", "archivo": "../sofia/palabras/escuela/aula.mp3"}, {"id": "palabra-lib-hoja", "grupo": "Palabras: 3 por tema", "texto": "hoja", "respelling": null, "voz": "candB (palabra suelta)", "categoria": "palabras / escuela", "archivo": "../sofia/palabras/escuela/hoja.mp3"}, {"id": "palabra-lib-prima", "grupo": "Palabras: 3 por tema", "texto": "prima", "respelling": null, "voz": "candB (palabra suelta)", "categoria": "palabras / familia", "archivo": "../sofia/palabras/familia/prima.mp3"}, {"id": "palabra-lib-padre", "grupo": "Palabras: 3 por tema", "texto": "padre", "respelling": null, "voz": "candB (palabra suelta)", "categoria": "palabras / familia", "archivo": "../sofia/palabras/familia/padre.mp3"}, {"id": "palabra-lib-familiar", "grupo": "Palabras: 3 por tema", "texto": "familiar", "respelling": null, "voz": "candB (palabra suelta)", "categoria": "palabras / familia", "archivo": "../sofia/palabras/familia/familiar.mp3"}, {"id": "palabra-lib-cuna", "grupo": "Palabras: 3 por tema", "texto": "cuna", "respelling": null, "voz": "candB (palabra suelta)", "categoria": "palabras / juguetes", "archivo": "../sofia/palabras/juguetes/cuna.mp3"}, {"id": "palabra-lib-hamaca", "grupo": "Palabras: 3 por tema", "texto": "hamaca", "respelling": null, "voz": "candB (palabra suelta)", "categoria": "palabras / juguetes", "archivo": "../sofia/palabras/juguetes/hamaca.mp3"}, {"id": "palabra-lib-muneco", "grupo": "Palabras: 3 por tema", "texto": "muñeco", "respelling": null, "voz": "candB (palabra suelta)", "categoria": "palabras / juguetes", "archivo": "../sofia/palabras/juguetes/muneco.mp3"}, {"id": "palabra-lib-municipio", "grupo": "Palabras: 3 por tema", "texto": "municipio", "respelling": null, "voz": "candB (palabra suelta)", "categoria": "palabras / lugares", "archivo": "../sofia/palabras/lugares/municipio.mp3"}, {"id": "palabra-lib-camping", "grupo": "Palabras: 3 por tema", "texto": "camping", "respelling": null, "voz": "candB (palabra suelta)", "categoria": "palabras / lugares", "archivo": "../sofia/palabras/lugares/camping.mp3"}, {"id": "palabra-lib-granja", "grupo": "Palabras: 3 por tema", "texto": "granja", "respelling": null, "voz": "candB (palabra suelta)", "categoria": "palabras / lugares", "archivo": "../sofia/palabras/lugares/granja.mp3"}, {"id": "palabra-lib-hielo", "grupo": "Palabras: 3 por tema", "texto": "hielo", "respelling": null, "voz": "candB (palabra suelta)", "categoria": "palabras / naturaleza", "archivo": "../sofia/palabras/naturaleza/hielo.mp3"}, {"id": "palabra-lib-trueno", "grupo": "Palabras: 3 por tema", "texto": "trueno", "respelling": null, "voz": "candB (palabra suelta)", "categoria": "palabras / naturaleza", "archivo": "../sofia/palabras/naturaleza/trueno.mp3"}, {"id": "palabra-lib-barro", "grupo": "Palabras: 3 por tema", "texto": "barro", "respelling": null, "voz": "candB (palabra suelta)", "categoria": "palabras / naturaleza", "archivo": "../sofia/palabras/naturaleza/barro.mp3"}, {"id": "palabra-lib-diecisiete", "grupo": "Palabras: 3 por tema", "texto": "diecisiete", "respelling": null, "voz": "candB (palabra suelta)", "categoria": "palabras / numeros", "archivo": "../sofia/palabras/numeros/diecisiete.mp3"}, {"id": "palabra-lib-doce", "grupo": "Palabras: 3 por tema", "texto": "doce", "respelling": null, "voz": "candB (palabra suelta)", "categoria": "palabras / numeros", "archivo": "../sofia/palabras/numeros/doce.mp3"}, {"id": "palabra-lib-veinte", "grupo": "Palabras: 3 por tema", "texto": "veinte", "respelling": null, "voz": "candB (palabra suelta)", "categoria": "palabras / numeros", "archivo": "../sofia/palabras/numeros/veinte.mp3"}, {"id": "palabra-lib-billete", "grupo": "Palabras: 3 por tema", "texto": "billete", "respelling": null, "voz": "candB (palabra suelta)", "categoria": "palabras / objetos", "archivo": "../sofia/palabras/objetos/billete.mp3"}, {"id": "palabra-lib-candado", "grupo": "Palabras: 3 por tema", "texto": "candado", "respelling": null, "voz": "candB (palabra suelta)", "categoria": "palabras / objetos", "archivo": "../sofia/palabras/objetos/candado.mp3"}, {"id": "palabra-lib-bomba", "grupo": "Palabras: 3 por tema", "texto": "bomba", "respelling": null, "voz": "candB (palabra suelta)", "categoria": "palabras / objetos", "archivo": "../sofia/palabras/objetos/bomba.mp3"}, {"id": "palabra-lib-paso", "grupo": "Palabras: 3 por tema", "texto": "paso", "respelling": null, "voz": "candB (palabra suelta)", "categoria": "palabras / pares", "archivo": "../sofia/palabras/pares/paso.mp3"}, {"id": "palabra-lib-oro", "grupo": "Palabras: 3 por tema", "texto": "oro", "respelling": null, "voz": "candB (palabra suelta)", "categoria": "palabras / pares", "archivo": "../sofia/palabras/pares/oro.mp3"}, {"id": "palabra-lib-coche", "grupo": "Palabras: 3 por tema", "texto": "coche", "respelling": null, "voz": "candB (palabra suelta)", "categoria": "palabras / pares", "archivo": "../sofia/palabras/pares/coche.mp3"}, {"id": "palabra-lib-princesa", "grupo": "Palabras: 3 por tema", "texto": "princesa", "respelling": null, "voz": "candB (palabra suelta)", "categoria": "palabras / personas", "archivo": "../sofia/palabras/personas/princesa.mp3"}, {"id": "palabra-lib-gigante", "grupo": "Palabras: 3 por tema", "texto": "gigante", "respelling": null, "voz": "candB (palabra suelta)", "categoria": "palabras / personas", "archivo": "../sofia/palabras/personas/gigante.mp3"}, {"id": "palabra-lib-chofer", "grupo": "Palabras: 3 por tema", "texto": "chofer", "respelling": null, "voz": "candB (palabra suelta)", "categoria": "palabras / personas", "archivo": "../sofia/palabras/personas/chofer.mp3"}, {"id": "palabra-lib-panal", "grupo": "Palabras: 3 por tema", "texto": "pañal", "respelling": null, "voz": "candB (palabra suelta)", "categoria": "palabras / ropa", "archivo": "../sofia/palabras/ropa/panal.mp3"}, {"id": "palabra-lib-pulsera", "grupo": "Palabras: 3 por tema", "texto": "pulsera", "respelling": null, "voz": "candB (palabra suelta)", "categoria": "palabras / ropa", "archivo": "../sofia/palabras/ropa/pulsera.mp3"}, {"id": "palabra-lib-capucha", "grupo": "Palabras: 3 por tema", "texto": "capucha", "respelling": null, "voz": "candB (palabra suelta)", "categoria": "palabras / ropa", "archivo": "../sofia/palabras/ropa/capucha.mp3"}, {"id": "palabra-lib-camion", "grupo": "Palabras: 3 por tema", "texto": "camión", "respelling": null, "voz": "candB (palabra suelta)", "categoria": "palabras / transporte", "archivo": "../sofia/palabras/transporte/camion.mp3"}, {"id": "palabra-lib-lancha", "grupo": "Palabras: 3 por tema", "texto": "lancha", "respelling": null, "voz": "candB (palabra suelta)", "categoria": "palabras / transporte", "archivo": "../sofia/palabras/transporte/lancha.mp3"}, {"id": "palabra-lib-bondi", "grupo": "Palabras: 3 por tema", "texto": "bondi", "respelling": null, "voz": "candB (palabra suelta)", "categoria": "palabras / transporte", "archivo": "../sofia/palabras/transporte/bondi.mp3"}, {"id": "silaba-lle", "grupo": "Sílabas (experimentales)", "texto": "lle", "respelling": "llé", "voz": "candB (palabra suelta)", "categoria": "silabas-directas", "archivo": "../sofia/silabas-directas/lle.mp3"}, {"id": "silaba-je", "grupo": "Sílabas (experimentales)", "texto": "je", "respelling": "jé", "voz": "candB (palabra suelta)", "categoria": "silabas-directas", "archivo": "../sofia/silabas-directas/je.mp3"}, {"id": "silaba-fo", "grupo": "Sílabas (experimentales)", "texto": "fo", "respelling": "fó", "voz": "candB (palabra suelta)", "categoria": "silabas-directas", "archivo": "../sofia/silabas-directas/fo.mp3"}, {"id": "silaba-da", "grupo": "Sílabas (experimentales)", "texto": "da", "respelling": "dá", "voz": "candB (palabra suelta)", "categoria": "silabas-directas", "archivo": "../sofia/silabas-directas/da.mp3"}, {"id": "silaba-qui", "grupo": "Sílabas (experimentales)", "texto": "qui", "respelling": "quí", "voz": "candB (palabra suelta)", "categoria": "silabas-directas", "archivo": "../sofia/silabas-directas/qui.mp3"}, {"id": "silaba-ri", "grupo": "Sílabas (experimentales)", "texto": "ri", "respelling": "rí", "voz": "candB (palabra suelta)", "categoria": "silabas-directas", "archivo": "../sofia/silabas-directas/ri.mp3"}, {"id": "silaba-bu", "grupo": "Sílabas (experimentales)", "texto": "bu", "respelling": "bú", "voz": "candB (palabra suelta)", "categoria": "silabas-directas", "archivo": "../sofia/silabas-directas/bu.mp3"}, {"id": "silaba-ro", "grupo": "Sílabas (experimentales)", "texto": "ro", "respelling": "ró", "voz": "candB (palabra suelta)", "categoria": "silabas-directas", "archivo": "../sofia/silabas-directas/ro.mp3"}, {"id": "silaba-cho", "grupo": "Sílabas (experimentales)", "texto": "cho", "respelling": "chó", "voz": "candB (palabra suelta)", "categoria": "silabas-directas", "archivo": "../sofia/silabas-directas/cho.mp3"}, {"id": "silaba-que", "grupo": "Sílabas (experimentales)", "texto": "que", "respelling": "qué", "voz": "candB (palabra suelta)", "categoria": "silabas-directas", "archivo": "../sofia/silabas-directas/que.mp3"}, {"id": "sofia-errores-032", "grupo": "Intervenciones de Sofía", "texto": "Esa se parece, pero no es.", "respelling": null, "voz": "Jessica (Sofía)", "categoria": "errores", "archivo": "../sofia/errores/sofia-errores-032.mp3"}, {"id": "sofia-rutina-002", "grupo": "Intervenciones de Sofía", "texto": "Hoy vamos a leer diez palabras.", "respelling": null, "voz": "Jessica (Sofía)", "categoria": "rutina", "archivo": "../sofia/rutina/sofia-rutina-002.mp3"}, {"id": "sofia-afecto-012", "grupo": "Intervenciones de Sofía", "texto": "Lo importante es intentarlo.", "respelling": null, "voz": "Jessica (Sofía)", "categoria": "afecto", "archivo": "../sofia/afecto/sofia-afecto-012.mp3"}, {"id": "sofia-emociones_sofia-007", "grupo": "Intervenciones de Sofía", "texto": "¡Qué lindo dibujo!", "respelling": null, "voz": "Jessica (Sofía)", "categoria": "emociones_sofia", "archivo": "../sofia/emociones_sofia/sofia-emociones_sofia-007.mp3"}, {"id": "sofia-refuerzo-064", "grupo": "Intervenciones de Sofía", "texto": "¡Qué bien que te salió!", "respelling": null, "voz": "Jessica (Sofía)", "categoria": "refuerzo", "archivo": "../sofia/refuerzo/sofia-refuerzo-064.mp3"}, {"id": "sofia-saludos-017", "grupo": "Intervenciones de Sofía", "texto": "¡Hola! ¿Me ayudás a leer hoy?", "respelling": null, "voz": "Jessica (Sofía)", "categoria": "saludos", "archivo": "../sofia/saludos/sofia-saludos-017.mp3"}, {"id": "sofia-cuento_formulas-017", "grupo": "Intervenciones de Sofía", "texto": "Ahora leé vos el cuento conmigo.", "respelling": null, "voz": "Jessica (Sofía)", "categoria": "cuento_formulas", "archivo": "../sofia/cuento_formulas/sofia-cuento_formulas-017.mp3"}, {"id": "sofia-pistas-024", "grupo": "Intervenciones de Sofía", "texto": "Mirá qué largas son las palabras.", "respelling": null, "voz": "Jessica (Sofía)", "categoria": "pistas", "archivo": "../sofia/pistas/sofia-pistas-024.mp3"}, {"id": "sofia-inicio-008", "grupo": "Intervenciones de Sofía", "texto": "Después lo hacés vos.", "respelling": null, "voz": "Jessica (Sofía)", "categoria": "inicio", "archivo": "../sofia/inicio/sofia-inicio-008.mp3"}, {"id": "sofia-autonomia-009", "grupo": "Intervenciones de Sofía", "texto": "Leé todas antes de elegir.", "respelling": null, "voz": "Jessica (Sofía)", "categoria": "autonomia", "archivo": "../sofia/autonomia/sofia-autonomia-009.mp3"}, {"id": "cuento-11-completo", "grupo": "Narraciones completas de cuento", "texto": "La abuela que tejía nubes", "respelling": null, "voz": "Jessica (Sofía)", "categoria": "cuentos / completo", "archivo": "../sofia/cuentos/cuento-11-la-abuela-que-tejia-nubes/completo.mp3"}, {"id": "cuento-19-completo", "grupo": "Narraciones completas de cuento", "texto": "El pulpo que se enojaba", "respelling": null, "voz": "Jessica (Sofía)", "categoria": "cuentos / completo", "archivo": "../sofia/cuentos/cuento-19-el-pulpo-que-se-enojaba/completo.mp3"}];
+const CLAVE = "qa-escucha-sofia-v1";
+const estado = {};
+function guardar() { try { localStorage.setItem(CLAVE, JSON.stringify(estado)); } catch (e) {} }
+function cargar() { try { return JSON.parse(localStorage.getItem(CLAVE) || "{}") || {}; } catch (e) { return {}; } }
+function pintar(tr, i) {
+  const v = (estado[i] || {}).veredicto;
+  tr.classList.toggle("v-ok", v === "OK"); tr.classList.toggle("v-mal", v === "MAL");
+}
+function irAPendiente() {
+  const filas = [...document.querySelectorAll("tr[data-i]")];
+  const tr = filas.find(f => !(estado[f.dataset.i] || {}).veredicto);
+  filas.forEach(f => f.classList.remove("actual"));
+  if (!tr) { document.getElementById("cuenta").textContent += " · ¡no quedan pendientes!"; return; }
+  tr.classList.add("actual");
+  tr.scrollIntoView({ block: "center" });
+}
+document.getElementById("siguiente").addEventListener("click", irAPendiente);
+function contar() {
+  const vals = Object.values(estado).map(x => x.veredicto).filter(Boolean);
+  document.getElementById("cuenta").textContent =
+    vals.length + " de " + MUESTRA.length + " evaluados · " + vals.filter(v => v === "MAL").length + " MAL";
+}
+Object.assign(estado, cargar());
+document.querySelectorAll("tr[data-i]").forEach(tr => {
+  const i = tr.dataset.i;
+  const nota = tr.querySelector(".nota");
+  if (estado[i] && estado[i].nota) nota.value = estado[i].nota;
+  pintar(tr, i);
+  tr.querySelector(".ok").addEventListener("click", () => { estado[i] = {...estado[i], veredicto: "OK"}; pintar(tr, i); contar(); guardar(); });
+  tr.querySelector(".mal").addEventListener("click", () => { estado[i] = {...estado[i], veredicto: "MAL"}; pintar(tr, i); contar(); guardar(); });
+  nota.addEventListener("input", () => { estado[i] = {...estado[i], nota: nota.value}; guardar(); });
+});
+contar();
+document.getElementById("exportar").addEventListener("click", () => {
+  const resultados = MUESTRA.map((m, i) => ({ id: m.id, grupo: m.grupo, texto: m.texto, respelling: m.respelling,
+    voz: m.voz, categoria: m.categoria, archivo: m.archivo,
+    veredicto: (estado[i] || {}).veredicto || null, nota: (estado[i] || {}).nota || "" }));
+  const blob = new Blob([JSON.stringify({ exportado: new Date().toISOString(), total: MUESTRA.length, resultados }, null, 2)],
+    { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = "qa-resultados.json";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+});
+</script>
+</body></html>

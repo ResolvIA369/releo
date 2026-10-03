@@ -1,0 +1,7 @@
+# Audios: viven fuera de git (430 MB). Respaldo en ~/respaldos/, hashes en MANIFEST.sha256.
+sofia/
+*.mp3
+*.part
+# Logs de corrida
+*.log
+__pycache__/
