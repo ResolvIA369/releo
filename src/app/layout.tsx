@@ -4,6 +4,8 @@ import { BrowserCheck } from '@/shared/components/BrowserCheck'
 import { AppProvider } from '@/shared/components/AppProvider'
 import { PWARegister } from '@/shared/components/PWARegister'
 import { WakeLock } from '@/shared/components/WakeLock'
+import { Canonical } from '@/shared/components/Canonical'
+import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -53,6 +55,7 @@ export default function RootLayout({
             dentro de la app, no en la landing pública. */}
       </head>
       <body>
+        <Canonical />
         <ErrorBoundary>
           <BrowserCheck>
             <AppProvider>
@@ -62,6 +65,9 @@ export default function RootLayout({
             </AppProvider>
           </BrowserCheck>
         </ErrorBoundary>
+        {/* Web Analytics de Vercel: separa por hostname, que es lo que hace
+            falta para medir cuánta gente sigue entrando por releo-sable. */}
+        <Analytics />
       </body>
     </html>
   )
