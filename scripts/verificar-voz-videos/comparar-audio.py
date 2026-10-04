@@ -3,8 +3,9 @@
 
 Para cada evento palabra-*.mp3 de audio-events.json corta una ventana del
 final.mp4 alrededor del momento del evento y calcula la correlación cruzada
-normalizada contra (a) la versión de git 651b1a6 (edge-tts, abril) y (b) la
-versión actual en public/ (candB). Gana la que correlaciona más.
+normalizada contra (a) la versión con la que se armaron los videos (2e21c29, o
+el commit que agregó la palabra si ahí no estaba) y (b) la versión actual en
+public/ (candB). Gana la que correlaciona más.
 Uso: comparar-audio.py <carpeta-sesion> [max_palabras]
 """
 import json, os, subprocess, sys
@@ -35,6 +36,13 @@ def ncc_max(seg, ref):
     return float(np.max(corr / (energia * np.linalg.norm(ref) + 1e-12)))
 
 
+def base_de(rel):
+    if subprocess.run(["git", "-C", REPO, "cat-file", "-e", f"2e21c29:{rel}"], capture_output=True).returncode == 0:
+        return "2e21c29"
+    r = subprocess.run(["git", "-C", REPO, "log", "--diff-filter=A", "--format=%h", "--", rel], capture_output=True, text=True)
+    return (r.stdout.split() or ["2e21c29"])[-1]
+
+
 carpeta = sys.argv[1]
 maximo = int(sys.argv[2]) if len(sys.argv) > 2 else 6
 ev = json.load(open(os.path.join(carpeta, "audio-events.json")))
@@ -44,10 +52,10 @@ res = []
 for e in [x for x in ev["events"] if "/palabra-" in x["src"]][:maximo]:
     rel = "public" + e["src"]
     actual = pcm(os.path.join(REPO, rel))
-    viejo_bytes = subprocess.run(["git", "-C", REPO, "show", f"651b1a6:{rel}"], capture_output=True).stdout
+    viejo_bytes = subprocess.run(["git", "-C", REPO, "show", f"{base_de(rel)}:{rel}"], capture_output=True).stdout
     viejo = pcm(None, stdin=viejo_bytes) if viejo_bytes else np.array([], dtype=np.float32)
     t = e["t"] / 1000 - offset
     seg = pcm(final, ss=max(0, t - 3), t=8)
-    res.append({"palabra": e["src"].split("palabra-")[1], "viejo_651b1a6": round(ncc_max(seg, viejo), 3),
+    res.append({"palabra": e["src"].split("palabra-")[1], "version_del_video": round(ncc_max(seg, viejo), 3),
                 "actual_candB": round(ncc_max(seg, actual), 3)})
 print(json.dumps({"sesion": os.path.basename(carpeta), "offset": offset, "palabras": res}, ensure_ascii=False))
